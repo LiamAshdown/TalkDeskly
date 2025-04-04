@@ -1,0 +1,161 @@
+{
+  "validation": {
+    "required": "This field is required",
+    "min": "Must be at least {{param}}",
+    "max": "Must be less than {{param}}",
+    "email": "Please enter a valid email address",
+    "emailAlreadyTaken": "Email already taken",
+    "confirmPassword": {
+      "mismatch": "Passwords do not match"
+    },
+    "invalidType": "Invalid type",
+    "companyAlreadyExists": "Company already exists"
+  },
+  "auth": {
+    "onboarding": {
+      "loading": "Loading...",
+      "next": "Next",
+      "haveAccount": "Already have an account?",
+      "login": "Login",
+      "user": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "password": "Password",
+        "confirmPassword": "Confirm Password"
+      },
+      "company": {
+        "name": "Company Name",
+        "email": "Company Email",
+        "website": "Website",
+        "phone": "Phone Number",
+        "address": "Address"
+      }
+    }
+  },
+  "contacts": {
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "company": "Company",
+    "create": {
+      "description": "Create a new contact. Click save when you're done.",
+      "title": "Create Contact",
+      "save": "Save Contact"
+    },
+    "searchContacts": "Search contacts..."
+  },
+  "inbox": {
+    "wizard": {
+      "website": {
+        "title": "Create Inbox",
+        "description": "Set up your website inbox and customize the welcome message.",
+        "steps": {
+          "create": {
+            "name": "Create Inbox",
+            "description": "Set up your website inbox and customize the welcome message."
+          },
+          "addAgents": {
+            "name": "Add Agents",
+            "description": "Add agents to the created inbox."
+          },
+          "complete": {
+            "name": "Voila!",
+            "description": "You are all set to go!"
+          }
+        }
+      },
+      "createInbox": {
+        "title": "Create Inbox",
+        "description": "Set up your website inbox and customize the welcome message.",
+        "form": {
+          "inboxName": "Inbox Name",
+          "inboxNamePlaceholder": "e.g., Website Support",
+          "welcomeMessage": "Welcome Message",
+          "welcomeMessagePlaceholder": "Enter the message visitors will see when they open the chat",
+          "welcomeMessageDefault": "👋 Hi there! How can we help you today?"
+        }
+      }
+    },
+    "edit": {
+      "title": "Edit Inbox",
+      "description": "Edit the details of this inbox",
+      "inboxUpdated": "Inbox updated successfully",
+      "inboxUpdateFailed": "Failed to update inbox",
+      "inboxUpdateFailedDescription": "Please check the form for errors and try again.",
+      "tabs": {
+        "general": {
+          "title": "General",
+          "description": "Basic information about this inbox",
+          "form": {
+            "inboxName": "Inbox Name",
+            "inboxNamePlaceholder": "Enter a name for this inbox",
+            "description": "Description",
+            "descriptionPlaceholder": "Enter a description for this inbox",
+            "inboxStatus": "Inbox Status",
+            "welcomeMessage": "Welcome Message",
+            "welcomeMessageDescription": "This message will be displayed to visitors when they open the chat",
+            "welcomeMessagePlaceholder": "Enter the message visitors will see when they open the chat",
+            "welcomeMessageDefault": "👋 Hi there! How can we help you today?",
+            "inboxIcon": "Inbox Icon"
+          }
+        },
+        "automation": {
+          "title": "Automation",
+          "description": "Configure the automation settings for this inbox.",
+          "form": {
+            "autoAssignmentEnabled": {
+              "label": "Auto Assignment",
+              "description": "Automatically assign conversations to available agents"
+            },
+            "maxAutoAssignments": {
+              "label": "Max Auto Assignments",
+              "description": "The maximum number of conversations that can be assigned to an agent at a time",
+              "placeholder": "Enter the maximum number of conversations that can be assigned to an agent at a time"
+            },
+            "autoResponderEnabled": {
+              "label": "Auto Responder",
+              "description": "Automatically respond to new conversations"
+            },
+            "autoResponderMessage": {
+              "label": "Auto Responder Message",
+              "description": "The message that will be sent to visitors when they open the chat",
+              "placeholder": "Enter the message that will be sent to visitors when they open the chat"
+            },
+            "outsideHoursMessage": {
+              "label": "Outside Hours Message",
+              "description": "The message that will be sent to visitors when the inbox is not available",
+              "placeholder": "Enter the message that will be sent to visitors when the inbox is not available"
+            },
+            "workingHours": {
+              "label": "Working Hours",
+              "description": "Set your working hours and automatic responses outside of those hours",
+              "startTime": "Start Time",
+              "endTime": "End Time"
+            }
+          }
+        }
+      }
+    }
+  },
+  "agents": {
+    "title": "Add Agents",
+    "description": "Add team members who will be responding to conversations in this inbox.",
+    "select": {
+      "label": "Select Agents",
+      "placeholder": "Search and select agents...",
+      "help": "Selected agents will have access to this inbox and receive notifications for new conversations."
+    },
+    "selected": {
+      "title": "Selected Agents ({{count}})"
+    },
+    "submit": "Complete Setup"
+  },
+  "errors": {
+    "toast": {
+      "error": {
+        "title": "Error"
+      }
+    }
+  }
+}
