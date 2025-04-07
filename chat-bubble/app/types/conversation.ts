@@ -1,8 +1,38 @@
-interface Conversation {
+export type SenderType = "contact" | "agent";
+
+export interface Sender {
+  id: string;
+  name: string;
+  type: SenderType;
+}
+
+export interface Message {
   conversationId: string;
+  name: string;
   content: string;
-  senderId: string;
-  senderType: string;
+  sender: Sender;
   type: string;
-  metadata: string;
+  metadata?: any;
+  timestamp: string;
+}
+
+export interface Conversation {
+  inboxId: string;
+  conversationId: string;
+  status: string;
+  contact: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  messages: Message[];
+  agent: {
+    id: string;
+    name: string;
+  };
+  inbox: {
+    id: string;
+    name: string;
+  };
 }

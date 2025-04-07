@@ -1,20 +1,7 @@
 import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChatBubble } from "~/components/chat-bubble";
-
-interface Message {
-  id: string;
-  content: string;
-  timestamp: string;
-  isCurrentUser: boolean;
-  isRead: boolean;
-  sender?: {
-    name: string;
-    avatar?: string;
-    fallback: string;
-  };
-}
-
+import type { Message } from "~/types/conversation";
 interface ChatMessagesProps {
   messages: Message[];
 }
@@ -44,9 +31,8 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
             message={message.content}
             timestamp={message.timestamp}
             sender={message.sender}
-            isCurrentUser={message.isCurrentUser}
-            isRead={message.isRead}
-            className={message.sender?.name === "System" ? "opacity-70" : ""}
+            isRead={false}
+            className={message.sender.type === "contact" ? "opacity-70" : ""}
           />
         </motion.div>
       ))}

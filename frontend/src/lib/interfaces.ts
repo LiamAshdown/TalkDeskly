@@ -75,10 +75,25 @@ export interface Inbox {
 
 type ConversationStatus = "active" | "closed" | "pending";
 
+export interface Message {
+  conversationId: string;
+  name: string;
+  content: string;
+  sender: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  type: string;
+  metadata: any;
+  timestamp: string;
+}
+
 export interface Conversation {
   inboxId: string;
   conversationId: string;
   status: ConversationStatus;
+  messages: Message[];
   contact: {
     id: string;
     name: string;

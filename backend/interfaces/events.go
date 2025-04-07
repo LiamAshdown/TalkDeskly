@@ -10,6 +10,7 @@ const (
 	// Conversation events
 	EventTypeConversationStart       EventType = "conversation_start"
 	EventTypeConversationSendMessage EventType = "conversation_send_message"
+	EventTypeConversationGetByID     EventType = "conversation_get_by_id"
 
 	// Contact events
 	EventTypeContactUpdated EventType = "contact_updated"

@@ -82,7 +82,7 @@ export default function ChatPanel({
             <Button
               variant="ghost"
               size="icon"
-              className="sm:hidden mr-1"
+              className="md:hidden mr-1"
               onClick={() => {
                 setMobileView("conversations");
               }}
@@ -103,7 +103,7 @@ export default function ChatPanel({
               <p className="text-xs text-muted-foreground">
                 {conversation?.status === "active"
                   ? "Online"
-                  : "Last seen " + conversation?.time}
+                  : "Last seen " + conversation?.updatedAt}
               </p>
             </div>
           </div>
@@ -129,11 +129,13 @@ export default function ChatPanel({
               key={index}
               className={cn(
                 "flex",
-                message.isAgent ? "justify-end" : "justify-start"
+                message.sender.type === "agent"
+                  ? "justify-end"
+                  : "justify-start"
               )}
             >
               <div className="flex items-start gap-2 max-w-[80%]">
-                {!message.isAgent && (
+                {message.sender.type !== "agent" && (
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarImage src={""} alt={conversation.contact.name} />
                     <AvatarFallback>
@@ -146,15 +148,15 @@ export default function ChatPanel({
                 <div
                   className={cn(
                     "rounded-lg p-3",
-                    message.isAgent
+                    message.sender.type === "agent"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted"
                   )}
                 >
                   <p>{message.content}</p>
-                  <p className="text-xs mt-1 opacity-70">{message.time}</p>
+                  <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
                 </div>
-                {message.isAgent && (
+                {message.sender.type === "agent" && (
                   <Avatar className="h-8 w-8 mt-1">
                     <AvatarImage
                       src="/placeholder.svg?height=32&width=32"

@@ -1,4 +1,4 @@
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/live-chat";
 import { LiveChatWidget } from "~/components/live-chat-widget";
 import { WebSocketProvider } from "~/contexts/websocket-context";
 

@@ -49,6 +49,7 @@
     "embla-carousel-react": "8.5.1",
     "emoji-mart": "latest",
     "i18next": "^24.2.3",
+    "immer": "^10.1.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "prism-react-renderer": "latest",

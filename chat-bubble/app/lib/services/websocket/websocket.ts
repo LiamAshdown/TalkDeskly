@@ -1,13 +1,8 @@
 import type { EventType, WebSocketMessage } from "./types";
 import {
-  MessageHandler,
-  TypingHandler,
   ConversationHandler,
-  ContactHandler,
-  InboxHandler,
   ConnectionHandler,
 } from "./handlers";
-import { useContactStore } from "~/stores/contact-store";
 import {
   convertKeysToCamelCase,
   convertKeysToSnakeCase,
@@ -34,32 +29,13 @@ export class WebSocketService {
   }
 
   private initializeHandlers() {
-    const messageHandler = new MessageHandler();
-    const typingHandler = new TypingHandler();
     const conversationHandler = new ConversationHandler();
-    const contactHandler = new ContactHandler();
-    const inboxHandler = new InboxHandler();
-    const connectionHandler = new ConnectionHandler((payload) => {
-      useContactStore.getState().setContactId(payload.userId);
-    });
+    const connectionHandler = new ConnectionHandler();
 
-    // Map events to their respective handlers
     this.handlers.set("connection_established", connectionHandler);
-    this.handlers.set("message", messageHandler);
-    this.handlers.set("message_sent", messageHandler);
-    this.handlers.set("message_read", messageHandler);
-    this.handlers.set("typing_start", typingHandler);
-    this.handlers.set("typing_stop", typingHandler);
-    this.handlers.set("join", conversationHandler);
-    this.handlers.set("leave", conversationHandler);
     this.handlers.set("conversation_start", conversationHandler);
-    this.handlers.set("conversation_end", conversationHandler);
-    this.handlers.set("agent_assigned", conversationHandler);
-    this.handlers.set("contact_updated", contactHandler);
-    this.handlers.set("contact_created", contactHandler);
-    this.handlers.set("contact_deleted", contactHandler);
-    this.handlers.set("inbox_updated", inboxHandler);
-    this.handlers.set("team_member_updated", inboxHandler);
+    this.handlers.set("conversation_send_message", conversationHandler);
+    this.handlers.set("conversation_get_by_id", conversationHandler);
   }
 
   private createWebSocketMessage(
@@ -152,6 +128,13 @@ export class WebSocketService {
       conversationId,
       content,
       type: "text",
+    });
+    this.send(message);
+  }
+
+  public getConversationById(conversationId: string) {
+    const message = this.createWebSocketMessage("conversation_get_by_id", {
+      conversationId,
     });
     this.send(message);
   }

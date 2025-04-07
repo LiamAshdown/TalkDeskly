@@ -3,20 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { ChatHeader } from "~/components/molecules/chat-header";
 import { ChatMessages } from "~/components/molecules/chat-messages";
 import { ChatInput } from "~/components/atoms/chat-input";
-
-interface Message {
-  id: string;
-  content: string;
-  timestamp: string;
-  isCurrentUser: boolean;
-  isRead: boolean;
-  sender?: {
-    name: string;
-    avatar?: string;
-    fallback: string;
-  };
-}
-
+import type { Message } from "~/types/conversation";
 interface ChatWindowProps {
   isFullScreen: boolean;
   isConversationEnded: boolean;

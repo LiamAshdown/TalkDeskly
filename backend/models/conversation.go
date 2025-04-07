@@ -55,6 +55,7 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			Email: utils.GetStringValue(c.Contact.Email),
 			Phone: utils.GetStringValue(c.Contact.Phone),
 		},
+		Messages: MessagesToPayload(c.Messages),
 		Inbox: struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`

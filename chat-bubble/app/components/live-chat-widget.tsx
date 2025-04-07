@@ -16,12 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
+import { useConversationStore } from "~/stores/conversation";
 
 interface Message {
   id: string;
   content: string;
   timestamp: string;
-  isCurrentUser: boolean;
   isRead: boolean;
   sender?: {
     name: string;
@@ -31,26 +31,21 @@ interface Message {
 }
 
 export function LiveChatWidget() {
+  const { conversation } = useConversationStore();
+
   const [isOpen, setIsOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isConversationEnded, setIsConversationEnded] = useState(false);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [unreadCount, setUnreadCount] = useState(1);
   const [hasNewMessage, setHasNewMessage] = useState(true);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const { wsService } = useWebSocket();
   const hasConnected = useRef(false);
 
   // Set up event handlers
   useEffect(() => {
-    wsService.on("message", handleIncomingMessage);
-    wsService.on("conversation_start", handleConversationStart);
-    wsService.on("conversation_end", handleConversationEnd);
-    wsService.on("agent_assigned", handleAgentAssigned);
-
     // Connect to WebSocket only if not already connected
     if (!hasConnected.current) {
       wsService.connect();
@@ -69,45 +64,12 @@ export function LiveChatWidget() {
       setUnreadCount(0);
       setHasNewMessage(false);
     }
-  }, [isOpen]);
 
-  const handleIncomingMessage = (message: any) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: message.payload.content,
-      timestamp: formatTime(new Date(message.timestamp)),
-      isCurrentUser: false,
-      isRead: true,
-      sender: {
-        name: "Support Agent",
-        avatar: "/placeholder.svg?height=32&width=32",
-        fallback: "SA",
-      },
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
-
-    // If chat is closed, increment unread count and trigger animation
-    if (!isOpen) {
-      setUnreadCount((prev) => prev + 1);
-      setHasNewMessage(true);
+    if (conversation) {
+      wsService.getConversationById(conversation.conversationId);
+      setConversationStarted(true);
     }
-  };
-
-  const handleConversationStart = (message: any) => {
-    setConversationId(message.payload.conversation_id);
-    setConversationStarted(true);
-  };
-
-  const handleConversationEnd = (message: any) => {
-    setIsConversationEnded(true);
-    setConversationId(null);
-  };
-
-  const handleAgentAssigned = (message: any) => {
-    // You can update the UI to show which agent is assigned
-    console.log("Agent assigned:", message.payload.agent_id);
-  };
+  }, [isOpen]);
 
   const startConversation = () => {
     setConversationStarted(true);
@@ -117,21 +79,11 @@ export function LiveChatWidget() {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || isConversationEnded || !conversationId) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      content: newMessage,
-      timestamp: formatTime(new Date()),
-      isCurrentUser: true,
-      isRead: false,
-    };
+    if (!newMessage.trim() || isConversationEnded || !conversation) return;
 
-    setMessages((prev) => [...prev, message]);
+    wsService.sendMessage(conversation.conversationId, newMessage);
     setNewMessage("");
-
-    // Send message through WebSocket
-    wsService.sendMessage(conversationId, newMessage);
   };
 
   const toggleFullScreen = () => {
@@ -142,62 +94,14 @@ export function LiveChatWidget() {
     setShowEndDialog(true);
   };
 
-  const confirmEndConversation = () => {
-    if (conversationId) {
-      wsService.leaveConversation(conversationId);
-    }
-    setIsConversationEnded(true);
-    setShowEndDialog(false);
+  const confirmEndConversation = () => {};
 
-    // Add system message indicating the conversation has ended
-    const endMessage: Message = {
-      id: Date.now().toString(),
-      content:
-        "This conversation has ended. You can start a new conversation anytime.",
-      timestamp: formatTime(new Date()),
-      isCurrentUser: false,
-      isRead: true,
-      sender: {
-        name: "System",
-        fallback: "SYS",
-      },
-    };
-
-    setMessages((prev) => [...prev, endMessage]);
-  };
-
-  const startNewConversation = () => {
-    // Reset conversation state
-    setIsConversationEnded(false);
-    setConversationStarted(true);
-    setConversationId(null);
-
-    // Clear previous messages and add welcome message
-    const welcomeMessage: Message = {
-      id: Date.now().toString(),
-      content: "👋 Hi there! How can I help you today?",
-      timestamp: formatTime(new Date()),
-      isCurrentUser: false,
-      isRead: true,
-      sender: {
-        name: "Support Agent",
-        avatar: "/placeholder.svg?height=32&width=32",
-        fallback: "SA",
-      },
-    };
-
-    setMessages([welcomeMessage]);
-  };
+  const startNewConversation = () => {};
 
   const resetChat = () => {
-    if (conversationId) {
-      wsService.leaveConversation(conversationId);
-    }
     setIsOpen(false);
     setConversationStarted(false);
     setIsConversationEnded(false);
-    setMessages([]);
-    setConversationId(null);
   };
 
   return (
@@ -285,7 +189,7 @@ export function LiveChatWidget() {
               <ChatWindow
                 isFullScreen={isFullScreen}
                 isConversationEnded={isConversationEnded}
-                messages={messages}
+                messages={conversation?.messages || []}
                 newMessage={newMessage}
                 onToggleFullScreen={toggleFullScreen}
                 onEndConversation={handleEndConversation}

@@ -1,9 +1,12 @@
+import type { Conversation } from "~/types/conversation";
+
 export type EventType =
   | "connection_established"
   | "join"
   | "leave"
   | "message"
   | "conversation_send_message"
+  | "conversation_get_by_id"
   | "message_sent"
   | "message_read"
   | "typing_start"
@@ -24,20 +27,29 @@ export interface WebSocketMessage {
 }
 
 export interface ConnectionEstablishedPayload {
-  contactId: string;
   userId: string;
-  userType: "agent" | "contact";
+  type: "agent" | "contact";
 }
 
-export interface MessagePayload {
-  conversation_id: string;
+export interface ConversationStartPayload extends Conversation {}
+
+export interface ConversationGetByIdPayload {
+  conversationId: string;
+}
+
+export interface ConversationSendMessagePayload {
+  id: string;
+  conversationId: string;
+  name: string;
   content: string;
+  sender: {
+    name: string;
+    type: string;
+    id: string;
+  };
   type: string;
-  metadata?: any;
+  metadata: any;
+  timestamp: string;
 }
 
-export interface ConversationPayload {
-  conversation_id: string;
-  contact_id: string;
-  agent_id?: string;
-}
+export interface ConversationGetByIdResponsePayload extends Conversation {}

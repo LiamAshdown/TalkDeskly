@@ -9,4 +9,10 @@ export const conversationService = {
     );
     return response.data;
   },
+  async getConversation(conversationId: string): Promise<APIResponse<Conversation>> {
+    const response = await apiClient.get<APIResponse<Conversation>>(
+      `/conversations/${conversationId}`
+    );
+    return response.data;
+  },
 };

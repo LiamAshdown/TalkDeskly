@@ -5,13 +5,13 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/auth";
 
 export default function ProtectedLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const { wsService } = useWebSocket();
   const hasConnected = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated && !hasConnected.current) {
-      wsService.connect();
+    if (isAuthenticated && !hasConnected.current && user) {
+      wsService.connect(user.id, "agent");
       hasConnected.current = true;
     } else if (!isAuthenticated) {
       wsService.disconnect();

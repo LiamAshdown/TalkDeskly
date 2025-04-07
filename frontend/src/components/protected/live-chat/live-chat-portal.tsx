@@ -1,35 +1,23 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import ConversationFilter from "@/components/protected/live-chat/conversation-filter";
 import ChatPanel from "@/components/protected/live-chat/chat-panel";
 import ContactInfo from "@/components/protected/live-chat/contact-info";
 import InboxSidebar from "@/components/protected/live-chat/inbox-sidebar";
 import ResponsiveLayout from "@/components/protected/live-chat/responsive-layout";
-import type {
-  Conversation,
-  Contact,
-  Note,
-  TeamInbox,
-  Message,
-} from "@/types/chat";
-import {
-  mockConversations,
-  mockContacts,
-  mockTeamInboxes,
-} from "@/lib/mock-data";
+
 import { useMobileView } from "@/context/mobile-view-context";
 import { useInboxesStore } from "@/stores/inboxes";
 import { useConversationsStore } from "@/stores/conversations";
+import { useWebSocket } from "@/context/websocket-context";
 
 export default function LiveChatPortal() {
   const { inboxes, fetchInboxes } = useInboxesStore();
   const { conversations, fetchConversations } = useConversationsStore();
+  const { wsService } = useWebSocket();
 
-  const [contacts] = useState<Contact[]>(mockContacts);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
-  >(mockConversations.length > 0 ? mockConversations[0].id : null);
+  >(null);
   const [activeInboxId, setActiveInboxId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const { setMobileView } = useMobileView();
@@ -39,9 +27,6 @@ export default function LiveChatPortal() {
     conversations.find(
       (conv) => conv.conversationId === activeConversationId
     ) || null;
-  const activeContact = activeConversation
-    ? contacts.find((contact) => contact.id === activeConversation.contact.id)
-    : null;
 
   // Filter conversations based on the selected inbox
   const filteredConversations = conversations.filter((conv) => {
@@ -65,10 +50,12 @@ export default function LiveChatPortal() {
   // Function to send a message
   const handleSendMessage = (message: string) => {
     if (!activeConversationId) return;
+
+    wsService.sendMessage(activeConversationId, message);
   };
 
   // Function to add a note to a contact
-  const addNoteToContact = (contactId: string, note: Note) => {};
+  const addNoteToContact = () => {};
 
   // Add a new function to handle conversation assignment
   const handleAssignConversation = (
@@ -79,7 +66,7 @@ export default function LiveChatPortal() {
   // Add a new state variable to track if the contact info panel is open
   const [isContactInfoOpen, setIsContactInfoOpen] = useState(true);
 
-  // Update the ResponsiveLayout component to handle mobile navigation
+  // Update the ResponsiveLayout component to hande mobile navigation
   return (
     <ResponsiveLayout
       inboxSidebar={
@@ -124,11 +111,11 @@ export default function LiveChatPortal() {
       contactInfo={
         isContactInfoOpen && (
           <ContactInfo
-            contact={activeContact || null}
-            onAddNote={(note: Note) => {
-              if (activeContact) {
-                addNoteToContact(activeContact.id, note);
-              }
+            contact={activeConversation?.contact || null}
+            onAddNote={(note: any) => {
+              // if (activeContact) {
+              //   addNoteToContact(activeContact.id, note);
+              // }
             }}
             onClose={() => {
               setIsContactInfoOpen(false);

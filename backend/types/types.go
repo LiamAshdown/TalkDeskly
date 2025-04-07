@@ -60,6 +60,29 @@ type InboxUpdatedPayload struct {
 	RemovedUserIDs []string
 }
 
+type SenderType string
+
+const (
+	SenderTypeContact SenderType = "contact"
+	SenderTypeAgent   SenderType = "agent"
+)
+
+type Sender struct {
+	ID   string     `json:"id"`
+	Name string     `json:"name"`
+	Type SenderType `json:"type"`
+}
+
+type MessagePayload struct {
+	ConversationID string      `json:"conversation_id"`
+	Name           string      `json:"name"`
+	Content        string      `json:"content"`
+	Sender         Sender      `json:"sender"`
+	Type           string      `json:"type"`
+	Metadata       interface{} `json:"metadata,omitempty"`
+	Timestamp      string      `json:"timestamp"`
+}
+
 type ConversationPayload struct {
 	InboxID        string `json:"inbox_id"`
 	ConversationID string `json:"conversation_id"`
@@ -70,7 +93,8 @@ type ConversationPayload struct {
 		Email string `json:"email"`
 		Phone string `json:"phone"`
 	} `json:"contact"`
-	Agent struct {
+	Messages []MessagePayload `json:"messages"`
+	Agent    struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"agent"`

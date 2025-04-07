@@ -62,4 +62,5 @@ func SetupRoutes(app *fiber.App, c interfaces.Container) {
 	conversationHandler := handler.NewConversationHandler(c.GetConversationRepo(), c.GetContactRepo(), c.GetDispatcher())
 	conversationGroup := apiGroup.Group("/conversations", middleware.Auth())
 	conversationGroup.Get("/", conversationHandler.HandleListConversations)
+	conversationGroup.Get("/:id", conversationHandler.HandleGetConversation)
 }

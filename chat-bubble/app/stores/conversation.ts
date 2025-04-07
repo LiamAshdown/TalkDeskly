@@ -1,22 +1,43 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { produce } from "immer";
+import type { Conversation, Message } from "~/types/conversation";
 
 interface ConversationState {
-  conversationId: string;
-  setConversationId: (id: string) => void;
+  conversation: Conversation | null;
+  setConversation: (conversation: Conversation) => void;
+  setMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
 }
 
-const getInitialContactId = () => {
-  if (typeof window === "undefined") return "";
-  const stored = localStorage.getItem("contactId");
-  return stored || "";
-};
-
-export const useConversationStore = create<ConversationState>((set) => ({
-  conversationId: getInitialConversationId(),
-  setConversationId: (id: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("conversationId", id);
+export const useConversationStore = create<ConversationState>()(
+  persist(
+    (set) => ({
+      conversation: null,
+      setConversation: (conversation: Conversation) => {
+        set({ conversation });
+      },
+      setMessages: (messages: Message[]) => {
+        set(
+          produce((state: ConversationState) => {
+            if (state.conversation) {
+              state.conversation.messages = messages;
+            }
+          })
+        );
+      },
+      addMessage: (message: Message) => {
+        set(
+          produce((state: ConversationState) => {
+            if (state.conversation) {
+              state.conversation.messages.push(message);
+            }
+          })
+        );
+      },
+    }),
+    {
+      name: "conversation-storage",
     }
-    set({ conversationId: id });
-  },
-}));
+  )
+);

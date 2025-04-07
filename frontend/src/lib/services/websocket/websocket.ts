@@ -18,15 +18,9 @@ export class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private handlers: Map<EventType, any> = new Map();
-  private eventListeners: Map<
-    EventType,
-    ((message: WebSocketMessage) => void)[]
-  > = new Map();
 
   constructor(
     private url: string,
-    private userId: string,
-    private userType: "agent"
   ) {
     this.initializeHandlers();
   }
@@ -44,20 +38,33 @@ export class WebSocketService {
     this.handlers.set("inbox_created", inboxHandler);
 
     this.handlers.set("conversation_start", conversationHandler);
+    this.handlers.set("conversation_send_message", conversationHandler);
   }
 
-  connect() {
+  private createWebSocketMessage(
+    event: EventType,
+    payload: any
+  ): WebSocketMessage {
+    return {
+      event,
+      payload,
+      timestamp: new Date(),
+    };
+  }
+
+  public connect(userId: string, userType: string) {
     try {
       this.ws = new WebSocket(
-        `${this.url}?type=${this.userType}&user_id=${this.userId}`
+        `${this.url}?type=${userType}&user_id=${userId}`
       );
       this.setupEventHandlers();
       this.reconnectAttempts = 0;
     } catch (error) {
       console.error("WebSocket connection error:", error);
-      this.handleReconnect();
+      this.handleReconnect(userId, userType);
     }
   }
+
 
   private setupEventHandlers() {
     if (!this.ws) return;
@@ -77,7 +84,6 @@ export class WebSocketService {
 
     this.ws.onclose = () => {
       console.log("WebSocket disconnected");
-      this.handleReconnect();
     };
 
     this.ws.onerror = (error) => {
@@ -85,14 +91,14 @@ export class WebSocketService {
     };
   }
 
-  private handleReconnect() {
+  private handleReconnect(userId: string, userType: string) {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       console.log(
         `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
       );
       setTimeout(
-        () => this.connect(),
+        () => this.connect(userId, userType),
         this.reconnectDelay * this.reconnectAttempts
       );
     } else {
@@ -105,24 +111,14 @@ export class WebSocketService {
     if (handler) {
       handler.handle(convertKeysToCamelCase(message));
     }
-
-    // Notify event listeners
-    const listeners = this.eventListeners.get(message.event);
-    if (listeners) {
-      listeners.forEach((listener) => listener(message));
-    }
   }
 
   public sendMessage(conversationId: string, content: string) {
-    const message: WebSocketMessage = {
-      event: "message",
-      payload: {
-        conversation_id: conversationId,
-        content,
-        type: "text",
-      },
-      timestamp: new Date(),
-    };
+    const message = this.createWebSocketMessage("conversation_send_message", {
+      conversationId,
+      content,
+      type: "text",
+    });
     this.send(message);
   }
 
@@ -139,23 +135,6 @@ export class WebSocketService {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
-    }
-  }
-
-  public on(event: EventType, handler: (message: WebSocketMessage) => void) {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
-    }
-    this.eventListeners.get(event)?.push(handler);
-  }
-
-  public off(event: EventType, handler: (message: WebSocketMessage) => void) {
-    const handlers = this.eventListeners.get(event);
-    if (handlers) {
-      const index = handlers.indexOf(handler);
-      if (index !== -1) {
-        handlers.splice(index, 1);
-      }
     }
   }
 }

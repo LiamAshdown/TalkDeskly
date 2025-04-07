@@ -3,58 +3,44 @@ package websocket
 import (
 	"live-chat-server/models"
 	"live-chat-server/types"
-	"live-chat-server/utils"
 )
 
 // BroadcastConversationCreated broadcasts a conversation creation event to all agents in the inbox
 func BroadcastConversationStart(conversation *models.Conversation) {
-	payload := types.OutgoingCreateConversationPayload{
-		ConversationID: conversation.ID,
-		Status:         string(conversation.Status),
-		InboxID:        conversation.InboxID,
-		Contact: struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Email string `json:"email"`
-			Phone string `json:"phone"`
-		}{
-			ID:    conversation.ContactID,
-			Name:  utils.GetStringValue(conversation.Contact.Name),
-			Email: utils.GetStringValue(conversation.Contact.Email),
-			Phone: utils.GetStringValue(conversation.Contact.Phone),
-		},
-		Inbox: struct {
-			ID   string `json:"id"`
-			Name string `json:"name"`
-		}{
-			ID:   conversation.InboxID,
-			Name: conversation.Inbox.Name,
-		},
-	}
-
-	if conversation.Contact.Email != nil {
-		payload.Contact.Email = *conversation.Contact.Email
-	}
-
-	if conversation.Contact.Phone != nil {
-		payload.Contact.Phone = *conversation.Contact.Phone
-	}
+	payload := conversation.ToPayload()
 
 	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationStart, payload)
+	BroadcastToContact(conversation.ContactID, types.EventTypeConversationStart, payload)
 }
 
 func BroadcastConversationSendMessage(conversation *models.Conversation) {
 	message := conversation.Messages[len(conversation.Messages)-1]
 
 	payload := types.OutgoingSendMessagePayload{
+		ID:             message.ID,
 		ConversationID: conversation.ID,
+		Name:           message.GetSenderName(),
 		Content:        message.Content,
-		SenderID:       message.SenderID,
-		SenderType:     string(message.SenderType),
-		Type:           string(message.Type),
-		Metadata:       message.Metadata,
+		Sender: types.Sender{
+			ID:   message.SenderID,
+			Name: message.GetSenderName(),
+			Type: types.SenderType(message.GetSenderType()),
+		},
+		Type:      string(message.Type),
+		Metadata:  message.Metadata,
+		Timestamp: message.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 
 	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationSendMessage, payload)
 	BroadcastToContact(conversation.ContactID, types.EventTypeConversationSendMessage, payload)
+}
+
+func BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
+	payload := conversation.ToPayload()
+
+	if client.GetType() == string(types.SenderTypeContact) {
+		BroadcastToContact(conversation.ContactID, types.EventTypeConversationGetByID, payload)
+	} else {
+		BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationGetByID, payload)
+	}
 }

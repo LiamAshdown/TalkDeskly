@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"live-chat-server/utils"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,7 +28,7 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
-	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID)
+	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Messages")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_list_conversations", err)
 	}
@@ -39,7 +41,23 @@ func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 	return utils.SuccessResponse(c, fiber.StatusOK, "conversations_listed", payload)
 }
 
-func (h *ConversationHandler) HandleConversationStart(client types.WebSocketClient, msg *types.WebSocketMessage) {
+func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
+	user := middleware.GetAuthUser(c)
+
+	id := c.Params("id")
+	if id == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "conversation_id_is_required", nil)
+	}
+
+	conversation, err := h.repo.GetConversationByIdAndCompanyID(c.Params("id"), *user.User.CompanyID, "Inbox", "Contact", "AssignedTo")
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_conversation", err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "conversation_retrieved", conversation.ToPayload())
+}
+
+func (h *ConversationHandler) WSHandleConversationStart(client types.WebSocketClient, msg *types.WebSocketMessage) {
 	var payload types.IncomingStartConversationPayload
 	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
 		return
@@ -52,7 +70,7 @@ func (h *ConversationHandler) HandleConversationStart(client types.WebSocketClie
 		Status:    models.ConversationStatusPending,
 	}
 
-	if err := models.DB.Create(&conversation).Error; err != nil {
+	if err := h.repo.CreateConversation(&conversation); err != nil {
 		return
 	}
 
@@ -65,7 +83,24 @@ func (h *ConversationHandler) HandleConversationStart(client types.WebSocketClie
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
 }
 
-func (h *ConversationHandler) HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+func (h *ConversationHandler) WSHandleGetConversationByID(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+	var payload types.IncomingGetConversationByIDPayload
+	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
+		return
+	}
+
+	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Inbox", "Contact", "AssignedTo")
+	if err != nil {
+		return
+	}
+
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationGetByID, map[string]interface{}{
+		"conversation": conversation,
+		"client":       client,
+	})
+}
+
+func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 	var payload types.IncomingSendMessagePayload
 	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
 		return
@@ -76,23 +111,45 @@ func (h *ConversationHandler) HandleMessage(client *types.WebSocketClient, msg *
 		return
 	}
 
-	conversation.Messages = append(conversation.Messages, models.Message{
-		Content:    payload.Content,
-		Type:       models.MessageTypeText,
-		SenderID:   client.GetID(),
-		SenderType: models.SenderTypeContact,
-		Metadata:   "",
-	})
+	// Convert metadata to JSON string if it's not nil
+	var metadataStr *string
+	if payload.Metadata != nil {
+		metadataBytes, err := json.Marshal(payload.Metadata)
+		if err != nil {
+			log.Printf("Error marshaling metadata: %v", err)
+		} else {
+			str := string(metadataBytes)
+			metadataStr = &str
+		}
+	}
+
+	newMessage := models.Message{
+		Content:        payload.Content,
+		Type:           models.MessageTypeText,
+		SenderID:       client.GetID(),
+		SenderType:     models.SenderType(client.GetType()),
+		ConversationID: conversation.ID,
+		Metadata:       metadataStr,
+	}
+
+	// Save the new message
+	if err := h.repo.CreateMessage(&newMessage); err != nil {
+		log.Printf("Error creating message: %v", err)
+		return
+	}
+
+	// Update the conversation's last message and timestamp
 	conversation.LastMessage = payload.Content
 	now := time.Now()
 	conversation.LastMessageAt = &now
 
 	if err := h.repo.UpdateConversation(conversation); err != nil {
+		log.Printf("Error updating conversation: %v", err)
 		return
 	}
 
 	// Reload the conversation
-	conversation, err = h.repo.GetConversationByID(payload.ConversationID, "Inbox", "Contact", "AssignedTo")
+	conversation, err = h.repo.GetConversationByID(payload.ConversationID, "Messages", "Inbox", "Contact", "AssignedTo")
 	if err != nil {
 		return
 	}

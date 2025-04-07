@@ -14,6 +14,7 @@ const (
 	// Conversation events
 	EventTypeConversationStart       EventType = "conversation_start"
 	EventTypeConversationSendMessage EventType = "conversation_send_message"
+	EventTypeConversationGetByID     EventType = "conversation_get_by_id"
 
 	// Contact events
 	EventTypeContactUpdated EventType = "contact_updated"
@@ -64,6 +65,10 @@ type IncomingSendMessagePayload struct {
 	Metadata       interface{} `mapstructure:"metadata,omitempty"`
 }
 
+type IncomingGetConversationByIDPayload struct {
+	ConversationID string `mapstructure:"conversation_id"`
+}
+
 type OutgoingMessagePayload struct {
 	ConversationID string      `json:"conversation_id"`
 	Content        string      `json:"content"`
@@ -73,36 +78,24 @@ type OutgoingMessagePayload struct {
 	SenderType     string      `json:"sender_type"`
 }
 
-type OutgoingCreateConversationPayload struct {
-	InboxID        string `json:"inbox_id"`
-	ConversationID string `json:"conversation_id"`
-	Status         string `json:"status"`
-	Contact        struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Email string `json:"email"`
-		Phone string `json:"phone"`
-	} `json:"contact"`
-	Agent struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"agent"`
-	Inbox struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"inbox"`
-}
+type OutgoingCreateConversationPayload = ConversationPayload
 
 type OutGoingInboxCreatedPayload struct {
 	InboxID string `json:"inbox_id"`
 	Name    string `json:"name"`
+	Type    string `json:"type"`
 }
 
 type OutgoingSendMessagePayload struct {
+	ID             string      `json:"id"`
 	ConversationID string      `json:"conversation_id"`
+	Name           string      `json:"name"`
 	Content        string      `json:"content"`
-	SenderID       string      `json:"sender_id"`
-	SenderType     string      `json:"sender_type"`
+	Sender         Sender      `json:"sender"`
 	Type           string      `json:"type"`
 	Metadata       interface{} `json:"metadata,omitempty"`
+	Timestamp      string      `json:"timestamp"`
 }
+
+// OutgoingGetConversationByIDPayload is now using ConversationPayload type
+type OutgoingGetConversationByIDPayload = ConversationPayload

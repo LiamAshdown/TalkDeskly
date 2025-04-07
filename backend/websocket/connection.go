@@ -111,15 +111,7 @@ func HandleWebSocket(c *fiber.Ctx) error {
 			msg.Timestamp = time.Now()
 
 			// Handle different event types
-			switch msg.Event {
-			case types.EventTypeConversationStart:
-				HandleMessage(client, &msg)
-			case types.EventTypeConversationSendMessage:
-				HandleMessage(client, &msg)
-			}
-
-			// Broadcast the message
-			wsManager.broadcast <- &msg
+			HandleMessage(client, &msg)
 		}
 
 		log.Printf("WebSocket connection closed for user %s", userID)

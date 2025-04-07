@@ -22,6 +22,7 @@ export type EventType =
   | "typing_stop"
   | "conversation_start"
   | "conversation_end"
+  | "conversation_send_message"
   | "agent_assigned"
   | "contact_updated"
   | "contact_created"
@@ -55,4 +56,17 @@ export interface ConversationPayload {
     id: string;
     name: string;
   };
+}
+export interface ConversationSendMessagePayload {
+  conversationId: string;
+  name: string;
+  content: string;
+  sender: {
+    name: string;
+    type: string;
+    id: string;
+  };
+  type: string;
+  metadata: any;
+  timestamp: string;
 }
