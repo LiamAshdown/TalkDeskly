@@ -23,6 +23,7 @@ func (l *ContactListener) subscribe() {
 	l.dispatcher.Subscribe(interfaces.EventTypeContactCreated, l.handleContactCreated)
 	l.dispatcher.Subscribe(interfaces.EventTypeContactUpdated, l.handleContactUpdated)
 	l.dispatcher.Subscribe(interfaces.EventTypeContactDeleted, l.handleContactDeleted)
+	l.dispatcher.Subscribe(interfaces.EventTypeContactNoteCreated, l.handleContactNoteCreated)
 }
 
 func (l *ContactListener) handleContactCreated(event interfaces.Event) {
@@ -42,3 +43,10 @@ func (l *ContactListener) handleContactDeleted(event interfaces.Event) {
 		websocket.BroadcastToCompanyAgents(contact.CompanyID, types.EventTypeContactDeleted, contact.ToPayload())
 	}
 }
+
+func (l *ContactListener) handleContactNoteCreated(event interfaces.Event) {
+	if note, ok := event.Payload.(map[string]interface{}); ok {
+		websocket.BroadcastToCompanyAgents(note["companyID"].(string), types.EventTypeContactNoteCreated, note["note"])
+	}
+}
+

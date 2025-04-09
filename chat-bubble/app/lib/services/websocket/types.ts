@@ -53,3 +53,4 @@ export interface ConversationSendMessagePayload {
 }
 
 export interface ConversationGetByIdResponsePayload extends Conversation {}
+export interface ConversationUpdatePayload extends Conversation {}

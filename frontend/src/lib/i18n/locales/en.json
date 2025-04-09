@@ -9,7 +9,8 @@
       "mismatch": "Passwords do not match"
     },
     "invalidType": "Invalid type",
-    "companyAlreadyExists": "Company already exists"
+    "companyAlreadyExists": "Company already exists",
+    "passwordMatch": "Passwords do not match"
   },
   "auth": {
     "onboarding": {
@@ -43,7 +44,16 @@
       "title": "Create Contact",
       "save": "Save Contact"
     },
-    "searchContacts": "Search contacts..."
+    "searchContacts": "Search contacts...",
+    "notes": {
+      "placeholder": "Type your note here...",
+      "addNote": "Add Note",
+      "noNotes": "No notes yet",
+      "noteAdded": "Note added successfully",
+      "noteAddedFailed": "Failed to add note",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
   },
   "inbox": {
     "wizard": {
@@ -150,6 +160,39 @@
       "title": "Selected Agents ({{count}})"
     },
     "submit": "Complete Setup"
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Update your personal information and profile picture",
+    "updateSuccess": "Profile updated successfully",
+    "updateSuccessDescription": "Your profile has been updated successfully",
+    "form": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "role": "Role",
+      "roleDescription": "Your role determines your permissions within the system"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configure how you receive notifications",
+      "emailNotifications": "Email Notifications",
+      "newConversation": "New conversations",
+      "newConversationDescription": "Get notified when a new conversation is assigned to you",
+      "newMessage": "New messages",
+      "newMessageDescription": "Get notified when you receive a new message in your conversations",
+      "mentions": "Mentions",
+      "mentionsDescription": "Get notified when someone mentions you in a conversation",
+      "browserNotifications": "Browser Notifications",
+      "browserEnabled": "Enable browser notifications",
+      "browserEnabledDescription": "Receive notifications directly in your browser when you're online"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "saving": "Saving..."
   },
   "errors": {
     "toast": {

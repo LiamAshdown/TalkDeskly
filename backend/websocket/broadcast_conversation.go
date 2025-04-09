@@ -35,9 +35,15 @@ func BroadcastConversationSendMessage(conversation *models.Conversation) {
 	BroadcastToContact(conversation.ContactID, types.EventTypeConversationSendMessage, payload)
 }
 
-func BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
+func BroadcastConversationUpdate(conversation *models.Conversation) {
 	payload := conversation.ToPayload()
 
+	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, payload)
+	BroadcastToContact(conversation.ContactID, types.EventTypeConversationUpdate, payload)
+}
+
+func BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
+	payload := conversation.ToPayload()
 	if client.GetType() == string(types.SenderTypeContact) {
 		BroadcastToContact(conversation.ContactID, types.EventTypeConversationGetByID, payload)
 	} else {

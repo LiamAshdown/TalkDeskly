@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Contact } from "@/lib/interfaces";
+import { Contact, ContactNote } from "@/lib/interfaces";
 import { contactsService } from "@/lib/api/services/contacts";
 import { toast } from "@/lib/hooks/use-toast";
 
@@ -12,6 +12,7 @@ interface ContactsState {
   handleDeleteContact: (contactId: string) => void;
   handleContactCreated: (contact: Contact) => void;
   handleContactUpdated: (contact: Contact) => void;
+  handleContactNoteCreated: (contactNote: ContactNote) => void;
 }
 
 export const useContactsStore = create<ContactsState>()((set, get) => {
@@ -65,6 +66,10 @@ export const useContactsStore = create<ContactsState>()((set, get) => {
         title: "Contact updated",
         description: `${updatedContact.name}'s information has been updated.`,
       });
+    },
+
+    handleContactNoteCreated: (contactNote: ContactNote) => {
+      // Do Nothing
     },
   };
 });

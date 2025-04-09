@@ -34,6 +34,7 @@ func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
 func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
 		websocket.BroadcastConversationSendMessage(conversation)
+		websocket.BroadcastConversationUpdate(conversation)
 	}
 }
 

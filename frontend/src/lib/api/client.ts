@@ -4,6 +4,7 @@ import { isValidationError } from "./error-handler";
 import {
   convertKeysToSnakeCase,
   convertKeysToCamelCase,
+  toCamelCase,
 } from "@/lib/utils/string-transforms";
 import { toast } from "@/lib/hooks/use-toast";
 import i18n from "@/lib/i18n";
@@ -24,8 +25,8 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Convert request data to snake_case if it exists
-    if (config.data) {
+    // Skip snake_case conversion for FormData objects
+    if (config.data && !(config.data instanceof FormData)) {
       config.data = convertKeysToSnakeCase(config.data);
     }
 
@@ -66,7 +67,7 @@ apiClient.interceptors.response.use(
       const errorMessage = error.response?.data?.message || "errors.unknown";
       toast({
         title: i18n.t("errors.toast.error.title"),
-        description: i18n.t(errorMessage),
+        description: i18n.t(toCamelCase(errorMessage)),
         variant: "destructive",
       });
     }

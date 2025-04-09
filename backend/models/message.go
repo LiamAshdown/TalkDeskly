@@ -127,6 +127,7 @@ func (m *Message) ToPayload() types.MessagePayload {
 		Content:        m.Content,
 		Sender: types.Sender{
 			ID:   m.SenderID,
+			Type: types.SenderType(m.SenderType),
 			Name: m.GetSenderName(),
 		},
 		Type:      string(m.Type),

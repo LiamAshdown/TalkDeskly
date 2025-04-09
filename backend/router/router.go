@@ -1,6 +1,7 @@
 package router
 
 import (
+	"live-chat-server/disk"
 	handler "live-chat-server/handlers"
 	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
@@ -12,6 +13,9 @@ import (
 func SetupRoutes(app *fiber.App, c interfaces.Container) {
 	// WebSocket route
 	app.Get("/ws", websocket.HandleWebSocket)
+
+	// Static file route
+	app.Static("/uploads", disk.GetBasePath())
 
 	apiGroup := app.Group("/api")
 
@@ -37,16 +41,20 @@ func SetupRoutes(app *fiber.App, c interfaces.Container) {
 	contactGroup.Post("/", contactHandler.HandleCreateContact)
 	contactGroup.Put("/:id", contactHandler.HandleUpdateContact)
 	contactGroup.Delete("/:id", contactHandler.HandleDeleteContact)
+	contactGroup.Post("/:id/notes", contactHandler.HandleCreateContactNote)
+	contactGroup.Get("/:id/notes", contactHandler.HandleListContactNotes)
 
 	companyGroup := apiGroup.Group("/companies", middleware.Auth())
 	companyGroup.Get("/", handler.GetCompany)
 	companyGroup.Put("/", handler.UpdateCompany)
 	companyGroup.Post("/logo", handler.UploadCompanyLogo)
 
-	userGroup := apiGroup.Group("/profile", middleware.Auth())
-	userGroup.Get("/", handler.GetProfile)
-	userGroup.Put("/", handler.UpdateProfile)
-	userGroup.Put("/password", handler.UpdateProfilePassword)
+	profileHandler := handler.NewProfileHandler(c.GetUserRepo(), c.GetDispatcher(), c.GetDiskManager())
+	profileGroup := apiGroup.Group("/profile", middleware.Auth())
+	profileGroup.Get("/", profileHandler.GetProfile)
+	profileGroup.Put("/", profileHandler.UpdateProfile)
+	profileGroup.Put("/password", profileHandler.UpdateProfilePassword)
+	profileGroup.Put("/avatar", profileHandler.UpdateProfileAvatar)
 
 	// Admin user management routes
 	adminUserGroup := apiGroup.Group("/users", middleware.Auth(), middleware.IsAdmin())

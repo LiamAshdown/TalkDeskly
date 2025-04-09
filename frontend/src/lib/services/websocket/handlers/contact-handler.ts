@@ -17,6 +17,9 @@ export class ContactHandler implements IWebSocketHandler {
       case "contact_deleted":
         this.handleContactDeleted(message);
         break;
+      case "contact_note_created":
+        this.handleContactNoteCreated(message);
+        break;
     }
   }
 
@@ -34,5 +37,11 @@ export class ContactHandler implements IWebSocketHandler {
 
   private handleContactDeleted(message: WebSocketMessage): void {
     // TODO
+  }
+
+  private handleContactNoteCreated(message: WebSocketMessage): void {
+    useContactsStore
+      .getState()
+      .handleContactNoteCreated(message.payload as ContactNotePayload);
   }
 }

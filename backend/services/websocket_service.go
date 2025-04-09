@@ -3,6 +3,7 @@ package services
 import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
+	"live-chat-server/utils"
 	"live-chat-server/ws"
 	"log"
 )
@@ -81,9 +82,11 @@ func (s *webSocketService) initializeContactClient(client *ws.Client, userID, in
 			return err
 		}
 
-		// Create new contact with minimal information
+		name := utils.GenerateRandomName()
+
 		contact := &models.Contact{
 			CompanyID: company.ID,
+			Name:      &name,
 		}
 
 		if err := s.container.GetContactRepo().CreateContact(contact); err != nil {

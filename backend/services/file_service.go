@@ -1,10 +1,13 @@
 package services
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
+	"io"
+	"live-chat-server/disk"
 	"live-chat-server/utils"
 	"mime/multipart"
 	"os"
@@ -49,7 +52,8 @@ func NewFileService(config FileUploadConfig) *FileService {
 	}
 }
 
-func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string) (string, error) {
+// UploadFile uploads a file to the specified disk location
+func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string, diskLocation string) (string, error) {
 	// Get and validate the uploaded file
 	file, err := s.ValidateAndGetFile(c, fieldName)
 	if err != nil {
@@ -59,19 +63,25 @@ func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string) (string, error)
 	// Generate output filename
 	filename := s.GenerateOutputFilename(file.Filename)
 
-	// Ensure upload directory exists
-	if err := utils.EnsureDir(s.config.UploadDir); err != nil {
-		return "", err
-	}
-
 	// Process the image
 	src, err := s.ProcessImage(c, file)
 	if err != nil {
 		return "", err
 	}
 
-	// Save the processed image
-	return s.SaveProcessedImage(src, filename)
+	// Create a buffer to store the processed image
+	buf := new(bytes.Buffer)
+	if err := s.EncodeAndSave(buf, src); err != nil {
+		return "", err
+	}
+
+	// Store the processed image using the disk system
+	filePath, err := disk.Store(diskLocation, filename, buf)
+	if err != nil {
+		return "", fmt.Errorf("failed to store image: %w", err)
+	}
+
+	return filePath, nil
 }
 
 func (s *FileService) ValidateAndGetFile(c *fiber.Ctx, fieldName string) (*multipart.FileHeader, error) {
@@ -164,25 +174,6 @@ func (s *FileService) DecodeOtherFormats(tempPath string) (image.Image, error) {
 	return src, nil
 }
 
-func (s *FileService) SaveProcessedImage(src image.Image, filename string) (string, error) {
-	// Resize if needed
-	src = s.ResizeIfNeeded(src)
-
-	// Create output file
-	outFile, err := os.Create(s.config.UploadDir + "/" + filename)
-	if err != nil {
-		return "", fmt.Errorf("failed to create output file: %w", err)
-	}
-	defer outFile.Close()
-
-	// Encode and save
-	if err := s.EncodeAndSave(outFile, src); err != nil {
-		return "", err
-	}
-
-	return filename, nil
-}
-
 func (s *FileService) ResizeIfNeeded(src image.Image) image.Image {
 	if src.Bounds().Dx() > s.config.MaxWidth || src.Bounds().Dy() > s.config.MaxHeight {
 		return imaging.Fit(src, s.config.MaxWidth, s.config.MaxHeight, imaging.Lanczos)
@@ -190,20 +181,24 @@ func (s *FileService) ResizeIfNeeded(src image.Image) image.Image {
 	return src
 }
 
-func (s *FileService) EncodeAndSave(outFile *os.File, src image.Image) error {
+func (s *FileService) EncodeAndSave(w io.Writer, src image.Image) error {
+	// Resize if needed
+	src = s.ResizeIfNeeded(src)
+
 	switch s.config.Format {
 	case "jpeg":
-		return jpeg.Encode(outFile, src, &jpeg.Options{Quality: s.config.Quality})
+		return jpeg.Encode(w, src, &jpeg.Options{Quality: s.config.Quality})
 	case "png":
-		return png.Encode(outFile, src)
+		return png.Encode(w, src)
 	default:
 		return fmt.Errorf("unsupported format: %s", s.config.Format)
 	}
 }
 
-func (s *FileService) DeleteFile(filename string) error {
+func (s *FileService) DeleteFile(filename string, diskLocation string) error {
 	if filename == "" {
 		return nil
 	}
-	return utils.DeleteFile(s.config.UploadDir + "/" + filename)
+	return disk.Delete(diskLocation, filename)
 }
+

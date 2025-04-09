@@ -1,9 +1,12 @@
 package container
 
 import (
+	"live-chat-server/disk"
 	"live-chat-server/factory"
 	"live-chat-server/interfaces"
 	"live-chat-server/repositories"
+	"live-chat-server/storage"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -16,6 +19,7 @@ type Container struct {
 	conversationRepo repositories.ConversationRepository
 	dispatcher       interfaces.Dispatcher
 	webSocketSvc     interfaces.WebSocketService
+	diskManager      storage.Manager
 }
 
 func NewContainer(db *gorm.DB) interfaces.Container {
@@ -30,6 +34,19 @@ func NewContainer(db *gorm.DB) interfaces.Container {
 	// Initialize services
 	c.dispatcher = factory.NewDispatcher()
 	c.webSocketSvc = factory.NewWebSocketService(c)
+
+	diskManager := disk.Initialize()
+	err := diskManager.CreateStorage(storage.Config{
+		Type:     storage.LocalType,
+		BasePath: "./uploads",
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c.diskManager = diskManager
+
 	return c
 }
 
@@ -59,4 +76,8 @@ func (c *Container) GetDispatcher() interfaces.Dispatcher {
 
 func (c *Container) GetWebSocketService() interfaces.WebSocketService {
 	return c.webSocketSvc
+}
+
+func (c *Container) GetDiskManager() storage.Manager {
+	return c.diskManager
 }

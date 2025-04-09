@@ -5,6 +5,7 @@ import (
 	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
+	"live-chat-server/types"
 	"live-chat-server/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,6 +16,10 @@ type ContactInput struct {
 	Email   *string `json:"email" validate:"optional=email"`
 	Phone   *string `json:"phone" validate:"optional=min=5,max=50"`
 	Company *string `json:"company" validate:"optional=min=2,max=255"`
+}
+
+type ContactNoteInput struct {
+	Content string `json:"content" validate:"required"`
 }
 
 type ContactHandler struct {
@@ -131,4 +136,51 @@ func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, &contact)
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "contact_deleted", nil)
+}
+
+func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
+	contactID := c.Params("id")
+	user := middleware.GetAuthUser(c)
+
+	var input ContactNoteInput
+	if err := c.BodyParser(&input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+	}
+
+	if err := utils.ValidateStruct(input); err != nil {
+		return utils.ValidationErrorResponse(c, err)
+	}
+
+	contactNote := models.ContactNote{
+		Content:   input.Content,
+		ContactID: contactID,
+		UserID:    user.User.ID,
+	}
+
+	if err := h.repo.CreateContactNote(&contactNote); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_contact_note", err)
+	}
+
+	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, map[string]interface{}{
+		"note":     contactNote.ToResponse(),
+		"companyID":  *user.User.CompanyID,
+	})
+
+	return utils.SuccessResponse(c, fiber.StatusCreated, "contact_note_created", contactNote.ToResponse())
+}
+
+func (h *ContactHandler) HandleListContactNotes(c *fiber.Ctx) error {
+	contactID := c.Params("id")
+	orderBy := "created_at DESC"
+	contactNotes, err := h.repo.GetContactNotesByContactID(contactID, &orderBy)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_fetch_contact_notes", err)
+	}
+
+	responses := make([]types.ContactNotePayload, len(contactNotes))
+	for i, note := range contactNotes {
+		responses[i] = note.ToResponse()
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "contact_notes_fetched", responses)
 }

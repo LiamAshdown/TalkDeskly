@@ -10,6 +10,31 @@ export interface User {
   notificationSettings: null | any;
 }
 
+export interface NotificationSettings {
+  id: string;
+  userId: string;
+  newConversation: boolean;
+  newMessage: boolean;
+  mentions: boolean;
+  emailEnabled: boolean;
+  browserEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Profile {
+  id: string;
+  companyId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatar: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  notificationSettings: NotificationSettings;
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -31,6 +56,19 @@ export interface Contact {
   companyId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ContactNote {
+  id: string;
+  content: string;
+  contactId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+  };
 }
 
 interface WidgetCustomization {
@@ -108,4 +146,7 @@ export interface Conversation {
     id: string;
     name: string;
   };
+  updatedAt: string;
+  lastMessage: string;
+  lastMessageAt: string;
 }

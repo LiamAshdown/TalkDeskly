@@ -88,10 +88,11 @@ type ConversationPayload struct {
 	ConversationID string `json:"conversation_id"`
 	Status         string `json:"status"`
 	Contact        struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Email string `json:"email"`
-		Phone string `json:"phone"`
+		ID        string `json:"id"`
+		Name      string `json:"name"`
+		Email     string `json:"email"`
+		Phone     string `json:"phone"`
+		CreatedAt string `json:"created_at"`
 	} `json:"contact"`
 	Messages []MessagePayload `json:"messages"`
 	Agent    struct {
@@ -102,6 +103,22 @@ type ConversationPayload struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"inbox"`
+	UpdatedAt     string `json:"updated_at"`
+	LastMessage   string `json:"last_message"`
+	LastMessageAt string `json:"last_message_at"`
+}
+
+type ContactNotePayload struct {
+	ID        string `json:"id"`
+	Content   string `json:"content"`
+	ContactID string `json:"contact_id"`
+	UserID    string `json:"user_id"`
+	User      struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"user"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
 // Scan implements the sql.Scanner interface for WorkingHoursMap

@@ -14,6 +14,8 @@ type ContactRepository interface {
 	UpdateContact(contact *models.Contact) error
 	DeleteContact(id string) error
 	DeleteContactByIDAndCompanyID(id string, companyID string) error
+	CreateContactNote(note *models.ContactNote) error
+	GetContactNotesByContactID(contactID string, orderBy *string) ([]models.ContactNote, error)
 }
 
 type contactRepository struct {
@@ -64,4 +66,28 @@ func (r *contactRepository) DeleteContact(id string) error {
 
 func (r *contactRepository) DeleteContactByIDAndCompanyID(id string, companyID string) error {
 	return r.db.Delete(&models.Contact{}, "id = ? AND company_id = ?", id, companyID).Error
+}
+
+func (r *contactRepository) CreateContactNote(note *models.ContactNote) error {
+	if err := r.db.Create(note).Error; err != nil {
+		return err
+	}
+	
+	return r.db.Preload("User").First(note, "id = ?", note.ID).Error
+}
+
+func (r *contactRepository) GetContactNotesByContactID(contactID string, orderBy *string) ([]models.ContactNote, error) {
+	var notes []models.ContactNote
+	query := r.db.Preload("User").Where("contact_id = ?", contactID)
+	
+	if orderBy != nil {
+		query = query.Order(*orderBy)
+	} else {
+		query = query.Order("ASC")
+	}
+	
+	if err := query.Find(&notes).Error; err != nil {
+		return nil, err
+	}
+	return notes, nil
 }

@@ -72,3 +72,7 @@ export function convertKeysToCamelCase<T extends object>(obj: T): any {
     return acc;
   }, {} as Record<string, any>);
 }
+
+export function toCamelCase(str: string): string {
+  return str.replace(/_([a-z0-9])/g, (match, char) => char.toUpperCase());
+}

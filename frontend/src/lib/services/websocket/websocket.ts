@@ -18,10 +18,10 @@ export class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private handlers: Map<EventType, any> = new Map();
+  private eventListeners: Map<EventType, ((message: any) => void)[]> =
+    new Map();
 
-  constructor(
-    private url: string,
-  ) {
+  constructor(private url: string) {
     this.initializeHandlers();
   }
 
@@ -54,9 +54,7 @@ export class WebSocketService {
 
   public connect(userId: string, userType: string) {
     try {
-      this.ws = new WebSocket(
-        `${this.url}?type=${userType}&user_id=${userId}`
-      );
+      this.ws = new WebSocket(`${this.url}?type=${userType}&user_id=${userId}`);
       this.setupEventHandlers();
       this.reconnectAttempts = 0;
     } catch (error) {
@@ -64,7 +62,6 @@ export class WebSocketService {
       this.handleReconnect(userId, userType);
     }
   }
-
 
   private setupEventHandlers() {
     if (!this.ws) return;
@@ -111,6 +108,14 @@ export class WebSocketService {
     if (handler) {
       handler.handle(convertKeysToCamelCase(message));
     }
+
+    // Call any registered event listeners
+    const listeners = this.eventListeners.get(message.event);
+    if (listeners) {
+      listeners.forEach((listener) =>
+        listener(convertKeysToCamelCase(message))
+      );
+    }
   }
 
   public sendMessage(conversationId: string, content: string) {
@@ -135,6 +140,33 @@ export class WebSocketService {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
+    }
+  }
+
+  public getWebSocket(): WebSocket | null {
+    return this.ws;
+  }
+
+  public registerHandler(
+    eventType: EventType,
+    handler: (message: any) => void
+  ): void {
+    if (!this.eventListeners.has(eventType)) {
+      this.eventListeners.set(eventType, []);
+    }
+    this.eventListeners.get(eventType)?.push(handler);
+  }
+
+  public unregisterHandler(
+    eventType: EventType,
+    handler: (message: any) => void
+  ): void {
+    const listeners = this.eventListeners.get(eventType);
+    if (listeners) {
+      const index = listeners.indexOf(handler);
+      if (index !== -1) {
+        listeners.splice(index, 1);
+      }
     }
   }
 }

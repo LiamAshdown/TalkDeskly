@@ -7,6 +7,7 @@ export interface Sender {
 }
 
 export interface Message {
+  id: string;
   conversationId: string;
   name: string;
   content: string;
@@ -35,4 +36,7 @@ export interface Conversation {
     id: string;
     name: string;
   };
+  updatedAt: string;
+  lastMessage: string;
+  lastMessageAt: string;
 }

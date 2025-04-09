@@ -23,12 +23,25 @@ func NewConversationRepository(db *gorm.DB) ConversationRepository {
 	return &conversationRepository{db: db}
 }
 
+// applyPreloads applies preloads to the query, with special handling for messages ordering
+func (r *conversationRepository) ApplyPreloads(query *gorm.DB, preloads ...string) *gorm.DB {
+	for _, preload := range preloads {
+		// Special handling for Messages to order by date
+		if preload == "Messages" {
+			query = query.Preload(preload, func(db *gorm.DB) *gorm.DB {
+				return db.Order("created_at ASC")
+			})
+		} else {
+			query = query.Preload(preload)
+		}
+	}
+	return query
+}
+
 func (r *conversationRepository) GetConversationsByCompanyID(companyID string, preloads ...string) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	query := r.db.Where("company_id = ?", companyID)
-	for _, preload := range preloads {
-		query = query.Preload(preload)
-	}
+	query = r.ApplyPreloads(query, preloads...)
 	if err := query.Find(&conversations).Error; err != nil {
 		return nil, err
 	}
@@ -38,9 +51,7 @@ func (r *conversationRepository) GetConversationsByCompanyID(companyID string, p
 func (r *conversationRepository) GetConversationByIdAndCompanyID(id string, companyID string, preloads ...string) (*models.Conversation, error) {
 	var conversation models.Conversation
 	query := r.db.Where("id = ? AND company_id = ?", id, companyID)
-	for _, preload := range preloads {
-		query = query.Preload(preload)
-	}
+	query = r.ApplyPreloads(query, preloads...)
 	if err := query.First(&conversation).Error; err != nil {
 		return nil, err
 	}
@@ -54,9 +65,7 @@ func (r *conversationRepository) CreateConversation(conversation *models.Convers
 func (r *conversationRepository) GetConversationByID(id string, preloads ...string) (*models.Conversation, error) {
 	var conversation models.Conversation
 	query := r.db
-	for _, preload := range preloads {
-		query = query.Preload(preload)
-	}
+	query = r.ApplyPreloads(query, preloads...)
 	if err := query.First(&conversation, "id = ?", id).Error; err != nil {
 		return nil, err
 	}

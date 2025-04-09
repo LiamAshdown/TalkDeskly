@@ -28,7 +28,7 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
-	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Messages")
+	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Contact", "Inbox", "Messages")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_list_conversations", err)
 	}
@@ -74,7 +74,7 @@ func (h *ConversationHandler) WSHandleConversationStart(client types.WebSocketCl
 		return
 	}
 
-	conversationPtr, err := h.repo.GetConversationByID(conversation.ID, "Inbox", "Contact", "AssignedTo")
+	conversationPtr, err := h.repo.GetConversationByID(conversation.ID, "Messages", "Inbox", "Contact", "AssignedTo")
 	if err != nil {
 		return
 	}
@@ -89,7 +89,7 @@ func (h *ConversationHandler) WSHandleGetConversationByID(client *types.WebSocke
 		return
 	}
 
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Inbox", "Contact", "AssignedTo")
+	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Messages", "Inbox", "Contact", "AssignedTo")
 	if err != nil {
 		return
 	}
@@ -106,7 +106,7 @@ func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg
 		return
 	}
 
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Inbox", "Contact", "AssignedTo")
+	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Messages", "Inbox", "Contact", "AssignedTo")
 	if err != nil {
 		return
 	}

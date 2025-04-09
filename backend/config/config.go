@@ -9,6 +9,7 @@ type Config struct {
 	Port        string
 	DatabaseDSN string
 	JwtSecret   string
+	BaseURL     string
 }
 
 var App Config
@@ -18,6 +19,7 @@ func Load() {
 		Port:        getEnv("PORT", "3000"),
 		DatabaseDSN: getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/postgres"),
 		JwtSecret:   getEnv("JWT_SECRET", "secret"),
+		BaseURL:     getEnv("BASE_URL", "http://localhost:6721"),
 	}
 
 	log.Println("Config loaded")

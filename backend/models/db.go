@@ -16,7 +16,7 @@ func ConnectDatabase(dsn string) {
 		log.Fatal("Error connecting to database: ", err)
 	}
 
-	err = DB.AutoMigrate(&Company{}, &User{}, &Inbox{}, &Contact{}, &NotificationSettings{}, &Conversation{}, &Message{})
+	err = DB.AutoMigrate(&Company{}, &User{}, &Inbox{}, &Contact{}, &NotificationSettings{}, &Conversation{}, &Message{}, &ContactNote{})
 	if err != nil {
 		log.Fatal("Auto migration failed: ", err)
 	}

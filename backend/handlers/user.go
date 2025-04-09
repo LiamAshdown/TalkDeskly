@@ -48,7 +48,7 @@ func GetUser(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "user_not_found", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "user_found", ToProfileResponse(&user))
+	return utils.SuccessResponse(c, fiber.StatusOK, "user_found", user.ToResponse())
 }
 
 func CreateCompanyUser(c *fiber.Ctx) error {
@@ -87,7 +87,7 @@ func CreateCompanyUser(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_user", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusCreated, "user_created", ToProfileResponse(&user))
+	return utils.SuccessResponse(c, fiber.StatusCreated, "user_created", user.ToResponse())
 }
 
 func UpdateUser(c *fiber.Ctx) error {
@@ -125,5 +125,5 @@ func UpdateUser(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_user", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "user_updated", ToProfileResponse(&user))
+	return utils.SuccessResponse(c, fiber.StatusOK, "user_updated", user.ToResponse())
 }

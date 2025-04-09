@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
-	"live-chat-server/models"
+	"live-chat-server/repositories"
+	"live-chat-server/storage"
 	"live-chat-server/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,40 +21,28 @@ type ProfilePasswordUpdateInput struct {
 	NewPassword string `json:"new_password" validate:"required"`
 }
 
-type ProfileResponse struct {
-	ID                   string                       `json:"id"`
-	CompanyID            *string                      `json:"company_id"`
-	FirstName            string                       `json:"first_name"`
-	LastName             string                       `json:"last_name"`
-	Email                string                       `json:"email"`
-	Role                 string                       `json:"role"`
-	NotificationSettings *models.NotificationSettings `json:"notification_settings"`
+type ProfileHandler struct {
+	repo       repositories.UserRepository
+	dispatcher interfaces.Dispatcher  
+  diskManager storage.Manager
+} 
+
+func NewProfileHandler(repo repositories.UserRepository, dispatcher interfaces.Dispatcher, diskManager storage.Manager) *ProfileHandler {
+	return &ProfileHandler{repo: repo, dispatcher: dispatcher, diskManager: diskManager}
 }
 
-func ToProfileResponse(user *models.User) ProfileResponse {
-	return ProfileResponse{
-		ID:                   user.ID,
-		CompanyID:            user.CompanyID,
-		FirstName:            user.FirstName,
-		LastName:             user.LastName,
-		Email:                user.Email,
-		Role:                 user.Role,
-		NotificationSettings: user.NotificationSettings,
-	}
-}
-
-func GetProfile(c *fiber.Ctx) error {
+func (h *ProfileHandler) GetProfile(c *fiber.Ctx) error {
 	authUser := middleware.GetAuthUser(c)
 
-	var user models.User
-	if err := models.DB.Preload("NotificationSettings").First(&user, "id = ?", authUser.ID).Error; err != nil {
+	user, err := h.repo.GetUserByID(authUser.ID)
+	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "user_not_found", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "user_found", ToProfileResponse(&user))
+	return utils.SuccessResponse(c, fiber.StatusOK, "user_found", user.ToProfileResponse())
 }
 
-func UpdateProfile(c *fiber.Ctx) error {
+func (h *ProfileHandler) UpdateProfile(c *fiber.Ctx) error {
 	var input ProfileUpdateInput
 	if err := c.BodyParser(&input); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
@@ -64,15 +54,15 @@ func UpdateProfile(c *fiber.Ctx) error {
 
 	authUser := middleware.GetAuthUser(c)
 
-	var user models.User
-	if err := models.DB.Preload("NotificationSettings").First(&user, "id = ?", authUser.ID).Error; err != nil {
+	user, err := h.repo.GetUserByID(authUser.ID)
+	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "user_not_found", err)
 	}
 
 	// Check if email is already taken by another user
 	if input.Email != user.Email {
-		var existingUser models.User
-		if err := models.DB.First(&existingUser, "email = ? AND id != ?", input.Email, user.ID).Error; err == nil {
+		existingUser, _ := h.repo.GetUserByEmail(input.Email)
+		if existingUser != nil {
 			return utils.ErrorResponse(c, fiber.StatusConflict, "email_taken", nil)
 		}
 	}
@@ -81,14 +71,14 @@ func UpdateProfile(c *fiber.Ctx) error {
 	user.LastName = input.LastName
 	user.Email = input.Email
 
-	if err := models.DB.Save(&user).Error; err != nil {
+	if err := h.repo.UpdateUser(user); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_user", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "user_updated", ToProfileResponse(&user))
+	return utils.SuccessResponse(c, fiber.StatusOK, "user_updated", user.ToProfileResponse())
 }
 
-func UpdateProfilePassword(c *fiber.Ctx) error {
+func (h *ProfileHandler) UpdateProfilePassword(c *fiber.Ctx) error {
 	var input ProfilePasswordUpdateInput
 	if err := c.BodyParser(&input); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
@@ -111,9 +101,34 @@ func UpdateProfilePassword(c *fiber.Ctx) error {
 	}
 
 	authUser.User.Password = hashedNewPassword
-	if err := models.DB.Save(&authUser.User).Error; err != nil {
+	if err := h.repo.UpdateUser(authUser.User); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_password", err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "password_updated", ToProfileResponse(authUser.User))
+	return utils.SuccessResponse(c, fiber.StatusOK, "password_updated", authUser.User.ToProfileResponse())
+}
+
+func (h *ProfileHandler) UpdateProfileAvatar(c *fiber.Ctx) error {
+	user := middleware.GetAuthUser(c)
+
+	filename, err := fileService.UploadFile(c, "avatar", "user-avatars")
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "file_upload_failed", err)
+	}
+
+	if user.User.AvatarPath != nil {
+		if err := h.diskManager.Delete("user-avatars", *user.User.AvatarPath); err != nil {
+			// Log the error but continue with the update
+			// The old file might have been already deleted
+		}
+	}
+
+	user.User.AvatarPath = &filename
+	if err := h.repo.UpdateUser(user.User); err != nil {
+		// Clean up the uploaded file if database update fails
+		h.diskManager.Delete("user-avatars", filename)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_avatar", err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "avatar_updated", user.User.ToProfileResponse())
 }

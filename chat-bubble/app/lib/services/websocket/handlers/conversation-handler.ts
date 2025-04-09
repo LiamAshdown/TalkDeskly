@@ -1,5 +1,10 @@
 import { useConversationStore } from "~/stores/conversation";
-import type { ConversationGetByIdPayload, ConversationGetByIdResponsePayload, ConversationSendMessagePayload, ConversationStartPayload, WebSocketMessage } from "~/lib/services/websocket/types";
+import type {
+  ConversationSendMessagePayload,
+  ConversationStartPayload,
+  ConversationUpdatePayload,
+  WebSocketMessage,
+} from "~/lib/services/websocket/types";
 import type { IWebSocketHandler } from "~/lib/services/websocket/handlers/types";
 import type { Message } from "~/types/conversation";
 
@@ -37,7 +42,7 @@ export class ConversationHandler implements IWebSocketHandler {
   }
 
   private handleConversationGetById(message: WebSocketMessage): void {
-    const payload = message.payload as ConversationGetByIdResponsePayload;
+    const payload = message.payload as ConversationUpdatePayload;
     useConversationStore.getState().setConversation(payload);
   }
 }

@@ -23,10 +23,12 @@ export type EventType =
   | "conversation_start"
   | "conversation_end"
   | "conversation_send_message"
+  | "conversation_update"
   | "agent_assigned"
   | "contact_updated"
   | "contact_created"
   | "contact_deleted"
+  | "contact_note_created"
   | "inbox_updated"
   | "inbox_created"
   | "team_member_updated";

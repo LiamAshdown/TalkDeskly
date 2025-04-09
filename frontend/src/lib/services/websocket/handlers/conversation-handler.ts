@@ -1,4 +1,7 @@
-import { ConversationPayload, ConversationSendMessagePayload } from "@/lib/services/websocket/handlers/types";
+import {
+  ConversationPayload,
+  ConversationSendMessagePayload,
+} from "@/lib/services/websocket/handlers/types";
 import { IWebSocketHandler } from "@/lib/services/websocket/handlers/types";
 import { WebSocketMessage } from "@/lib/services/websocket/handlers/types";
 import { useConversationsStore } from "@/stores/conversations";
@@ -12,6 +15,9 @@ export class ConversationHandler implements IWebSocketHandler {
       case "conversation_send_message":
         this.handleConversationSendMessage(message);
         break;
+      case "conversation_update":
+        this.handleConversationUpdate(message);
+        break;
     }
   }
 
@@ -24,6 +30,14 @@ export class ConversationHandler implements IWebSocketHandler {
   private handleConversationSendMessage(message: WebSocketMessage): void {
     useConversationsStore
       .getState()
-      .handleConversationSendMessage(message.payload as ConversationSendMessagePayload);
+      .handleConversationSendMessage(
+        message.payload as ConversationSendMessagePayload
+      );
+  }
+
+  private handleConversationUpdate(message: WebSocketMessage): void {
+    useConversationsStore
+      .getState()
+      .handleConversationUpdate(message.payload as ConversationPayload);
   }
 }

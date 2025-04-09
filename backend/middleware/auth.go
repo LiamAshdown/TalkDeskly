@@ -54,7 +54,7 @@ func Auth() fiber.Handler {
 
 		// Load user from database
 		var user models.User
-		if result := models.DB.Preload("Company").First(&user, "id = ?", userID); result.Error != nil {
+		if result := models.DB.Preload("Company").Preload("NotificationSettings").First(&user, "id = ?", userID); result.Error != nil {
 			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_not_found", nil)
 		}
 

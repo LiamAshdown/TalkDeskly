@@ -45,15 +45,17 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 		Status:         string(c.Status),
 		InboxID:        c.InboxID,
 		Contact: struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Email string `json:"email"`
-			Phone string `json:"phone"`
+			ID        string `json:"id"`
+			Name      string `json:"name"`
+			Email     string `json:"email"`
+			Phone     string `json:"phone"`
+			CreatedAt string `json:"created_at"`
 		}{
 			ID:    c.ContactID,
 			Name:  utils.GetStringValue(c.Contact.Name),
 			Email: utils.GetStringValue(c.Contact.Email),
 			Phone: utils.GetStringValue(c.Contact.Phone),
+			CreatedAt: c.Contact.CreatedAt.Format("01/02/2006 15:04:05"),
 		},
 		Messages: MessagesToPayload(c.Messages),
 		Inbox: struct {
@@ -63,5 +65,14 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			ID:   c.InboxID,
 			Name: c.Inbox.Name,
 		},
+		UpdatedAt:     c.UpdatedAt.Format("01/02/2006 15:04:05"),
+		LastMessage:   c.LastMessage,
+		LastMessageAt: func() string {
+			if c.LastMessageAt == nil {
+				return ""
+			}
+			return c.LastMessageAt.Format("01/02/2006 15:04:05")
+		}(),
 	}
 }
+

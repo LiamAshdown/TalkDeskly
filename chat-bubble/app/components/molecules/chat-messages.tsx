@@ -10,7 +10,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView();
   }, [messages]);
 
   return (
@@ -21,7 +21,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            delay: index * 0.05,
+            delay: index * 0.01,
             type: "spring",
             stiffness: 500,
             damping: 30,

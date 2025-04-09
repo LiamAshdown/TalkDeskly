@@ -9,6 +9,7 @@ import { useMobileView } from "@/context/mobile-view-context";
 import { useInboxesStore } from "@/stores/inboxes";
 import { useConversationsStore } from "@/stores/conversations";
 import { useWebSocket } from "@/context/websocket-context";
+import { Contact } from "@/lib/interfaces";
 
 export default function LiveChatPortal() {
   const { inboxes, fetchInboxes } = useInboxesStore();
@@ -53,9 +54,6 @@ export default function LiveChatPortal() {
 
     wsService.sendMessage(activeConversationId, message);
   };
-
-  // Function to add a note to a contact
-  const addNoteToContact = () => {};
 
   // Add a new function to handle conversation assignment
   const handleAssignConversation = (
@@ -111,12 +109,7 @@ export default function LiveChatPortal() {
       contactInfo={
         isContactInfoOpen && (
           <ContactInfo
-            contact={activeConversation?.contact || null}
-            onAddNote={(note: any) => {
-              // if (activeContact) {
-              //   addNoteToContact(activeContact.id, note);
-              // }
-            }}
+            contact={activeConversation?.contact as Contact | null}
             onClose={() => {
               setIsContactInfoOpen(false);
               setMobileView("chat");

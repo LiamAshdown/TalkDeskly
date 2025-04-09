@@ -9,26 +9,55 @@ interface ConversationsState {
   setConversations: (conversations: Conversation[]) => void;
   handleConversationStart: (payload: ConversationPayload) => void;
   handleConversationSendMessage: (payload: ConversationSendMessagePayload) => void;
+  handleConversationUpdate: (payload: ConversationPayload) => void;
   addMessageToConversation: (conversationId: string, message: any) => void;
   fetchConversations: () => Promise<void>;
   fetchConversation: (conversationId: string) => Promise<void>;
 }
 
+// Helper function to sort conversations by last message timestamp
+const sortConversationsByLastMessage = (conversations: Conversation[]): Conversation[] => {
+  return [...conversations].sort((a, b) => {
+    // Get the last message timestamp for each conversation
+    const aLastMessage = a.messages.length > 0 ? a.messages[a.messages.length - 1].timestamp : '';
+    const bLastMessage = b.messages.length > 0 ? b.messages[b.messages.length - 1].timestamp : '';
+
+    // Sort in descending order (newest first)
+    return bLastMessage.localeCompare(aLastMessage);
+  });
+};
+
 export const useConversationsStore = create<ConversationsState>()(
   immer((set, get) => {
     return {
       conversations: [],
-      setConversations: (conversations: Conversation[]) => set({ conversations }),
+      setConversations: (conversations: Conversation[]) => set({
+        conversations: sortConversationsByLastMessage(conversations)
+      }),
 
       fetchConversations: async () => {
         const response = await conversationService.getConversations();
-        set({ conversations: response.data });
+        set({ conversations: sortConversationsByLastMessage(response.data) });
       },
 
       fetchConversation: async (conversationId: string) => {
         const response = await conversationService.getConversation(conversationId);
         set((state) => {
-          state.conversations.push(response.data);
+          // Check if conversation already exists
+          const existingIndex = state.conversations.findIndex(
+            (c) => c.conversationId === conversationId
+          );
+
+          if (existingIndex !== -1) {
+            // Update existing conversation
+            state.conversations[existingIndex] = response.data;
+          } else {
+            // Add new conversation
+            state.conversations.push(response.data);
+          }
+
+          // Sort conversations by last message
+          state.conversations = sortConversationsByLastMessage(state.conversations);
         });
       },
 
@@ -46,7 +75,8 @@ export const useConversationsStore = create<ConversationsState>()(
             messages: [...updatedConversations[conversationIndex].messages, message]
           };
 
-          return { conversations: updatedConversations };
+          // Sort conversations by last message
+          return { conversations: sortConversationsByLastMessage(updatedConversations) };
         });
       },
 
@@ -60,6 +90,8 @@ export const useConversationsStore = create<ConversationsState>()(
               ...payload,
               messages: [],
             });
+            // Sort conversations by last message
+            state.conversations = sortConversationsByLastMessage(state.conversations);
           }
         });
       },
@@ -71,9 +103,22 @@ export const useConversationsStore = create<ConversationsState>()(
           );
           if (conversation) {
             conversation.messages.push(payload);
+            // Sort conversations by last message
+            state.conversations = sortConversationsByLastMessage(state.conversations);
           } else {
             // Doesn't exist, fetch it
             get().fetchConversation(payload.conversationId);
+          }
+        });
+      },
+
+      handleConversationUpdate: (payload: ConversationPayload) => {
+        set((state) => {
+          const conversation = state.conversations.find(
+            (c) => c.conversationId === payload.conversationId
+          );
+          if (conversation) {
+            state.conversations = sortConversationsByLastMessage(state.conversations);
           }
         });
       },

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"live-chat-server/config"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,4 +44,9 @@ func DeleteFile(filepath string) error {
 		return nil // File doesn't exist, nothing to delete
 	}
 	return os.Remove(filepath)
+}
+
+// Asset returns the absolute path to a file in the uploads directory
+func Asset(filePath string) string {
+  return config.App.BaseURL + "/" + filePath
 }

@@ -18,18 +18,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useConversationStore } from "~/stores/conversation";
 
-interface Message {
-  id: string;
-  content: string;
-  timestamp: string;
-  isRead: boolean;
-  sender?: {
-    name: string;
-    avatar?: string;
-    fallback: string;
-  };
-}
-
 export function LiveChatWidget() {
   const { conversation } = useConversationStore();
 
@@ -66,7 +54,7 @@ export function LiveChatWidget() {
     }
 
     if (conversation) {
-      wsService.getConversationById(conversation.conversationId);
+      // wsService.getConversationById(conversation.conversationId);
       setConversationStarted(true);
     }
   }, [isOpen]);

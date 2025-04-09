@@ -99,6 +99,15 @@ func (h *OnboardingHandler) HandleCreateCompany(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusConflict, "validation.company_already_exists", nil)
 	}
 
+  existingCompany, err = h.companyRepo.GetCompanyByEmail(input.Email)
+  if err != nil && err != gorm.ErrRecordNotFound {
+    return utils.ErrorResponse(c, fiber.StatusInternalServerError, "company_fetch_failed", err)
+  }
+
+  if existingCompany != nil {
+    return utils.ErrorResponse(c, fiber.StatusConflict, "validation.company_already_exists", nil)
+  }
+
 	user := middleware.GetAuthUser(c)
 
 	// User cannot create a company if they already have one

@@ -15,7 +15,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     "ws://localhost:6721/ws",
     contactId || "",
     "contact",
-    "a7d0527b-757b-4a93-bc15-cd15ccc825f1"
+    "e62a9fbd-4e11-4e13-8ed2-03463b4f4078"
   );
 
   return (

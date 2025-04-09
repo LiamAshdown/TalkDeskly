@@ -77,7 +77,7 @@ func UploadCompanyLogo(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
 	// Upload the file
-	filename, err := fileService.UploadFile(c, "logo")
+	filename, err := fileService.UploadFile(c, "logo", "company-logos")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "file_upload_failed", err)
 	}
@@ -86,12 +86,12 @@ func UploadCompanyLogo(c *fiber.Ctx) error {
 	var company models.Company
 	if err := models.DB.First(&company, "id = ?", user.User.CompanyID).Error; err != nil {
 		// Clean up the uploaded file if company not found
-		fileService.DeleteFile(filename)
+		fileService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "company_not_found", err)
 	}
 
 	// Delete old logo if exists
-	if err := fileService.DeleteFile(company.Logo); err != nil {
+	if err := fileService.DeleteFile(company.Logo, "company-logos"); err != nil {
 		// Log the error but continue with the update
 		// The old file might have been already deleted
 	}
@@ -99,7 +99,7 @@ func UploadCompanyLogo(c *fiber.Ctx) error {
 	company.Logo = filename
 	if err := models.DB.Save(&company).Error; err != nil {
 		// Clean up the uploaded file if database update fails
-		fileService.DeleteFile(filename)
+		fileService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_company_logo", err)
 	}
 

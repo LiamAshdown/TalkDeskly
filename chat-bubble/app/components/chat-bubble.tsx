@@ -47,10 +47,10 @@ const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
             className={cn(
               "rounded-lg px-3 py-2 text-sm",
               isContactMessage
-                ? "bg-primary text-primary-foreground"
+                ? "bg-muted"
                 : isSystemMessage
                 ? "bg-muted/50 text-muted-foreground italic text-center"
-                : "bg-muted"
+                : "bg-primary text-primary-foreground"
             )}
           >
             {message}
