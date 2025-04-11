@@ -23,6 +23,8 @@ func (l *ConversationListener) subscribe() {
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationStart, l.HandleConversationStart)
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationSendMessage, l.HandleConversationSendMessage)
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationGetByID, l.HandleConversationGetByID)
+	l.dispatcher.Subscribe(interfaces.EventTypeConversationTyping, l.HandleConversationTyping)
+	l.dispatcher.Subscribe(interfaces.EventTypeConversationTypingStop, l.HandleConversationTypingStop)
 }
 
 func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
@@ -45,5 +47,17 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 				websocket.BroadcastConversationGetByID(conversation, client)
 			}
 		}
+	}
+}
+
+func (l *ConversationListener) HandleConversationTyping(event interfaces.Event) {
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		websocket.BroadcastConversationTyping(conversation)
+	}
+}
+
+func (l *ConversationListener) HandleConversationTypingStop(event interfaces.Event) {
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		websocket.BroadcastConversationTypingStop(conversation)
 	}
 }

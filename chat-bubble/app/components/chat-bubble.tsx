@@ -1,7 +1,7 @@
 import type React from "react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, Bot } from "lucide-react";
 import { forwardRef } from "react";
 
 export interface ChatBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -11,6 +11,7 @@ export interface ChatBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
     id: string;
     name: string;
     type: string;
+    avatar?: string;
   };
   isRead?: boolean;
 }
@@ -23,6 +24,26 @@ const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
     const isSystemMessage = sender?.type === "system";
     const isAgentMessage = sender?.type === "agent";
     const isContactMessage = sender?.type === "contact";
+    const isBotMessage = sender?.type === "bot";
+
+    const renderAvatar = () => {
+      if (isContactMessage || isSystemMessage || !sender) return null;
+
+      return (
+        <Avatar className="h-10 w-10">
+          {isBotMessage ? (
+            <AvatarFallback>
+              <Bot className="h-6 w-6" />
+            </AvatarFallback>
+          ) : (
+            <>
+              <AvatarImage src={sender.avatar} alt={sender.name} />
+              <AvatarFallback>{sender.name}</AvatarFallback>
+            </>
+          )}
+        </Avatar>
+      );
+    };
 
     return (
       <div
@@ -31,27 +52,21 @@ const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
           "flex w-full max-w-xs flex-col gap-2",
           isContactMessage && "ml-auto items-start",
           isSystemMessage && "mx-auto items-center",
-          isAgentMessage && "mx-auto items-end",
+          (isAgentMessage || isBotMessage) && "mx-auto items-end",
           className
         )}
         {...props}
       >
         <div className="flex items-end gap-2">
-          {!isContactMessage && sender && !isSystemMessage && (
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={sender.avatar} alt={sender.name} />
-              <AvatarFallback>{sender.name}</AvatarFallback>
-            </Avatar>
-          )}
+          {renderAvatar()}
           <div
-            className={cn(
-              "rounded-lg px-3 py-2 text-sm",
-              isContactMessage
-                ? "bg-muted"
-                : isSystemMessage
-                ? "bg-muted/50 text-muted-foreground italic text-center"
-                : "bg-primary text-primary-foreground"
-            )}
+            className={cn("rounded-lg px-3 py-2 text-sm", {
+              "bg-muted": isContactMessage,
+              "bg-muted/50 text-muted-foreground italic text-center":
+                isSystemMessage,
+              "bg-primary/90 text-primary-foreground": isBotMessage,
+              "bg-primary text-primary-foreground": isAgentMessage,
+            })}
           >
             {message}
           </div>

@@ -22,9 +22,10 @@ func BroadcastConversationSendMessage(conversation *models.Conversation) {
 		Name:           message.GetSenderName(),
 		Content:        message.Content,
 		Sender: types.Sender{
-			ID:   message.SenderID,
-			Name: message.GetSenderName(),
-			Type: types.SenderType(message.GetSenderType()),
+			ID:        message.SenderID,
+			Name:      message.GetSenderName(),
+			Type:      types.SenderType(message.GetSenderType()),
+			AvatarUrl: message.GetSenderAvatarUrl(),
 		},
 		Type:      string(message.Type),
 		Metadata:  message.Metadata,
@@ -49,4 +50,16 @@ func BroadcastConversationGetByID(conversation *models.Conversation, client *typ
 	} else {
 		BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationGetByID, payload)
 	}
+}
+
+func BroadcastConversationTyping(conversation *models.Conversation) {
+	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTyping, map[string]interface{}{
+		"conversation_id": conversation.ID,
+	})
+}
+
+func BroadcastConversationTypingStop(conversation *models.Conversation) {
+	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTypingStop, map[string]interface{}{
+		"conversation_id": conversation.ID,
+	})
 }

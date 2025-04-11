@@ -1,10 +1,10 @@
 package interfaces
 
 import (
-	"live-chat-server/ws"
+	"live-chat-server/types"
 )
 
 // WebSocketService handles WebSocket client initialization and management
 type WebSocketService interface {
-	InitializeClient(c *ws.Conn, userID, userType, inboxID string) *ws.Client
+	InitializeClient(c *types.WebSocketConn, userID, userType, inboxID string) *types.WebSocketClient
 }

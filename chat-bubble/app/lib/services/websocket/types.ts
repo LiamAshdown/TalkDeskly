@@ -1,18 +1,20 @@
 import type { Conversation } from "~/types/conversation";
 
 export type EventType =
-  | "connection_established"
   | "join"
   | "leave"
   | "message"
-  | "conversation_send_message"
-  | "conversation_get_by_id"
   | "message_sent"
   | "message_read"
   | "typing_start"
   | "typing_stop"
+  | "connection_established"
   | "conversation_start"
   | "conversation_end"
+  | "conversation_typing"
+  | "conversation_typing_stop"
+  | "conversation_send_message"
+  | "conversation_get_by_id"
   | "agent_assigned"
   | "contact_updated"
   | "contact_created"

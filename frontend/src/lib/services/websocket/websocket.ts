@@ -21,11 +21,9 @@ export class WebSocketService {
   private eventListeners: Map<EventType, ((message: any) => void)[]> =
     new Map();
 
-  constructor(private url: string) {
-    this.initializeHandlers();
-  }
+  constructor(private url: string) {}
 
-  private initializeHandlers() {
+  public initializeHandlers() {
     const contactHandler = new ContactHandler();
     const inboxHandler = new InboxHandler();
     const conversationHandler = new ConversationHandler();

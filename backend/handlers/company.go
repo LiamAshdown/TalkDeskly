@@ -1,8 +1,9 @@
 package handler
 
 import (
+	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
-	"live-chat-server/models"
+	"live-chat-server/repositories"
 	"live-chat-server/services"
 	"live-chat-server/utils"
 
@@ -32,18 +33,27 @@ type CompanyResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func GetCompany(c *fiber.Ctx) error {
+type CompanyHandler struct {
+	repo       repositories.CompanyRepository
+	dispatcher interfaces.Dispatcher
+}
+
+func NewCompanyHandler(repo repositories.CompanyRepository, dispatcher interfaces.Dispatcher) *CompanyHandler {
+	return &CompanyHandler{repo: repo, dispatcher: dispatcher}
+}
+
+func (h *CompanyHandler) GetCompany(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
-	var company models.Company
-	if err := models.DB.First(&company, "id = ?", user.User.CompanyID).Error; err != nil {
+	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
+	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "company_not_found", err)
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "company_found", company.ToResponse())
 }
 
-func UpdateCompany(c *fiber.Ctx) error {
+func (h *CompanyHandler) UpdateCompany(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
 	var input CompanyInput
@@ -55,8 +65,8 @@ func UpdateCompany(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	var company models.Company
-	if err := models.DB.First(&company, "id = ?", user.User.CompanyID).Error; err != nil {
+	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
+	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "company_not_found", err)
 	}
 
@@ -66,14 +76,14 @@ func UpdateCompany(c *fiber.Ctx) error {
 	company.Phone = input.Phone
 	company.Address = input.Address
 
-	if err := models.DB.Save(&company).Error; err != nil {
+	if err := h.repo.UpdateCompany(company); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_company", err)
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "company_updated", company.ToResponse())
 }
 
-func UploadCompanyLogo(c *fiber.Ctx) error {
+func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
 	user := middleware.GetAuthUser(c)
 
 	// Upload the file
@@ -83,8 +93,8 @@ func UploadCompanyLogo(c *fiber.Ctx) error {
 	}
 
 	// Update company logo in database
-	var company models.Company
-	if err := models.DB.First(&company, "id = ?", user.User.CompanyID).Error; err != nil {
+	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
+	if err != nil {
 		// Clean up the uploaded file if company not found
 		fileService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "company_not_found", err)
@@ -97,7 +107,7 @@ func UploadCompanyLogo(c *fiber.Ctx) error {
 	}
 
 	company.Logo = filename
-	if err := models.DB.Save(&company).Error; err != nil {
+	if err := h.repo.UpdateCompany(company); err != nil {
 		// Clean up the uploaded file if database update fails
 		fileService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_company_logo", err)

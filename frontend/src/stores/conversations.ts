@@ -1,6 +1,9 @@
 import { conversationService } from "@/lib/api/services/conversations";
 import { Conversation } from "@/lib/interfaces";
-import { ConversationPayload, ConversationSendMessagePayload } from "@/lib/services/websocket/handlers/types";
+import {
+  ConversationPayload,
+  ConversationSendMessagePayload,
+} from "@/lib/services/websocket/handlers/types";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
@@ -8,7 +11,9 @@ interface ConversationsState {
   conversations: Conversation[];
   setConversations: (conversations: Conversation[]) => void;
   handleConversationStart: (payload: ConversationPayload) => void;
-  handleConversationSendMessage: (payload: ConversationSendMessagePayload) => void;
+  handleConversationSendMessage: (
+    payload: ConversationSendMessagePayload
+  ) => void;
   handleConversationUpdate: (payload: ConversationPayload) => void;
   addMessageToConversation: (conversationId: string, message: any) => void;
   fetchConversations: () => Promise<void>;
@@ -16,11 +21,15 @@ interface ConversationsState {
 }
 
 // Helper function to sort conversations by last message timestamp
-const sortConversationsByLastMessage = (conversations: Conversation[]): Conversation[] => {
+const sortConversationsByLastMessage = (
+  conversations: Conversation[]
+): Conversation[] => {
   return [...conversations].sort((a, b) => {
     // Get the last message timestamp for each conversation
-    const aLastMessage = a.messages.length > 0 ? a.messages[a.messages.length - 1].timestamp : '';
-    const bLastMessage = b.messages.length > 0 ? b.messages[b.messages.length - 1].timestamp : '';
+    const aLastMessage =
+      a.messages.length > 0 ? a.messages[a.messages.length - 1].timestamp : "";
+    const bLastMessage =
+      b.messages.length > 0 ? b.messages[b.messages.length - 1].timestamp : "";
 
     // Sort in descending order (newest first)
     return bLastMessage.localeCompare(aLastMessage);
@@ -31,9 +40,10 @@ export const useConversationsStore = create<ConversationsState>()(
   immer((set, get) => {
     return {
       conversations: [],
-      setConversations: (conversations: Conversation[]) => set({
-        conversations: sortConversationsByLastMessage(conversations)
-      }),
+      setConversations: (conversations: Conversation[]) =>
+        set({
+          conversations: sortConversationsByLastMessage(conversations),
+        }),
 
       fetchConversations: async () => {
         const response = await conversationService.getConversations();
@@ -41,7 +51,9 @@ export const useConversationsStore = create<ConversationsState>()(
       },
 
       fetchConversation: async (conversationId: string) => {
-        const response = await conversationService.getConversation(conversationId);
+        const response = await conversationService.getConversation(
+          conversationId
+        );
         set((state) => {
           // Check if conversation already exists
           const existingIndex = state.conversations.findIndex(
@@ -57,7 +69,9 @@ export const useConversationsStore = create<ConversationsState>()(
           }
 
           // Sort conversations by last message
-          state.conversations = sortConversationsByLastMessage(state.conversations);
+          state.conversations = sortConversationsByLastMessage(
+            state.conversations
+          );
         });
       },
 
@@ -72,11 +86,16 @@ export const useConversationsStore = create<ConversationsState>()(
           const updatedConversations = [...state.conversations];
           updatedConversations[conversationIndex] = {
             ...updatedConversations[conversationIndex],
-            messages: [...updatedConversations[conversationIndex].messages, message]
+            messages: [
+              ...updatedConversations[conversationIndex].messages,
+              message,
+            ],
           };
 
           // Sort conversations by last message
-          return { conversations: sortConversationsByLastMessage(updatedConversations) };
+          return {
+            conversations: sortConversationsByLastMessage(updatedConversations),
+          };
         });
       },
 
@@ -89,14 +108,21 @@ export const useConversationsStore = create<ConversationsState>()(
             state.conversations.push({
               ...payload,
               messages: [],
+              updatedAt: new Date().toISOString(),
+              lastMessage: "",
+              lastMessageAt: new Date().toISOString(),
             });
             // Sort conversations by last message
-            state.conversations = sortConversationsByLastMessage(state.conversations);
+            state.conversations = sortConversationsByLastMessage(
+              state.conversations
+            );
           }
         });
       },
 
-      handleConversationSendMessage: (payload: ConversationSendMessagePayload) => {
+      handleConversationSendMessage: (
+        payload: ConversationSendMessagePayload
+      ) => {
         set((state) => {
           const conversation = state.conversations.find(
             (c) => c.conversationId === payload.conversationId
@@ -104,7 +130,9 @@ export const useConversationsStore = create<ConversationsState>()(
           if (conversation) {
             conversation.messages.push(payload);
             // Sort conversations by last message
-            state.conversations = sortConversationsByLastMessage(state.conversations);
+            state.conversations = sortConversationsByLastMessage(
+              state.conversations
+            );
           } else {
             // Doesn't exist, fetch it
             get().fetchConversation(payload.conversationId);
@@ -118,7 +146,9 @@ export const useConversationsStore = create<ConversationsState>()(
             (c) => c.conversationId === payload.conversationId
           );
           if (conversation) {
-            state.conversations = sortConversationsByLastMessage(state.conversations);
+            state.conversations = sortConversationsByLastMessage(
+              state.conversations
+            );
           }
         });
       },

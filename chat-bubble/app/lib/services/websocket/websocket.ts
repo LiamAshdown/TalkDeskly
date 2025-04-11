@@ -1,8 +1,5 @@
 import type { EventType, WebSocketMessage } from "./types";
-import {
-  ConversationHandler,
-  ConnectionHandler,
-} from "./handlers";
+import { ConversationHandler, ConnectionHandler } from "./handlers";
 import {
   convertKeysToCamelCase,
   convertKeysToSnakeCase,
@@ -24,11 +21,9 @@ export class WebSocketService {
     private userId: string,
     private userType: "contact",
     private inboxId: string
-  ) {
-    this.initializeHandlers();
-  }
+  ) {}
 
-  private initializeHandlers() {
+  public initializeHandlers() {
     const conversationHandler = new ConversationHandler();
     const connectionHandler = new ConnectionHandler();
 
@@ -140,12 +135,37 @@ export class WebSocketService {
   }
 
   private send(message: WebSocketMessage) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      message.payload = convertKeysToSnakeCase(message.payload);
-      this.ws.send(JSON.stringify(message));
-    } else {
-      console.error("WebSocket is not connected");
+    switch (this.ws?.readyState) {
+      case WebSocket.OPEN:
+        message.payload = convertKeysToSnakeCase(message.payload);
+        this.ws.send(JSON.stringify(message));
+        break;
+      case WebSocket.CONNECTING:
+        setTimeout(() => this.send(message), 100);
+        break;
+      case WebSocket.CLOSED:
+        this.connect();
+        break;
+      default:
+        console.error("Couldn't send message");
+        break;
     }
+  }
+
+  public startTyping(conversationId: string) {
+    const message = this.createWebSocketMessage("conversation_typing", {
+      conversationId,
+    });
+
+    this.send(message);
+  }
+
+  public stopTyping(conversationId: string) {
+    const message = this.createWebSocketMessage("conversation_typing_stop", {
+      conversationId,
+    });
+
+    this.send(message);
   }
 
   public disconnect() {
@@ -153,6 +173,10 @@ export class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
+  }
+
+  public isConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
   }
 
   public on(event: EventType, handler: (message: WebSocketMessage) => void) {

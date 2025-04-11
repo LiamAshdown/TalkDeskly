@@ -36,6 +36,14 @@ func NewConversationEventHandler(handler *ConversationHandler, eventType types.E
 		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 			handler.WSHandleGetConversationByID(client, msg)
 		}
+	case types.EventTypeConversationTyping:
+		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+			handler.WSHandleConversationTyping(client, msg)
+		}
+	case types.EventTypeConversationTypingStop:
+		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+			handler.WSHandleConversationTypingStop(client, msg)
+		}
 	}
 
 	return &ConversationHandlerWrapper{handlerFunc: handlerFunc}
@@ -47,6 +55,7 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 		container.GetConversationRepo(),
 		container.GetContactRepo(),
 		container.GetDispatcher(),
+		container.GetInboxRepo(),
 	)
 
 	// Register handlers for all conversation event types
@@ -54,9 +63,15 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 		types.EventTypeConversationStart,
 		types.EventTypeConversationSendMessage,
 		types.EventTypeConversationGetByID,
+		types.EventTypeConversationTyping,
+		types.EventTypeConversationTypingStop,
 	}
 
 	for _, eventType := range eventTypes {
-		wsManager.RegisterHandler(eventType, NewConversationEventHandler(conversationHandler, eventType))
+		// Create the base handler first
+		baseHandler := NewConversationEventHandler(conversationHandler, eventType)
+		
+		// Register the handler with WebSocket manager
+		wsManager.RegisterHandler(eventType, baseHandler)
 	}
 }

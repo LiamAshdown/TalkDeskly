@@ -10,6 +10,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  console.log("Home");
   return (
     <WebSocketProvider>
       <LiveChatWidget />

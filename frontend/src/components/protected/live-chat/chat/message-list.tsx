@@ -1,43 +1,40 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/lib/interfaces";
-import { generateAvatarUrl } from "@/lib/utils/avatar";
-
+import { Bot } from "lucide-react";
+import { useWebSocket } from "@/context/websocket-context";
 interface MessageListProps {
   conversation: Conversation;
 }
 
 // MessageAvatar component to avoid duplication
 const MessageAvatar = ({
-  isAgent,
+  type,
   name,
+  avatarUrl,
 }: {
-  isAgent: boolean;
+  type: string;
   name: string;
+  avatarUrl?: string;
 }) => {
-  if (isAgent) {
-    return (
-      <Avatar className="h-8 w-8 mt-1">
-        <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Agent" />
-        <AvatarFallback>AG</AvatarFallback>
-      </Avatar>
-    );
-  }
-
   return (
-    <Avatar className="h-8 w-8 mt-1">
-      <AvatarImage src={generateAvatarUrl(name)} alt={name} />
-      <AvatarFallback>
-        {name.substring(0, 2).toUpperCase() || "CA"}
-      </AvatarFallback>
-    </Avatar>
+    <div className="flex items-center gap-2">
+      <Avatar className="h-8 w-8 mt-1">
+        {avatarUrl && <AvatarImage src={avatarUrl} alt="Agent" />}
+        <AvatarFallback>
+          {type === "bot" ? <Bot /> : name.substring(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+    </div>
   );
 };
 
 export default function MessageList({ conversation }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevConversationIdRef = useRef<string | null>(null);
+  const { wsService } = useWebSocket();
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (conversation) {
@@ -50,35 +47,87 @@ export default function MessageList({ conversation }: MessageListProps) {
     }
   }, [conversation]);
 
+  const handleConversationTyping = (data: {
+    event: string;
+    payload: {
+      conversationId: string;
+    };
+  }) => {
+    if (data.payload.conversationId === conversation.conversationId) {
+      setIsTyping(true);
+    }
+  };
+
+  const handleConversationTypingStop = (data: {
+    event: string;
+    payload: {
+      conversationId: string;
+    };
+  }) => {
+    if (data.payload.conversationId === conversation.conversationId) {
+      setIsTyping(false);
+    }
+  };
+
+  useEffect(() => {
+    wsService.registerHandler("conversation_typing", handleConversationTyping);
+    wsService.registerHandler(
+      "conversation_typing_stop",
+      handleConversationTypingStop
+    );
+
+    return () => {
+      wsService.unregisterHandler(
+        "conversation_typing",
+        handleConversationTyping
+      );
+      wsService.unregisterHandler(
+        "conversation_typing_stop",
+        handleConversationTypingStop
+      );
+    };
+  }, [wsService, conversation.conversationId]);
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 h-full max-h-[calc(100vh-12rem)]">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 h-full max-h-[calc(100vh-12rem)] relative">
       {conversation?.messages && conversation?.messages.length > 0 ? (
         conversation?.messages.map((message, index) => (
           <div
             key={index}
             className={cn(
               "flex",
-              message.sender.type === "agent" ? "justify-end" : "justify-start"
+              message.sender.type === "agent" || message.sender.type === "bot"
+                ? "justify-end"
+                : "justify-start"
             )}
           >
             <div className="flex items-start gap-2 max-w-[80%]">
-              {message.sender.type !== "agent" && (
-                <MessageAvatar isAgent={false} name={message.sender.name} />
+              {message.sender.type === "contact" && (
+                <MessageAvatar
+                  type={message.sender.type}
+                  name={message.sender.name}
+                  avatarUrl={message.sender.avatarUrl}
+                />
               )}
               <div
                 className={cn(
                   "rounded-lg p-3",
-                  message.sender.type === "agent"
+                  message.sender.type === "agent" ||
+                    message.sender.type === "bot"
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted"
                 )}
               >
                 <p>{message.content}</p>
-                <p>{message.sender.type}</p>
                 <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
               </div>
-              {message.sender.type === "agent" && (
-                <MessageAvatar isAgent={true} name="Agent" />
+              {(message.sender.type === "agent" ||
+                message.sender.type === "bot") && (
+                <MessageAvatar
+                  type={message.sender.type}
+                  name={message.sender.name}
+                  avatarUrl={message.sender.avatarUrl}
+                />
               )}
             </div>
           </div>
@@ -86,6 +135,13 @@ export default function MessageList({ conversation }: MessageListProps) {
       ) : (
         <div className="text-center text-muted-foreground py-8">
           No messages in this conversation yet.
+        </div>
+      )}
+      {isTyping && (
+        <div className="rounded-lg p-3 bg-muted w-16 h-8 flex items-center justify-center gap-2  bottom-4 left-4">
+          <div className="w-1 h-1 bg-primary rounded-full animate-pulse "></div>
+          <div className="w-1 h-1 bg-primary rounded-full animate-pulse delay-100"></div>
+          <div className="w-1 h-1 bg-primary rounded-full animate-pulse delay-200"></div>
         </div>
       )}
       <div ref={messagesEndRef} />

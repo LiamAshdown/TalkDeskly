@@ -2,15 +2,7 @@ import type React from "react";
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import {
-  User,
-  Inbox,
-  Users,
-  SettingsIcon,
-  Bell,
-  Building,
-  Menu,
-} from "lucide-react";
+import { User, Inbox, Users, Building, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -42,11 +34,6 @@ const settingsNavItems: SettingsNavItem[] = [
     title: "Company",
     href: "company",
     icon: Building,
-  },
-  {
-    title: "General",
-    href: "general",
-    icon: SettingsIcon,
   },
 ];
 

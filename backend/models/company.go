@@ -1,6 +1,7 @@
 package models
 
 import (
+	"live-chat-server/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -27,7 +28,7 @@ func (c *Company) ToResponse() interface{} {
 		"phone":      c.Phone,
 		"website":    c.Website,
 		"address":    c.Address,
-		"logo":       c.Logo,
+		"logo":       utils.Asset(c.Logo),
 		"created_at": c.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		"updated_at": c.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}

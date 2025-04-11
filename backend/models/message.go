@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"live-chat-server/types"
+	"live-chat-server/utils"
 	"time"
 
 	"gorm.io/gorm"
@@ -21,6 +22,8 @@ const (
 const (
 	SenderTypeAgent   SenderType = "agent"
 	SenderTypeContact SenderType = "contact"
+	SenderTypeBot     SenderType = "bot"
+	SenderTypeSystem  SenderType = "system"
 )
 
 // Message represents a single message in a conversation
@@ -38,8 +41,8 @@ type Message struct {
 
 	// Relationships
 	Conversation  Conversation `gorm:"foreignKey:ConversationID" json:"conversation"`
-	AgentSender   *User        `gorm:"-" json:"agent_sender,omitempty"`   // Used when SenderType is "agent"
-	ContactSender *Contact     `gorm:"-" json:"contact_sender,omitempty"` // Used when SenderType is "contact"
+	AgentSender   *User        `gorm:"-"`  // Used when SenderType is "agent"
+	ContactSender *Contact     `gorm:"-"`  // Used when SenderType is "contact"
 }
 
 // GetSender returns either the agent or contact who sent the message
@@ -114,6 +117,24 @@ func (m *Message) GetSenderName() string {
 	return ""
 }
 
+// GetSenderAvatarUrl returns the avatar url of the sender
+func (m *Message) GetSenderAvatarUrl() string {
+	sender, err := m.GetSender()
+	if err != nil {
+		return ""
+	}
+
+	if sender == nil {
+		return ""
+	}
+
+	if agent, ok := sender.(*User); ok {
+		return utils.Asset(utils.GetStringValue(agent.AvatarPath))
+	}
+
+	return ""
+}
+
 // GetSenderType returns the type of the sender
 func (m *Message) GetSenderType() string {
 	return string(m.SenderType)
@@ -128,7 +149,8 @@ func (m *Message) ToPayload() types.MessagePayload {
 		Sender: types.Sender{
 			ID:   m.SenderID,
 			Type: types.SenderType(m.SenderType),
-			Name: m.GetSenderName(),
+			Name:      m.GetSenderName(),
+			AvatarUrl: m.GetSenderAvatarUrl(),
 		},
 		Type:      string(m.Type),
 		Metadata:  m.Metadata,

@@ -1,6 +1,10 @@
 package types
 
-import "github.com/gofiber/websocket/v2"
+import (
+	"sync"
+
+	"github.com/gofiber/websocket/v2"
+)
 
 // WebSocketConn is an alias for the websocket.Conn type
 type WebSocketConn = websocket.Conn
@@ -13,10 +17,14 @@ type WebSocketClient struct {
 	ConversationID string   // Current conversation ID
 	CompanyID      string   // Company ID for the agent
 	InboxIDs       []string // List of inbox IDs the agent or contact has access to
+	mu             sync.Mutex
 }
 
 // SendMessage sends a WebSocket message to the client
 func (c *WebSocketClient) SendMessage(event EventType, payload interface{}) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	msg := NewWebSocketMessage(event, payload)
 	return c.Conn.WriteJSON(msg)
 }
@@ -43,6 +51,18 @@ func (c *WebSocketClient) GetType() string {
 // GetCompanyID returns the company ID
 func (c *WebSocketClient) GetCompanyID() string {
 	return c.CompanyID
+}
+
+// GetConversationID returns the conversation ID
+func (c *WebSocketClient) GetConversationID() string {
+	return c.ConversationID
+}
+
+// SetConversationID sets the conversation ID
+func (c *WebSocketClient) SetConversationID(conversationID string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.ConversationID = conversationID
 }
 
 // WebSocketHandler handles WebSocket messages

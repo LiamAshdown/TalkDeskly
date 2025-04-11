@@ -34,7 +34,6 @@ export default function LiveChatPortal() {
     if (activeInboxId === null) {
       return true; // Show all conversations
     } else if (activeInboxId === "my-inbox") {
-      // For demo purposes, let's assume "my-inbox" shows conversations assigned to the current agent
       return conv.status === "active";
     } else if (activeInboxId === "unassigned") {
       return conv.status === "pending";

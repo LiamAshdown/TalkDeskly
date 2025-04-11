@@ -1,17 +1,10 @@
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -23,190 +16,241 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building, Upload, Globe, Mail, Phone, MapPin } from "lucide-react";
 import SettingsContent from "@/components/protected/settings/settings-content";
+import { Company } from "@/lib/interfaces";
+import { companyService } from "@/lib/api/services/company";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form } from "@/components/ui/form";
+import { InputField, TextareaField } from "@/components/ui/form-field";
+import { useTranslation } from "react-i18next";
+import {
+  createCompanyUpdateSchema,
+  type CompanyUpdateFormData,
+} from "@/lib/schemas/company-schema";
+import { handleServerValidation } from "@/lib/utils/form-validation";
+import { useToast } from "@/lib/hooks/use-toast";
+import { UploadAvatarDialog } from "@/components/ui/upload-avatar-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CompanySettings() {
-  const [company, setCompany] = useState({
-    name: "Acme Corporation",
-    logo: "/placeholder.svg?height=100&width=100",
-    website: "https://example.com",
-    email: "contact@example.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Business Ave, Suite 100, San Francisco, CA 94107",
-    description:
-      "A leading provider of customer support solutions for businesses of all sizes.",
-    industry: "Software",
-    size: "50-100",
-    timezone: "America/Los_Angeles",
-    founded: "2015",
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [company, setCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<CompanyUpdateFormData>({
+    resolver: zodResolver(createCompanyUpdateSchema(t)),
+    defaultValues: {
+      name: "",
+      email: "",
+      website: "",
+      phone: "",
+      address: "",
+    },
+    mode: "onBlur",
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        const response = await companyService.getCompany();
+        setCompany(response.data);
 
-  const handleSave = () => {
-    setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
-    }, 1000);
-  };
+        // Set form default values
+        form.reset({
+          name: response.data.name,
+          email: response.data.email,
+          website: response.data.website,
+          phone: response.data.phone,
+          address: response.data.address,
+        });
+      } catch (error) {
+        console.error("Failed to fetch company:", error);
+      }
+    };
+    fetchCompany();
+  }, [form]);
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      // In a real app, you would upload the file to your server/cloud storage
-      // For now, we'll just create a local URL
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && event.target.result) {
-          setCompany({
-            ...company,
-            logo: event.target.result as string,
-          });
-        }
-      };
-      reader.readAsDataURL(e.target.files[0]);
+  const handleSubmit = async (data: CompanyUpdateFormData) => {
+    if (!company) return;
+
+    try {
+      setIsLoading(true);
+      const response = await companyService.updateCompany({
+        ...company,
+        ...data,
+      });
+
+      setCompany(response.data);
+
+      toast({
+        title: t("company.updateSuccess"),
+        description: t("company.updateSuccessDescription"),
+      });
+    } catch (error) {
+      handleServerValidation(form, error, t);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      setIsLoading(true);
+      const response = await companyService.updateCompanyLogo(file);
+      setCompany(response.data);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const CompanySkeleton = () => (
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-4 w-64" />
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+          <div className="flex flex-col items-center gap-2">
+            <Skeleton className="h-24 w-24 rounded-full" />
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+          <div className="flex-1 space-y-4">
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        <div className="pt-4 border-t">
+          <Skeleton className="h-5 w-48 mb-4" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+        <Skeleton className="h-10 w-full sm:w-24" />
+        <Skeleton className="h-10 w-full sm:w-32" />
+      </CardFooter>
+    </Card>
+  );
+
+  if (!company) {
+    return (
+      <SettingsContent
+        title={t("company.title")}
+        description={t("company.description")}
+        showBackButton={false}
+      >
+        <CompanySkeleton />
+      </SettingsContent>
+    );
+  }
+
   return (
     <SettingsContent
-      title="Company Settings"
-      description="Manage your company profile and business information"
+      title={t("company.title")}
+      description={t("company.description")}
       showBackButton={false}
     >
       <Card>
         <CardHeader>
-          <CardTitle>Company Profile</CardTitle>
-          <CardDescription>
-            Update your company information and contact details
-          </CardDescription>
+          <CardTitle>{t("company.title")}</CardTitle>
+          <CardDescription>{t("company.description")}</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={company.logo} alt={company.name} />
-                <AvatarFallback>
-                  <Building className="h-12 w-12" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-center">
-                <Label htmlFor="logo-upload" className="cursor-pointer">
-                  <div className="flex items-center gap-1 text-sm text-primary">
-                    <Upload className="h-3 w-3" />
-                    <span>Upload logo</span>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage src={company.logo} alt={company.name} />
+                    <AvatarFallback>
+                      <Building className="h-12 w-12" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-center">
+                    <UploadAvatarDialog
+                      onUpload={handleAvatarUpload}
+                      className="mb-2"
+                      maxSize={2}
+                      aspectRatio="4:3"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      SVG, PNG, JPG (max. 2MB)
+                    </p>
                   </div>
-                </Label>
-                <input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoChange}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  SVG, PNG, JPG (max. 2MB)
-                </p>
+                </div>
+                <div className="flex-1 space-y-4">
+                  <InputField
+                    name="name"
+                    label={t("company.form.name")}
+                    control={form.control}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="company-name">Company Name</Label>
-                <Input
-                  id="company-name"
-                  value={company.name}
-                  onChange={(e) =>
-                    setCompany({ ...company, name: e.target.value })
-                  }
-                />
+              <div className="pt-4 border-t">
+                <h3 className="text-sm font-medium mb-4">
+                  {t("company.contactInformation")}
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField
+                    name="website"
+                    label={t("company.form.website")}
+                    control={form.control}
+                    placeholder="https://example.com"
+                    disabled={isLoading}
+                  />
+                  <InputField
+                    name="email"
+                    label={t("company.form.email")}
+                    control={form.control}
+                    placeholder="contact@example.com"
+                    disabled={isLoading}
+                  />
+                  <InputField
+                    name="phone"
+                    label={t("company.form.phone")}
+                    control={form.control}
+                    placeholder="+1 (555) 123-4567"
+                    disabled={isLoading}
+                  />
+                  <div className="space-y-2">
+                    <TextareaField
+                      name="address"
+                      label={t("company.form.address")}
+                      control={form.control}
+                      placeholder="123 Business Ave, Suite 100, San Francisco, CA 94107"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="company-description">Company Description</Label>
-                <Textarea
-                  id="company-description"
-                  value={company.description}
-                  onChange={(e) =>
-                    setCompany({ ...company, description: e.target.value })
-                  }
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="pt-4 border-t">
-            <h3 className="text-sm font-medium mb-4">Contact Information</h3>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="website" className="flex items-center gap-2">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  Website
-                </Label>
-                <Input
-                  id="website"
-                  value={company.website}
-                  onChange={(e) =>
-                    setCompany({ ...company, website: e.target.value })
-                  }
-                  placeholder="https://example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={company.email}
-                  onChange={(e) =>
-                    setCompany({ ...company, email: e.target.value })
-                  }
-                  placeholder="contact@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  Phone
-                </Label>
-                <Input
-                  id="phone"
-                  value={company.phone}
-                  onChange={(e) =>
-                    setCompany({ ...company, phone: e.target.value })
-                  }
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="address" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Address
-                </Label>
-                <Textarea
-                  id="address"
-                  value={company.address}
-                  onChange={(e) =>
-                    setCompany({ ...company, address: e.target.value })
-                  }
-                  placeholder="123 Business Ave, Suite 100, San Francisco, CA 94107"
-                />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-          <Button variant="outline" className="w-full sm:w-auto">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full sm:w-auto"
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
-        </CardFooter>
+            </CardContent>
+            <CardFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                type="button"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                className="w-full sm:w-auto"
+                type="submit"
+                disabled={isLoading}
+              >
+                {isLoading ? t("common.saving") : t("common.saveChanges")}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </SettingsContent>
   );

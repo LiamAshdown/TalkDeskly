@@ -21,6 +21,10 @@ func Init(wsService interfaces.WebSocketService) {
 	instance = NewManager(wsService)
 	go instance.Run()
 
+	// Register middlewares
+	RegisterMiddleware(ConversationIDMiddleware)
+	log.Println("Conversation ID middleware registered")
+
 	log.Println("WebSocket manager started")
 }
 

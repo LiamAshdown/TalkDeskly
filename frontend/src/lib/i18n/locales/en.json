@@ -10,7 +10,8 @@
     },
     "invalidType": "Invalid type",
     "companyAlreadyExists": "Company already exists",
-    "passwordMatch": "Passwords do not match"
+    "passwordMatch": "Passwords do not match",
+    "url": "Please enter a valid URL"
   },
   "auth": {
     "onboarding": {
@@ -53,6 +54,20 @@
       "noteAddedFailed": "Failed to add note",
       "cancel": "Cancel",
       "save": "Save"
+    }
+  },
+  "company": {
+    "title": "Company",
+    "description": "Manage your company information and settings",
+    "contactInformation": "Contact Information",
+    "updateSuccess": "Company updated",
+    "updateSuccessDescription": "Your company information has been updated successfully",
+    "form": {
+      "name": "Company Name",
+      "email": "Company Email",
+      "website": "Website",
+      "phone": "Phone Number",
+      "address": "Address"
     }
   },
   "inbox": {

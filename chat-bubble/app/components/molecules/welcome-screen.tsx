@@ -1,14 +1,16 @@
 import { Button } from "~/components/ui/button";
-import { X, MessageSquare, ArrowRight } from "lucide-react";
+import { X, MessageSquare, ArrowRight, Loader2 } from "lucide-react";
 
 interface WelcomeScreenProps {
   onClose: () => void;
   onStartConversation: () => void;
+  isConnecting?: boolean;
 }
 
 export function WelcomeScreen({
   onClose,
   onStartConversation,
+  isConnecting = false,
 }: WelcomeScreenProps) {
   return (
     <div className="flex flex-col h-full">
@@ -49,9 +51,19 @@ export function WelcomeScreen({
         <Button
           onClick={onStartConversation}
           className="w-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-between"
+          disabled={isConnecting}
         >
-          <span>Start Conversation</span>
-          <ArrowRight className="h-4 w-4" />
+          {isConnecting ? (
+            <>
+              <span>Connecting...</span>
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </>
+          ) : (
+            <>
+              <span>Start Conversation</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
 
         {/* Powered by footer */}

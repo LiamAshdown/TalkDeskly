@@ -45,31 +45,50 @@ export default function InboxesPage() {
           </Link>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {inboxes.map((inbox) => (
-            <Link key={inbox.id} to={`${inbox.id}`} className="block">
-              <Card className="h-full transition-all hover:shadow-md">
-                <CardHeader className="flex flex-row items-center gap-4">
-                  <div className="bg-primary/10 p-2 rounded-lg">
-                    <Inbox className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">{inbox.name}</CardTitle>
-                    <CardDescription>Created {inbox.createdAt}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {inbox.welcomeMessage}
-                  </p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>{inbox.users.length} members</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        {inboxes.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent className="flex flex-col items-center gap-4">
+              <div className="bg-primary/10 p-4 rounded-full">
+                <Inbox className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold mb-2">No inboxes yet</h3>
+                <p className="text-muted-foreground">
+                  Create your first inbox to start managing customer
+                  conversations
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {inboxes.map((inbox) => (
+              <Link key={inbox.id} to={`${inbox.id}`} className="block">
+                <Card className="h-full transition-all hover:shadow-md">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <Inbox className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">{inbox.name}</CardTitle>
+                      <CardDescription>
+                        Created {inbox.createdAt}
+                      </CardDescription>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {inbox.welcomeMessage}
+                    </p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{inbox.users.length} members</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </SettingsContent>
   );

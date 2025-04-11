@@ -11,6 +11,7 @@ export default function ProtectedLayout() {
 
   useEffect(() => {
     if (isAuthenticated && !hasConnected.current && user) {
+      wsService.initializeHandlers();
       wsService.connect(user.id, "agent");
       hasConnected.current = true;
     } else if (!isAuthenticated) {

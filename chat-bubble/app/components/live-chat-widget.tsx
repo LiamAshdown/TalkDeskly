@@ -27,24 +27,19 @@ export function LiveChatWidget() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [conversationStarted, setConversationStarted] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(1);
   const [hasNewMessage, setHasNewMessage] = useState(true);
   const { wsService } = useWebSocket();
-  const hasConnected = useRef(false);
+  const wsServiceConnected = useRef(false);
 
-  // Set up event handlers
   useEffect(() => {
-    // Connect to WebSocket only if not already connected
-    if (!hasConnected.current) {
-      wsService.connect();
-      hasConnected.current = true;
-    }
-
-    // Cleanup on unmount
-    return () => {
-      wsService.disconnect();
-    };
-  }, [wsService]);
+    if (wsServiceConnected.current) return;
+    console.log("wsService", wsService);
+    wsService.initializeHandlers();
+    wsService.connect();
+    wsServiceConnected.current = true;
+  }, []);
 
   // Reset unread count when chat is opened
   useEffect(() => {
@@ -65,12 +60,27 @@ export function LiveChatWidget() {
     wsService.sendCreateConversation();
   };
 
+  const handleSetMessage = (message: string) => {
+    setNewMessage(message);
+
+    if (conversation) {
+      if (message.length > 0 && !isTyping) {
+        setIsTyping(true);
+        wsService.startTyping(conversation.conversationId);
+      } else if (message.length === 0 && isTyping) {
+        setIsTyping(false);
+        wsService.stopTyping(conversation.conversationId);
+      }
+    }
+  };
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!newMessage.trim() || isConversationEnded || !conversation) return;
 
     wsService.sendMessage(conversation.conversationId, newMessage);
+    wsService.stopTyping(conversation.conversationId);
     setNewMessage("");
   };
 
@@ -183,7 +193,7 @@ export function LiveChatWidget() {
                 onEndConversation={handleEndConversation}
                 onStartNewConversation={startNewConversation}
                 onClose={resetChat}
-                onNewMessageChange={setNewMessage}
+                onNewMessageChange={handleSetMessage}
                 onSendMessage={handleSendMessage}
               />
             )}

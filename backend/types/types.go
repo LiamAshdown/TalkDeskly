@@ -68,9 +68,10 @@ const (
 )
 
 type Sender struct {
-	ID   string     `json:"id"`
-	Name string     `json:"name"`
-	Type SenderType `json:"type"`
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Type      SenderType `json:"type"`
+	AvatarUrl string     `json:"avatar_url,omitempty"`
 }
 
 type MessagePayload struct {

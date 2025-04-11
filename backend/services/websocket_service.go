@@ -3,8 +3,8 @@ package services
 import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
+	"live-chat-server/types"
 	"live-chat-server/utils"
-	"live-chat-server/ws"
 	"log"
 )
 
@@ -19,8 +19,8 @@ func NewWebSocketService(c interfaces.Container) interfaces.WebSocketService {
 }
 
 // InitializeClient creates and initializes a new WebSocket client
-func (s *webSocketService) InitializeClient(c *ws.Conn, userID, userType, inboxID string) *ws.Client {
-	client := &ws.Client{
+func (s *webSocketService) InitializeClient(c *types.WebSocketConn, userID, userType, inboxID string) *types.WebSocketClient {
+	client := &types.WebSocketClient{
 		Conn: c,
 		ID:   userID,
 		Type: userType,
@@ -40,7 +40,7 @@ func (s *webSocketService) InitializeClient(c *ws.Conn, userID, userType, inboxI
 	return client
 }
 
-func (s *webSocketService) initializeAgentClient(client *ws.Client, userID string) error {
+func (s *webSocketService) initializeAgentClient(client *types.WebSocketClient, userID string) error {
 	user, err := s.container.GetUserRepo().GetUserByID(userID)
 	if err != nil {
 		log.Printf("Error getting user %s: %v", userID, err)
@@ -67,7 +67,7 @@ func (s *webSocketService) initializeAgentClient(client *ws.Client, userID strin
 	return nil
 }
 
-func (s *webSocketService) initializeContactClient(client *ws.Client, userID, inboxID string) error {
+func (s *webSocketService) initializeContactClient(client *types.WebSocketClient, userID, inboxID string) error {
 	if userID == "" {
 		// Create new contact
 		inbox, err := s.container.GetInboxRepo().GetInboxByID(inboxID)

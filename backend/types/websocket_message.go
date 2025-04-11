@@ -16,6 +16,8 @@ const (
 	EventTypeConversationSendMessage EventType = "conversation_send_message"
 	EventTypeConversationGetByID     EventType = "conversation_get_by_id"
 	EventTypeConversationUpdate      EventType = "conversation_update"
+	EventTypeConversationTyping      EventType = "conversation_typing"
+	EventTypeConversationTypingStop  EventType = "conversation_typing_stop"
 
 	// Contact events
 	EventTypeContactUpdated EventType = "contact_updated"
@@ -67,6 +69,14 @@ type IncomingSendMessagePayload struct {
 }
 
 type IncomingGetConversationByIDPayload struct {
+	ConversationID string `mapstructure:"conversation_id"`
+}
+
+type IncomingConversationTypingPayload struct {
+	ConversationID string `mapstructure:"conversation_id"`
+}
+
+type IncomingConversationTypingStopPayload struct {
 	ConversationID string `mapstructure:"conversation_id"`
 }
 

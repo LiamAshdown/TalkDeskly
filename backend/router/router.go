@@ -44,10 +44,11 @@ func SetupRoutes(app *fiber.App, c interfaces.Container) {
 	contactGroup.Post("/:id/notes", contactHandler.HandleCreateContactNote)
 	contactGroup.Get("/:id/notes", contactHandler.HandleListContactNotes)
 
+	companyHandler := handler.NewCompanyHandler(c.GetCompanyRepo(), c.GetDispatcher())
 	companyGroup := apiGroup.Group("/companies", middleware.Auth())
-	companyGroup.Get("/", handler.GetCompany)
-	companyGroup.Put("/", handler.UpdateCompany)
-	companyGroup.Post("/logo", handler.UploadCompanyLogo)
+	companyGroup.Get("/", companyHandler.GetCompany)
+	companyGroup.Put("/", companyHandler.UpdateCompany)
+	companyGroup.Post("/logo", companyHandler.UploadCompanyLogo)
 
 	profileHandler := handler.NewProfileHandler(c.GetUserRepo(), c.GetDispatcher(), c.GetDiskManager())
 	profileGroup := apiGroup.Group("/profile", middleware.Auth())
@@ -67,7 +68,7 @@ func SetupRoutes(app *fiber.App, c interfaces.Container) {
 	notificationSettingsGroup.Get("/", handler.GetNotificationSettings)
 	notificationSettingsGroup.Put("/", handler.UpdateNotificationSettings)
 
-	conversationHandler := handler.NewConversationHandler(c.GetConversationRepo(), c.GetContactRepo(), c.GetDispatcher())
+	conversationHandler := handler.NewConversationHandler(c.GetConversationRepo(), c.GetContactRepo(), c.GetDispatcher(), c.GetInboxRepo())
 	conversationGroup := apiGroup.Group("/conversations", middleware.Auth())
 	conversationGroup.Get("/", conversationHandler.HandleListConversations)
 	conversationGroup.Get("/:id", conversationHandler.HandleGetConversation)

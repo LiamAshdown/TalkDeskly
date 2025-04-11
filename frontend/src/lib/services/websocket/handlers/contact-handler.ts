@@ -1,4 +1,7 @@
-import { IWebSocketHandler } from "@/lib/services/websocket/handlers/types";
+import {
+  ContactNotePayload,
+  IWebSocketHandler,
+} from "@/lib/services/websocket/handlers/types";
 import {
   ContactPayload,
   WebSocketMessage,

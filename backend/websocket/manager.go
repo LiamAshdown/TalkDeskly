@@ -7,20 +7,18 @@ import (
 	"log"
 	"sync"
 
-	"live-chat-server/ws"
-
 	"github.com/gofiber/websocket/v2"
 )
 
 // WebSocketManager defines the interface for WebSocket operations
 type WebSocketManager interface {
 	Run()
-	HandleNewConnection(c *websocket.Conn, userID, userType, inboxID string) *Client
+	HandleNewConnection(c *websocket.Conn, userID, userType, inboxID string) *types.WebSocketClient
 	BroadcastToCompanyAgents(companyID string, message *types.WebSocketMessage)
 	BroadcastToInboxAgents(inboxID string, message *types.WebSocketMessage)
 	BroadcastToContact(contactID string, message *types.WebSocketMessage)
 	BroadcastToConversation(conversationID string, message *types.WebSocketMessage)
-	RemoveClient(client *Client)
+	RemoveClient(client *types.WebSocketClient)
 	UpdateAgentInboxAccess(userID string)
 	BroadcastToAgent(userID string, message *types.WebSocketMessage)
 	RegisterHandler(eventType types.EventType, handler types.WebSocketHandler)
@@ -30,57 +28,13 @@ var (
 	once sync.Once
 )
 
-// Client represents a connected WebSocket client
-type Client struct {
-	Conn           *websocket.Conn
-	ID             string   // User ID or Contact ID
-	Type           string   // "agent" or "contact"
-	ConversationID string   // Current conversation ID
-	CompanyID      string   // Company ID for the agent
-	InboxIDs       []string // List of inbox IDs the agent or contact has access to
-	mu             sync.Mutex
-}
-
-// SendMessage sends a WebSocket message to the client
-func (c *Client) SendMessage(event types.EventType, payload interface{}) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	msg := types.NewWebSocketMessage(event, payload)
-	return c.Conn.WriteJSON(msg)
-}
-
-// SendError sends an error message to the client and closes the connection
-func (c *Client) SendError(message, code string) {
-	c.SendMessage(types.EventTypeError, map[string]string{
-		"message": message,
-		"code":    code,
-	})
-	c.Conn.Close()
-}
-
-// GetID returns the client ID
-func (c *Client) GetID() string {
-	return c.ID
-}
-
-// GetType returns the client type
-func (c *Client) GetType() string {
-	return c.Type
-}
-
-// GetCompanyID returns the company ID
-func (c *Client) GetCompanyID() string {
-	return c.CompanyID
-}
-
 // Manager handles WebSocket connections and message broadcasting
 type Manager struct {
-	clients         map[*Client]bool
-	agents          map[*Client]bool // Separate map for agent clients
-	contacts        map[*Client]bool // Separate map for contact clients
-	register        chan *Client
-	unregister      chan *Client
+	clients         map[*types.WebSocketClient]bool
+	agents          map[*types.WebSocketClient]bool // Separate map for agent clients
+	contacts        map[*types.WebSocketClient]bool // Separate map for contact clients
+	register        chan *types.WebSocketClient
+	unregister      chan *types.WebSocketClient
 	broadcast       chan *types.WebSocketMessage
 	messageHandlers map[types.EventType]types.WebSocketHandler
 	wsService       interfaces.WebSocketService
@@ -90,11 +44,11 @@ type Manager struct {
 // NewManager creates a new WebSocket manager
 func NewManager(wsService interfaces.WebSocketService) *Manager {
 	return &Manager{
-		clients:         make(map[*Client]bool),
-		agents:          make(map[*Client]bool),
-		contacts:        make(map[*Client]bool),
-		register:        make(chan *Client),
-		unregister:      make(chan *Client),
+		clients:         make(map[*types.WebSocketClient]bool),
+		agents:          make(map[*types.WebSocketClient]bool),
+		contacts:        make(map[*types.WebSocketClient]bool),
+		register:        make(chan *types.WebSocketClient),
+		unregister:      make(chan *types.WebSocketClient),
 		broadcast:       make(chan *types.WebSocketMessage),
 		messageHandlers: make(map[types.EventType]types.WebSocketHandler),
 		wsService:       wsService,
@@ -218,24 +172,11 @@ func (m *Manager) BroadcastToConversation(conversationID string, message *types.
 }
 
 // HandleNewConnection creates a new client for a WebSocket connection
-func (m *Manager) HandleNewConnection(c *websocket.Conn, userID, userType, inboxID string) *Client {
-	// Convert websocket.Conn to ws.Conn
-	wsConn := (*ws.Conn)(c)
-
-	// Use the WebSocketService to initialize the client
-	wsClient := m.wsService.InitializeClient(wsConn, userID, userType, inboxID)
-	if wsClient == nil {
+func (m *Manager) HandleNewConnection(c *websocket.Conn, userID, userType, inboxID string) *types.WebSocketClient {
+	// Use the WebSocketService to initialize the client directly
+	client := m.wsService.InitializeClient((*types.WebSocketConn)(c), userID, userType, inboxID)
+	if client == nil {
 		return nil
-	}
-
-	// Convert ws.Client to websocket.Client
-	client := &Client{
-		Conn:           c,
-		ID:             wsClient.ID,
-		Type:           wsClient.Type,
-		ConversationID: wsClient.ConversationID,
-		CompanyID:      wsClient.CompanyID,
-		InboxIDs:       wsClient.InboxIDs,
 	}
 
 	m.register <- client
@@ -243,8 +184,12 @@ func (m *Manager) HandleNewConnection(c *websocket.Conn, userID, userType, inbox
 }
 
 // RemoveClient removes a client from the manager
-func (m *Manager) RemoveClient(client *Client) {
+func (m *Manager) RemoveClient(client *types.WebSocketClient) {
 	m.unregister <- client
+
+	if client.GetType() == "contact" {
+		m.HandleContactDisconnection(client)
+	}
 }
 
 // UpdateAgentInboxAccess updates the inbox access for an agent
@@ -262,6 +207,17 @@ func (m *Manager) UpdateAgentInboxAccess(userID string) {
 			client.InboxIDs = inboxIDs
 			break
 		}
+	}
+}
+
+// HandleContactDisconnection handles the disconnection of a contact
+func (m *Manager) HandleContactDisconnection(client *types.WebSocketClient) {
+	// Send a typing stop event to the agent
+	if client.ConversationID != "" {
+		HandleMessage(client, &types.WebSocketMessage{
+			Event:   types.EventTypeConversationTypingStop,
+			Payload: map[string]string{"conversation_id": client.ConversationID},
+		})
 	}
 }
 

@@ -121,6 +121,7 @@ export interface Message {
     id: string;
     name: string;
     type: string;
+    avatarUrl?: string;
   };
   type: string;
   metadata: any;
@@ -149,4 +150,15 @@ export interface Conversation {
   updatedAt: string;
   lastMessage: string;
   lastMessageAt: string;
+}
+
+export type SenderType = "agent" | "contact" | "bot" | "system";
+
+export interface Bot {
+  id: string;
+  name: string;
+  avatar: string;
+  type: "bot";
+  description?: string;
+  capabilities?: string[];
 }
