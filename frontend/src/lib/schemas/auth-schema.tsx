@@ -40,6 +40,7 @@ export const createOnboardingUserSchema = (t: (key: string) => string) => {
         .transform((val) => val.toLowerCase()),
       password: zod.string().min(1).min(8),
       confirmPassword: zod.string(),
+      companyId: zod.string().optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: t("validation.confirmPassword.mismatch"),

@@ -15,7 +15,7 @@ import (
 
 // DiskManager implements the storage.Manager interface for local disk storage
 type DiskManager struct {
-	storage storage.Storage
+	storage  storage.Storage
 	basePath string
 }
 

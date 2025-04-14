@@ -22,7 +22,7 @@ func main() {
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:5174",
+		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
@@ -30,13 +30,9 @@ func main() {
 	// Initialize dependency container
 	c := container.NewContainer(models.DB)
 
-	// Initialize WebSocket manager with the WebSocket service
 	websocket.Init(c.GetWebSocketService())
-
-	// Register WebSocket message handlers with the WebSocket manager
 	handler.InitWebSocketHandlers(websocket.GetManager(), c)
 
-	// Initialize the dispatcher and listeners
 	listeners.NewContactListener(c.GetDispatcher())
 	listeners.NewInboxListener(c.GetDispatcher())
 	listeners.NewConversationListener(c.GetDispatcher())

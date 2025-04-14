@@ -1,0 +1,26 @@
+{
+  "packages": [],
+  "minify": true,
+  "keepComments": false,
+  "beautify": false,
+  "validationLevel": "strict",
+  "filePath": null,
+  "fonts": {},
+  "juicePreserveTags": {},
+  "juiceOptions": {
+    "preserveMediaQueries": true,
+    "preserveFontFaces": true,
+    "preserveKeyFrames": true,
+    "preservePseudos": true,
+    "insertPreservedExtraCss": false,
+    "applyWidthAttributes": true,
+    "applyHeightAttributes": true,
+    "applyAttributesTableElements": true,
+    "webResources": {
+      "images": false,
+      "svg": false,
+      "scripts": false,
+      "links": false
+    }
+  }
+}

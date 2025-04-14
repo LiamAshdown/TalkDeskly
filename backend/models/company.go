@@ -8,15 +8,15 @@ import (
 )
 
 type Company struct {
-	ID        string         `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Name      string         `json:"name" gorm:"unique"`
-	Email     string         `json:"email" gorm:"unique"`
-	Website   string         `json:"website"`
-	Phone     string         `json:"phone"`
-	Address   string         `json:"address"`
-	Logo      string         `json:"logo"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID        string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Name      string         `gorm:"unique"`
+	Email     string         `gorm:"unique"`
+	Website   string         `gorm:""`
+	Phone     string         `gorm:""`
+	Address   string         `gorm:""`
+	Logo      string         `gorm:""`
+	CreatedAt time.Time      `gorm:""`
+	UpdatedAt time.Time      `gorm:""`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

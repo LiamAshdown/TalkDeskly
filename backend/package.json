@@ -1,0 +1,12 @@
+{
+  "name": "talkdeskly-backend",
+  "version": "1.0.0",
+  "description": "Backend for TalkDeskly application",
+  "main": "index.js",
+  "scripts": {
+    "build:emails": "mjml -r templates/email/*.mjml -o templates/email/ && node scripts/extract-content.js"
+  },
+  "dependencies": {
+    "mjml": "^4.14.1"
+  }
+}

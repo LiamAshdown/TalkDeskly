@@ -1,9 +1,12 @@
 package container
 
 import (
+	"live-chat-server/config"
 	"live-chat-server/disk"
+	"live-chat-server/email"
 	"live-chat-server/factory"
 	"live-chat-server/interfaces"
+	"live-chat-server/jobs"
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 	"log"
@@ -20,6 +23,8 @@ type Container struct {
 	dispatcher       interfaces.Dispatcher
 	webSocketSvc     interfaces.WebSocketService
 	diskManager      storage.Manager
+	jobServer        *jobs.Server
+	emailProvider    email.EmailProvider
 }
 
 func NewContainer(db *gorm.DB) interfaces.Container {
@@ -34,6 +39,8 @@ func NewContainer(db *gorm.DB) interfaces.Container {
 	// Initialize services
 	c.dispatcher = factory.NewDispatcher()
 	c.webSocketSvc = factory.NewWebSocketService(c)
+	c.emailProvider = factory.NewEmailProvider()
+	c.jobServer = jobs.InitJobServer(config.App.RedisAddr, c)
 
 	diskManager := disk.Initialize()
 	err := diskManager.CreateStorage(storage.Config{
@@ -80,4 +87,12 @@ func (c *Container) GetWebSocketService() interfaces.WebSocketService {
 
 func (c *Container) GetDiskManager() storage.Manager {
 	return c.diskManager
+}
+
+func (c *Container) GetJobClient() *jobs.Client {
+	return c.jobServer.Client
+}
+
+func (c *Container) GetEmailProvider() email.EmailProvider {
+	return c.emailProvider
 }

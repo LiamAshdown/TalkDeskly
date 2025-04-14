@@ -1,6 +1,5 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardFooter } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import {
   createOnboardingUserSchema,
@@ -18,9 +17,17 @@ import { useAuthStore } from "@/stores/auth";
 
 interface UserDetailsFormProps {
   onNextStep: () => void;
+  type: "register" | "invite";
+  email?: string;
+  companyID?: string;
 }
 
-export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
+export function UserDetailsForm({
+  onNextStep,
+  type,
+  email,
+  companyID,
+}: UserDetailsFormProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const authStore = useAuthStore();
@@ -29,9 +36,10 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
     defaultValues: {
       firstName: "",
       lastName: "",
-      email: "",
+      email: email || "",
       password: "",
       confirmPassword: "",
+      companyId: companyID || undefined,
     },
     mode: "onBlur",
   });
@@ -39,8 +47,19 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
   const handleSubmit = async (data: OnboardingUser) => {
     try {
       setLoading(true);
-      const response = await authService.onboardingUser(data);
+      const response = await authService.onboardingUser({
+        ...data,
+        companyId: companyID || undefined,
+      });
       authStore.setToken(response.data.token);
+
+      if (type === "invite") {
+        authStore.setAuth({
+          user: response.data.user,
+          token: response.data.token,
+        });
+      }
+
       onNextStep();
     } catch (error) {
       handleServerValidation(form, error, t);
@@ -52,7 +71,7 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <CardContent className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <InputField
               name="firstName"
@@ -75,8 +94,8 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
             label={t("auth.onboarding.user.email")}
             control={form.control}
             type="email"
-            placeholder="m@example.com"
-            disabled={loading}
+            placeholder={email || "m@example.com"}
+            disabled={loading || type === "invite"}
           />
 
           <InputField
@@ -94,10 +113,14 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
             type="password"
             disabled={loading}
           />
-        </CardContent>
-        <CardFooter className="flex flex-col">
+        </div>
+        <div className="mt-6 flex flex-col">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? t("auth.onboarding.loading") : t("auth.onboarding.next")}
+            {loading
+              ? t("auth.onboarding.loading")
+              : type === "invite"
+              ? t("auth.onboarding.continue")
+              : t("auth.onboarding.next")}
           </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             {t("auth.onboarding.haveAccount")}{" "}
@@ -108,7 +131,7 @@ export function UserDetailsForm({ onNextStep }: UserDetailsFormProps) {
               {t("auth.onboarding.login")}
             </Link>
           </p>
-        </CardFooter>
+        </div>
       </form>
     </Form>
   );

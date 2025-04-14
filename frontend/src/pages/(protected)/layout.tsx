@@ -10,7 +10,8 @@ export default function ProtectedLayout() {
   const hasConnected = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated && !hasConnected.current && user) {
+    console.log(user);
+    if (isAuthenticated && !hasConnected.current && user && user.company) {
       wsService.initializeHandlers();
       wsService.connect(user.id, "agent");
       hasConnected.current = true;

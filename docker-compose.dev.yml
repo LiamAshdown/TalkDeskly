@@ -1,0 +1,88 @@
+services:
+  chat-bubble:
+    build:
+      context: ./chat-bubble
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ./chat-bubble:/app
+      - /app/node_modules
+    ports:
+      - "3000:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080/api
+      - VITE_WS_URL=ws://localhost:8080/ws
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8080:8080"
+      - "2345:2345"
+    environment:
+      - GO_ENV=development
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/talkdeskly
+      - PORT=8080
+      - JWT_SECRET=secret
+      - BASE_URL=http://localhost:8080
+      - REDIS_URL=redis:6379
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USERNAME=
+      - SMTP_PASSWORD=
+      - SMTP_FROM=noreply@talkdeskly.com
+    depends_on:
+      - postgres
+      - redis
+      - mailhog
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3001:5173"
+    environment:
+      - NODE_ENV=development
+
+  postgres:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=talkdeskly
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web interface
+    environment:
+      - MH_STORAGE=maildir
+      - MH_MAILDIR_PATH=/tmp
+    volumes:
+      - mailhog_data:/tmp
+
+volumes:
+  postgres_data:
+  redis_data:
+  mailhog_data:

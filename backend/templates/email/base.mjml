@@ -1,0 +1,58 @@
+<mjml>
+  <mj-head>
+    <mj-title>TalkDeskly</mj-title>
+    <mj-font
+      name="Inter"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <mj-attributes>
+      <mj-all font-family="Inter, Arial, sans-serif" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f5">
+    <mj-wrapper background-color="#ffffff" padding="20px 0">
+      <!-- Header -->
+      <mj-section background-color="#ffffff" padding="20px 0">
+        <mj-column>
+          <mj-image
+            width="150px"
+            src="https://placehold.co/50x50"
+            alt="TalkDeskly Logo"
+          />
+        </mj-column>
+      </mj-section>
+
+      <!-- Main Content -->
+      <mj-section background-color="#ffffff" padding="20px 0">
+        <mj-column>
+          <mj-text>
+            <mj-raw> {{ .Content }} </mj-raw>
+          </mj-text>
+        </mj-column>
+      </mj-section>
+
+      <!-- Footer -->
+      <mj-section background-color="#f4f4f5" padding="20px 0">
+        <mj-column>
+          <mj-text
+            color="#666666"
+            font-size="12px"
+            align="center"
+            line-height="20px"
+          >
+            © {{ .Year }} TalkDeskly. All rights reserved.
+          </mj-text>
+          <mj-text
+            color="#666666"
+            font-size="12px"
+            align="center"
+            line-height="20px"
+          >
+            If you have any questions, please contact us at
+            support@talkdeskly.com
+          </mj-text>
+        </mj-column>
+      </mj-section>
+    </mj-wrapper>
+  </mj-body>
+</mjml>

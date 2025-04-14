@@ -18,6 +18,9 @@ export interface AuthResponse {
 
 export interface OnboardingUserResponse {
   token: string;
+  user: User & {
+    company: Company;
+  };
 }
 
 export interface OnboardingCompanyResponse extends AuthResponse {}

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, redirect } from "react-router-dom";
 import App from "@/App";
 import LiveChatPage from "@/pages/(protected)/live-chat/page";
 import ProtectedLayout from "@/pages/(protected)/layout";
@@ -15,6 +15,8 @@ import CompanySettingsPage from "@/pages/(protected)/settings/company/page";
 import LoginPage from "@/pages/(auth)/login/page";
 import RegisterPage from "@/pages/(auth)/register/page";
 import ForgotPasswordPage from "@/pages/(auth)/forgot-password/page";
+import InvitePage from "./components/auth/invite";
+import { AuthLayout } from "@/components/layouts/auth-layout";
 
 export const router = createBrowserRouter([
   {
@@ -24,18 +26,36 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "login",
-        element: <LoginPage />,
-        id: "login",
+        loader: () => redirect("/auth/login"),
       },
       {
         path: "register",
-        element: <RegisterPage />,
-        id: "register",
+        loader: () => redirect("/auth/register"),
       },
       {
-        path: "forgot-password",
-        element: <ForgotPasswordPage />,
-        id: "forgot-password",
+        path: "invite/:token",
+        loader: () => redirect("/auth/invite/:token"),
+      },
+      {
+        path: "auth",
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "login",
+            element: <LoginPage />,
+            id: "login",
+          },
+          {
+            path: "register",
+            element: <RegisterPage />,
+            id: "register",
+          },
+          {
+            path: "invite/:token/",
+            element: <InvitePage />,
+            id: "invite",
+          },
+        ],
       },
       {
         path: "portal",

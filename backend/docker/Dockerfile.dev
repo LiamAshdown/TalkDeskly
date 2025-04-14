@@ -1,0 +1,12 @@
+FROM golang:1.24-alpine
+
+WORKDIR /app
+
+RUN go install github.com/cosmtrek/air@v1.45.0
+
+COPY . .
+
+# Enable CGO
+ENV CGO_ENABLED=1
+
+CMD ["air"]

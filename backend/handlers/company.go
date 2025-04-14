@@ -1,11 +1,19 @@
 package handler
 
 import (
+	"live-chat-server/config"
 	"live-chat-server/interfaces"
+	"live-chat-server/jobs"
 	"live-chat-server/middleware"
+	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/services"
 	"live-chat-server/utils"
+	"time"
+
+	"live-chat-server/email"
+
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,25 +29,26 @@ type CompanyInput struct {
 	Logo    string `json:"logo"`
 }
 
-type CompanyResponse struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Website   string `json:"website"`
-	Phone     string `json:"phone"`
-	Address   string `json:"address"`
-	Logo      string `json:"logo"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+type SendInviteInput struct {
+	Emails []string `json:"emails" validate:"required"`
 }
 
 type CompanyHandler struct {
-	repo       repositories.CompanyRepository
-	dispatcher interfaces.Dispatcher
+	repo          repositories.CompanyRepository
+	userRepo      repositories.UserRepository
+	dispatcher    interfaces.Dispatcher
+	jobClient     *jobs.Client
+	emailProvider email.EmailProvider
 }
 
-func NewCompanyHandler(repo repositories.CompanyRepository, dispatcher interfaces.Dispatcher) *CompanyHandler {
-	return &CompanyHandler{repo: repo, dispatcher: dispatcher}
+func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient *jobs.Client, emailProvider email.EmailProvider) *CompanyHandler {
+	return &CompanyHandler{
+		repo:          repo,
+		userRepo:      userRepo,
+		dispatcher:    dispatcher,
+		jobClient:     jobClient,
+		emailProvider: emailProvider,
+	}
 }
 
 func (h *CompanyHandler) GetCompany(c *fiber.Ctx) error {
@@ -114,4 +123,178 @@ func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "logo_uploaded", company.ToResponse())
+}
+
+func (h *CompanyHandler) SendInvite(c *fiber.Ctx) error {
+	var input SendInviteInput
+	if err := c.BodyParser(&input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+	}
+
+	if err := utils.ValidateStruct(input); err != nil {
+		return utils.ValidationErrorResponse(c, err)
+	}
+
+	authUser := middleware.GetAuthUser(c)
+
+	for _, email := range input.Emails {
+		// Is it a valid email?
+		if !utils.IsEmailValid(email) {
+			continue
+		}
+
+		_, err := h.userRepo.GetUserByEmail(email)
+		if err == nil {
+			continue
+		}
+
+		_, err = h.repo.GetCompanyInviteByEmail(email)
+		if err == nil {
+			continue
+		}
+
+		job := jobs.NewSendInviteJob(h.emailProvider)
+		token := utils.GenerateRandomString(32)
+
+		// Create the accept URL
+		acceptURL := fmt.Sprintf("%s/invite/%s", config.App.FrontendURL, token)
+
+		invite := models.CompanyInvite{
+			CompanyID: *authUser.User.CompanyID,
+			Email:     email,
+			UserID:    authUser.User.ID,
+			Token:     token,
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 7),
+		}
+
+		if err := h.repo.CreateCompanyInvite(&invite); err != nil {
+			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite", err)
+		}
+
+		task, err := job.CreateSendInviteTask(
+			email,
+			*authUser.User.CompanyID,
+			fmt.Sprintf("%s %s", authUser.User.FirstName, authUser.User.LastName),
+			acceptURL,
+		)
+		if err != nil {
+			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite_task", err)
+		}
+
+		if err := h.jobClient.Enqueue(task, jobs.ProcessImmediately...); err != nil {
+			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_invite", err)
+		}
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "invite_sent", nil)
+}
+
+func (h *CompanyHandler) GetInvites(c *fiber.Ctx) error {
+	user := middleware.GetAuthUser(c)
+
+	invites, err := h.repo.GetCompanyInvites(*user.User.CompanyID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_invites", err)
+	}
+
+	payload := make([]interface{}, len(invites))
+
+	for i, invite := range invites {
+		payload[i] = invite.ToResponse()
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "invites_found", payload)
+}
+
+func (h *CompanyHandler) GetInvite(c *fiber.Ctx) error {
+	token := c.Params("token")
+
+	invite, err := h.repo.GetCompanyInviteByToken(token)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, "invite_not_found", err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "invite_found", invite.ToResponse())
+}
+
+func (h *CompanyHandler) GetTeamMembers(c *fiber.Ctx) error {
+	user := middleware.GetAuthUser(c)
+
+	members, err := h.userRepo.GetUsersByCompanyID(*user.User.CompanyID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_team_members", err)
+	}
+
+	invites, err := h.repo.GetCompanyInvites(*user.User.CompanyID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_team_members", err)
+	}
+
+	teamMembers := make([]interface{}, len(members)+len(invites))
+
+	type TeamMember struct {
+		ID        string    `json:"id"`
+		Name      string    `json:"name"`
+		Email     string    `json:"email"`
+		Avatar    string    `json:"avatar,omitempty"`
+		Role      string    `json:"role"`
+		Status    string    `json:"status"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	for i, member := range members {
+		teamMembers[i] = TeamMember{
+			ID:        member.ID,
+			Name:      member.GetFullName(),
+			Email:     member.Email,
+			Avatar:    member.GetAvatar(),
+			Role:      member.Role,
+			Status:    "Active",
+			CreatedAt: member.CreatedAt,
+			UpdatedAt: member.UpdatedAt,
+		}
+	}
+
+	for i, invite := range invites {
+		teamMembers[len(members)+i] = TeamMember{
+			ID:        invite.ID,
+			Name:      invite.Email,
+			Email:     invite.Email,
+			Role:      "agent",
+			Status:    "Invited",
+			CreatedAt: invite.CreatedAt,
+			UpdatedAt: invite.UpdatedAt,
+		}
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "team_members_found", teamMembers)
+}
+
+func (h *CompanyHandler) ResendInvite(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	invite, err := h.repo.GetCompanyInviteByID(id)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, "invite_not_found", nil)
+	}
+
+	acceptURL := fmt.Sprintf("%s/invite/%s", config.App.FrontendURL, invite.Token)
+
+	job := jobs.NewSendInviteJob(h.emailProvider)
+	task, err := job.CreateSendInviteTask(
+		invite.Email,
+		invite.CompanyID,
+		fmt.Sprintf("%s %s", invite.User.FirstName, invite.User.LastName),
+		acceptURL,
+	)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite_task", err)
+	}
+
+	if err := h.jobClient.Enqueue(task, jobs.ProcessImmediately...); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_invite", err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "invite_resent", nil)
 }

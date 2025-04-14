@@ -91,6 +91,10 @@ func validateOptionalString(fl validator.FieldLevel) bool {
 	return validate.Var(str, param) == nil
 }
 
+func IsEmailValid(email string) bool {
+	return validate.Var(email, "required,email") == nil
+}
+
 func RegisterValidators(v *validator.Validate) {
 	v.RegisterValidation("working_hours", validateWorkingHours)
 	v.RegisterValidation("optional", validateOptionalString)

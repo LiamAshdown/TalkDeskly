@@ -13,6 +13,11 @@ type CompanyRepository interface {
 	GetCompanyByName(name string) (*models.Company, error)
 	UpdateCompany(company *models.Company) error
 	DeleteCompany(id string) error
+	CreateCompanyInvite(invite *models.CompanyInvite) error
+	GetCompanyInvites(companyID string) ([]*models.CompanyInvite, error)
+	GetCompanyInviteByToken(token string) (*models.CompanyInvite, error)
+	GetCompanyInviteByEmail(email string) (*models.CompanyInvite, error)
+	GetCompanyInviteByID(id string) (*models.CompanyInvite, error)
 }
 
 type companyRepository struct {
@@ -57,4 +62,41 @@ func (r *companyRepository) UpdateCompany(company *models.Company) error {
 
 func (r *companyRepository) DeleteCompany(id string) error {
 	return r.db.Delete(&models.Company{}, "id = ?", id).Error
+}
+
+func (r *companyRepository) CreateCompanyInvite(invite *models.CompanyInvite) error {
+	return r.db.Create(invite).Error
+}
+
+func (r *companyRepository) GetCompanyInvites(companyID string) ([]*models.CompanyInvite, error) {
+	var invites []*models.CompanyInvite
+	if err := r.db.Preload("Company").Preload("User").Where("company_id = ?", companyID).Find(&invites).Error; err != nil {
+		return nil, err
+	}
+	return invites, nil
+}
+
+func (r *companyRepository) GetCompanyInviteByToken(token string) (*models.CompanyInvite, error) {
+	var invite models.CompanyInvite
+	if err := r.db.Preload("Company").Preload("User").Where("token = ?", token).First(&invite).Error; err != nil {
+		return nil, err
+	}
+	return &invite, nil
+}
+
+func (r *companyRepository) GetCompanyInviteByEmail(email string) (*models.CompanyInvite, error) {
+	var invite models.CompanyInvite
+	if err := r.db.Preload("Company").Preload("User").Where("email = ?", email).First(&invite).Error; err != nil {
+		return nil, err
+	}
+	return &invite, nil
+}
+
+func (r *companyRepository) GetCompanyInviteByID(id string) (*models.CompanyInvite, error) {
+	var invite models.CompanyInvite
+	if err := r.db.Preload("Company").Preload("User").Where("id = ?", id).First(&invite).Error; err != nil {
+		return nil, err
+	}
+
+	return &invite, nil
 }

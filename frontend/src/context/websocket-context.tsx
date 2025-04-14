@@ -9,7 +9,9 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const wsService = new WebSocketService("ws://localhost:6721/ws");
+  const wsService = new WebSocketService(
+    import.meta.env.VITE_WS_URL || "ws://localhost:6721/ws"
+  );
 
   return (
     <WebSocketContext.Provider value={{ wsService }}>

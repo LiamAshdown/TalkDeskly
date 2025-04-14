@@ -1,6 +1,8 @@
 package interfaces
 
 import (
+	"live-chat-server/email"
+	"live-chat-server/jobs"
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 )
@@ -15,4 +17,6 @@ type Container interface {
 	GetDispatcher() Dispatcher
 	GetWebSocketService() WebSocketService
 	GetDiskManager() storage.Manager
+	GetJobClient() *jobs.Client
+	GetEmailProvider() email.EmailProvider
 }

@@ -19,6 +19,7 @@
       "next": "Next",
       "haveAccount": "Already have an account?",
       "login": "Login",
+      "continue": "Continue",
       "user": {
         "firstName": "First Name",
         "lastName": "Last Name",
@@ -32,6 +33,14 @@
         "website": "Website",
         "phone": "Phone Number",
         "address": "Address"
+      },
+      "invite": {
+        "somethingWentWrong": "Oops! Something went wrong",
+        "inviteNotFound": "Invite not found",
+        "inviteNotFoundDescription": "The invite link you provided is invalid. Please check the link and try again.",
+        "returnToHome": "Return to Home",
+        "inviteFound": "You've been invited to join {{companyName}}",
+        "inviteFoundDescription": "You've been invited to join {{companyName}}. Please enter your details to continue."
       }
     }
   },
@@ -68,6 +77,36 @@
       "website": "Website",
       "phone": "Phone Number",
       "address": "Address"
+    }
+  },
+  "invite": {
+    "title": "Invite Team Members",
+    "description": "Invite team members by email. They will receive an invitation to join your workspace.",
+    "placeholder": "Enter email addresses separated by commas or spaces",
+    "send": "Send Invitations",
+    "emails": "Email Addresses",
+    "inviteHelperText": "Team members will be invited as Agents by default. You can change their role later.",
+    "errors": {
+      "noEmails": {
+        "title": "No emails provided",
+        "description": "Please enter at least one email address to send invitations."
+      },
+      "invalidEmails": {
+        "title": "Invalid email format",
+        "description": "The following emails are invalid: {{emails}}"
+      },
+      "inviteFailed": {
+        "title": "Failed to invite team members",
+        "description": "Please try again."
+      }
+    },
+    "success": {
+      "title": "Invitations sent",
+      "description": "Invitations have been sent to the following team members: {{emails}}"
+    },
+    "resend": {
+      "title": "Invite resent",
+      "description": "A new invitation has been sent to the selected member."
     }
   },
   "inbox": {
@@ -207,7 +246,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "saveChanges": "Save Changes",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "error": "Error"
   },
   "errors": {
     "toast": {

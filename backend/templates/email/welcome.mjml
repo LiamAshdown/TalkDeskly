@@ -1,0 +1,46 @@
+<mjml>
+  <mj-body>
+    <!-- START EMAIL CONTENT -->
+    <mj-section background-color="#ffffff">
+      <mj-column>
+        <mj-text
+          font-size="24px"
+          color="#1a1a1a"
+          font-weight="600"
+          align="center"
+        >
+          Welcome to TalkDeskly!
+        </mj-text>
+      </mj-column>
+      <mj-column>
+        <mj-text
+          font-size="16px"
+          color="#4a4a4a"
+          line-height="24px"
+          padding="20px 0"
+          align="center"
+        >
+          Thank you for signing up for TalkDeskly. We're excited to have you on
+          board! Please click the button below to get started.
+        </mj-text>
+
+        <mj-button
+          background-color="#2563eb"
+          color="#ffffff"
+          font-size="16px"
+          font-weight="600"
+          href="{{ .AcceptURL }}"
+          padding="15px 30px"
+          border-radius="8px"
+          color="#4a4a4a"
+          line-height="24px"
+          padding="20px 0"
+          align="center"
+        >
+          Get Started
+        </mj-button>
+      </mj-column>
+    </mj-section>
+    <!-- END EMAIL CONTENT -->
+  </mj-body>
+</mjml>

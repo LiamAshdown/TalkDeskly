@@ -35,6 +35,27 @@ export interface Profile {
   notificationSettings: NotificationSettings;
 }
 
+export interface CompanyInvite {
+  company: Company;
+  user: User;
+  token: string;
+  email: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Company {
   id: string;
   name: string;

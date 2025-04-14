@@ -10,7 +10,7 @@ type UserRepository interface {
 	GetUserByID(id string) (*models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
 	GetUsersByCompanyID(companyID string) ([]models.User, error)
-	CreateUser(user *models.User) error
+	CreateUser(user *models.User) (*models.User, error)
 	UpdateUser(user *models.User) error
 	DeleteUser(id string) error
 }
@@ -50,8 +50,17 @@ func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
 	return &user, gorm.ErrRecordNotFound
 }
 
-func (r *userRepository) CreateUser(user *models.User) error {
-	return r.db.Create(user).Error
+func (r *userRepository) CreateUser(user *models.User) (*models.User, error) {
+	if err := r.db.Create(user).Error; err != nil {
+		return nil, err
+	}
+
+	// Preload the user
+	if err := r.db.Preload("Company").Preload("NotificationSettings").First(user, "id = ?", user.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (r *userRepository) UpdateUser(user *models.User) error {
