@@ -25,6 +25,7 @@ type Container struct {
 	diskManager      storage.Manager
 	jobServer        *jobs.Server
 	emailProvider    email.EmailProvider
+	securityContext  interfaces.SecurityContext
 }
 
 func NewContainer(db *gorm.DB) interfaces.Container {
@@ -41,6 +42,7 @@ func NewContainer(db *gorm.DB) interfaces.Container {
 	c.webSocketSvc = factory.NewWebSocketService(c)
 	c.emailProvider = factory.NewEmailProvider()
 	c.jobServer = jobs.InitJobServer(config.App.RedisAddr, c)
+	c.securityContext = factory.NewSecurityContext()
 
 	diskManager := disk.Initialize()
 	err := diskManager.CreateStorage(storage.Config{
@@ -95,4 +97,8 @@ func (c *Container) GetJobClient() *jobs.Client {
 
 func (c *Container) GetEmailProvider() email.EmailProvider {
 	return c.emailProvider
+}
+
+func (c *Container) GetSecurityContext() interfaces.SecurityContext {
+	return c.securityContext
 }

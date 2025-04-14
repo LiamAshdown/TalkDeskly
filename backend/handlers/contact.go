@@ -2,7 +2,6 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
-	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
@@ -23,17 +22,18 @@ type ContactNoteInput struct {
 }
 
 type ContactHandler struct {
-	repo       repositories.ContactRepository
-	dispatcher interfaces.Dispatcher
+	repo            repositories.ContactRepository
+	securityContext interfaces.SecurityContext
+	dispatcher      interfaces.Dispatcher
 }
 
-func NewContactHandler(repo repositories.ContactRepository, dispatcher interfaces.Dispatcher) *ContactHandler {
-	return &ContactHandler{repo: repo, dispatcher: dispatcher}
+func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher) *ContactHandler {
+	return &ContactHandler{repo: repo, securityContext: securityContext, dispatcher: dispatcher}
 }
 
 func (h *ContactHandler) HandleGetContact(c *fiber.Ctx) error {
 	contactID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	contact, err := h.repo.GetContactByIDAndCompanyID(contactID, *user.User.CompanyID)
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *ContactHandler) HandleGetContact(c *fiber.Ctx) error {
 }
 
 func (h *ContactHandler) HandleListContacts(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	contacts, err := h.repo.GetContactsByCompanyID(*user.User.CompanyID)
 	if err != nil {
@@ -69,7 +69,7 @@ func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	contact := models.Contact{
 		Name:      input.Name,
@@ -90,7 +90,7 @@ func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 
 func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 	contactID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	var input ContactInput
 	if err := c.BodyParser(&input); err != nil {
@@ -122,7 +122,7 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 
 func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 	contactID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	contact, err := h.repo.GetContactByID(contactID)
 	if err != nil {
@@ -140,7 +140,7 @@ func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 
 func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 	contactID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	var input ContactNoteInput
 	if err := c.BodyParser(&input); err != nil {
@@ -162,8 +162,8 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, map[string]interface{}{
-		"note":     contactNote.ToResponse(),
-		"companyID":  *user.User.CompanyID,
+		"note":      contactNote.ToResponse(),
+		"companyID": *user.User.CompanyID,
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, "contact_note_created", contactNote.ToResponse())

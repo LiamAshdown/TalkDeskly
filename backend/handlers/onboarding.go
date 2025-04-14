@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"live-chat-server/config"
 	"live-chat-server/email"
+	"live-chat-server/interfaces"
 	"live-chat-server/jobs"
-	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/utils"
@@ -23,14 +23,15 @@ type UserInput struct {
 }
 
 type OnboardingHandler struct {
-	userRepo      repositories.UserRepository
-	companyRepo   repositories.CompanyRepository
-	jobClient     *jobs.Client
-	emailProvider email.EmailProvider
+	userRepo        repositories.UserRepository
+	companyRepo     repositories.CompanyRepository
+	jobClient       *jobs.Client
+	emailProvider   email.EmailProvider
+	securityContext interfaces.SecurityContext
 }
 
-func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient *jobs.Client, emailProvider email.EmailProvider) *OnboardingHandler {
-	return &OnboardingHandler{userRepo: userRepo, companyRepo: companyRepo, jobClient: jobClient, emailProvider: emailProvider}
+func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient *jobs.Client, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext) *OnboardingHandler {
+	return &OnboardingHandler{userRepo: userRepo, companyRepo: companyRepo, jobClient: jobClient, emailProvider: emailProvider, securityContext: securityContext}
 }
 
 func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
@@ -121,7 +122,7 @@ func (h *OnboardingHandler) HandleCreateCompany(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusConflict, "validation.company_already_exists", nil)
 	}
 
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	// User cannot create a company if they already have one
 	if user.User.CompanyID != nil {

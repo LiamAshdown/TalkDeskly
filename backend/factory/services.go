@@ -14,3 +14,8 @@ func NewDispatcher() interfaces.Dispatcher {
 func NewWebSocketService(c interfaces.Container) interfaces.WebSocketService {
 	return services.NewWebSocketService(c)
 }
+
+// NewSecurityContext creates a new security context
+func NewSecurityContext() interfaces.SecurityContext {
+	return services.NewSecurityContext()
+}

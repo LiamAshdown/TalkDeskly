@@ -2,7 +2,6 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
-	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
@@ -42,18 +41,19 @@ type UserResponse struct {
 }
 
 type InboxHandler struct {
-	repo       repositories.InboxRepository
-	userRepo   repositories.UserRepository
-	dispatcher interfaces.Dispatcher
+	repo            repositories.InboxRepository
+	userRepo        repositories.UserRepository
+	securityContext interfaces.SecurityContext
+	dispatcher      interfaces.Dispatcher
 }
 
-func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher) *InboxHandler {
-	return &InboxHandler{repo: repo, userRepo: userRepo, dispatcher: dispatcher}
+func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher) *InboxHandler {
+	return &InboxHandler{repo: repo, userRepo: userRepo, securityContext: securityContext, dispatcher: dispatcher}
 }
 
 func (h *InboxHandler) HandleGetInbox(c *fiber.Ctx) error {
 	inboxID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	inbox, err := h.repo.GetInboxByIDAndCompanyID(inboxID, *user.User.CompanyID)
 	if err != nil {
@@ -64,7 +64,7 @@ func (h *InboxHandler) HandleGetInbox(c *fiber.Ctx) error {
 }
 
 func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	inboxes, err := h.repo.GetInboxesByCompanyID(*user.User.CompanyID)
 	if err != nil {
@@ -89,7 +89,7 @@ func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	users := []models.User{*user.User}
 
@@ -160,7 +160,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	inbox, err := h.repo.GetInboxByIDAndCompanyID(input.ID, *user.User.CompanyID)
 	if err != nil {
@@ -203,7 +203,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 
 func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
 	inboxID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	if err := h.repo.DeleteInboxByIDAndCompanyID(inboxID, *user.User.CompanyID); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_delete_inbox", err)
@@ -214,7 +214,7 @@ func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
 
 func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 	inboxID := c.Params("id")
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	var input struct {
 		AgentIDs []string `json:"agent_ids"`

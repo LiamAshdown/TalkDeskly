@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"live-chat-server/interfaces"
-	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
@@ -16,18 +15,19 @@ import (
 )
 
 type ConversationHandler struct {
-	repo        repositories.ConversationRepository
-	contactRepo repositories.ContactRepository
-	dispatcher  interfaces.Dispatcher
-	inboxRepo   repositories.InboxRepository
+	repo            repositories.ConversationRepository
+	contactRepo     repositories.ContactRepository
+	securityContext interfaces.SecurityContext
+	dispatcher      interfaces.Dispatcher
+	inboxRepo       repositories.InboxRepository
 }
 
-func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository, dispatcher interfaces.Dispatcher, inboxRepo repositories.InboxRepository) *ConversationHandler {
-	return &ConversationHandler{repo: repo, contactRepo: contactRepo, dispatcher: dispatcher, inboxRepo: inboxRepo}
+func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, inboxRepo repositories.InboxRepository) *ConversationHandler {
+	return &ConversationHandler{repo: repo, contactRepo: contactRepo, securityContext: securityContext, dispatcher: dispatcher, inboxRepo: inboxRepo}
 }
 
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Contact", "Inbox", "Messages")
 	if err != nil {
@@ -43,7 +43,7 @@ func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 }
 
 func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	id := c.Params("id")
 	if id == "" {
@@ -108,10 +108,9 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 	// Add the message to the conversation's messages
 	conversation.Messages = append(conversation.Messages, *createdMessage)
 
-
 	// Dispatch the message event
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationSendMessage, conversation)
-	
+
 	return nil
 }
 
@@ -142,9 +141,9 @@ func (h *ConversationHandler) WSHandleConversationStart(client types.WebSocketCl
 		return
 	}
 
-    client.SetConversationID(conversationPtr.ID)
+	client.SetConversationID(conversationPtr.ID)
 
-    h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
 
 	if inbox.WelcomeMessage != "" {
 		err := h.SendMessage(

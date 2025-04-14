@@ -19,4 +19,5 @@ type Container interface {
 	GetDiskManager() storage.Manager
 	GetJobClient() *jobs.Client
 	GetEmailProvider() email.EmailProvider
+	GetSecurityContext() SecurityContext
 }

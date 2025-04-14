@@ -2,7 +2,6 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
-	"live-chat-server/middleware"
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 	"live-chat-server/utils"
@@ -22,17 +21,18 @@ type ProfilePasswordUpdateInput struct {
 }
 
 type ProfileHandler struct {
-	repo       repositories.UserRepository
-	dispatcher interfaces.Dispatcher  
-  diskManager storage.Manager
-} 
+	repo            repositories.UserRepository
+	dispatcher      interfaces.Dispatcher
+	diskManager     storage.Manager
+	securityContext interfaces.SecurityContext
+}
 
-func NewProfileHandler(repo repositories.UserRepository, dispatcher interfaces.Dispatcher, diskManager storage.Manager) *ProfileHandler {
-	return &ProfileHandler{repo: repo, dispatcher: dispatcher, diskManager: diskManager}
+func NewProfileHandler(repo repositories.UserRepository, dispatcher interfaces.Dispatcher, diskManager storage.Manager, securityContext interfaces.SecurityContext) *ProfileHandler {
+	return &ProfileHandler{repo: repo, dispatcher: dispatcher, diskManager: diskManager, securityContext: securityContext}
 }
 
 func (h *ProfileHandler) GetProfile(c *fiber.Ctx) error {
-	authUser := middleware.GetAuthUser(c)
+	authUser := h.securityContext.GetAuthenticatedUser(c)
 
 	user, err := h.repo.GetUserByID(authUser.ID)
 	if err != nil {
@@ -52,7 +52,7 @@ func (h *ProfileHandler) UpdateProfile(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	authUser := middleware.GetAuthUser(c)
+	authUser := h.securityContext.GetAuthenticatedUser(c)
 
 	user, err := h.repo.GetUserByID(authUser.ID)
 	if err != nil {
@@ -88,7 +88,7 @@ func (h *ProfileHandler) UpdateProfilePassword(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	authUser := middleware.GetAuthUser(c)
+	authUser := h.securityContext.GetAuthenticatedUser(c)
 
 	// Check if old password is correct
 	if !utils.CheckPasswordHash(input.OldPassword, authUser.User.Password) {
@@ -109,7 +109,7 @@ func (h *ProfileHandler) UpdateProfilePassword(c *fiber.Ctx) error {
 }
 
 func (h *ProfileHandler) UpdateProfileAvatar(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	filename, err := fileService.UploadFile(c, "avatar", "user-avatars")
 	if err != nil {

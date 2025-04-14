@@ -4,7 +4,6 @@ import (
 	"live-chat-server/config"
 	"live-chat-server/interfaces"
 	"live-chat-server/jobs"
-	"live-chat-server/middleware"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/services"
@@ -34,25 +33,27 @@ type SendInviteInput struct {
 }
 
 type CompanyHandler struct {
-	repo          repositories.CompanyRepository
-	userRepo      repositories.UserRepository
-	dispatcher    interfaces.Dispatcher
-	jobClient     *jobs.Client
-	emailProvider email.EmailProvider
+	repo            repositories.CompanyRepository
+	userRepo        repositories.UserRepository
+	dispatcher      interfaces.Dispatcher
+	jobClient       *jobs.Client
+	emailProvider   email.EmailProvider
+	securityContext interfaces.SecurityContext
 }
 
-func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient *jobs.Client, emailProvider email.EmailProvider) *CompanyHandler {
+func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient *jobs.Client, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext) *CompanyHandler {
 	return &CompanyHandler{
-		repo:          repo,
-		userRepo:      userRepo,
-		dispatcher:    dispatcher,
-		jobClient:     jobClient,
-		emailProvider: emailProvider,
+		repo:            repo,
+		userRepo:        userRepo,
+		dispatcher:      dispatcher,
+		jobClient:       jobClient,
+		emailProvider:   emailProvider,
+		securityContext: securityContext,
 	}
 }
 
 func (h *CompanyHandler) GetCompany(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
 	if err != nil {
@@ -63,7 +64,7 @@ func (h *CompanyHandler) GetCompany(c *fiber.Ctx) error {
 }
 
 func (h *CompanyHandler) UpdateCompany(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	var input CompanyInput
 	if err := c.BodyParser(&input); err != nil {
@@ -93,7 +94,7 @@ func (h *CompanyHandler) UpdateCompany(c *fiber.Ctx) error {
 }
 
 func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	// Upload the file
 	filename, err := fileService.UploadFile(c, "logo", "company-logos")
@@ -135,7 +136,7 @@ func (h *CompanyHandler) SendInvite(c *fiber.Ctx) error {
 		return utils.ValidationErrorResponse(c, err)
 	}
 
-	authUser := middleware.GetAuthUser(c)
+	authUser := h.securityContext.GetAuthenticatedUser(c)
 
 	for _, email := range input.Emails {
 		// Is it a valid email?
@@ -190,7 +191,7 @@ func (h *CompanyHandler) SendInvite(c *fiber.Ctx) error {
 }
 
 func (h *CompanyHandler) GetInvites(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	invites, err := h.repo.GetCompanyInvites(*user.User.CompanyID)
 	if err != nil {
@@ -218,7 +219,7 @@ func (h *CompanyHandler) GetInvite(c *fiber.Ctx) error {
 }
 
 func (h *CompanyHandler) GetTeamMembers(c *fiber.Ctx) error {
-	user := middleware.GetAuthUser(c)
+	user := h.securityContext.GetAuthenticatedUser(c)
 
 	members, err := h.userRepo.GetUsersByCompanyID(*user.User.CompanyID)
 	if err != nil {
