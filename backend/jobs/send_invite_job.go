@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"live-chat-server/email"
-	"log"
+	"live-chat-server/interfaces"
 
 	"github.com/hibiken/asynq"
 )
@@ -22,13 +22,15 @@ type SendInviteJobPayload struct {
 type SendInviteJob struct {
 	*BaseJob
 	emailProvider email.EmailProvider
+	logger        interfaces.Logger
 }
 
 // NewSendInviteJob creates a new send invite job
-func NewSendInviteJob(emailProvider email.EmailProvider) *SendInviteJob {
+func NewSendInviteJob(emailProvider email.EmailProvider, logger interfaces.Logger) *SendInviteJob {
 	return &SendInviteJob{
 		BaseJob:       NewBaseJob("send_invite"),
 		emailProvider: emailProvider,
+		logger:        logger,
 	}
 }
 
@@ -43,7 +45,7 @@ func (j *SendInviteJob) ProcessTask(ctx context.Context, task *asynq.Task) error
 		return fmt.Errorf("failed to send invite email: %v", err)
 	}
 
-	log.Printf("Successfully sent invite email to %s for company %s",
+	j.logger.Info("Successfully sent invite email to %s for company %s",
 		payload.Email,
 		payload.CompanyID)
 

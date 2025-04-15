@@ -27,18 +27,29 @@ func main() {
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
-	// Initialize dependency container
+	// Initialize dependency container and provide Fiber app
 	c := container.NewContainer(models.DB)
 
-	websocket.Init(c.GetWebSocketService())
+	// Register the Fiber app in the DI container
+	if err := c.GetDig().Provide(func() *fiber.App { return app }); err != nil {
+		panic(err)
+	}
+
+	// For backwards compatibility during transition
+	websocket.Init(c.GetWebSocketService(), c.GetLogger())
 	handler.InitWebSocketHandlers(websocket.GetManager(), c)
 
 	listeners.NewContactListener(c.GetDispatcher())
 	listeners.NewInboxListener(c.GetDispatcher())
 	listeners.NewConversationListener(c.GetDispatcher())
 
-	// Setup routes with dependencies
-	router.SetupRoutes(app, c)
+	// Start the job server
+	container.StartJobServer(c)
+
+	// Use the new DI router instead of the old one
+	if err := c.GetDig().Invoke(router.SetupRoutesWithDI); err != nil {
+		panic(err)
+	}
 
 	app.Listen(":" + config.App.Port)
 }

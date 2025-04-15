@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// NewEmailProvider creates a new email provider based on the application configuration
 func NewEmailProvider() email.EmailProvider {
 	providerType := config.App.EmailProvider
 

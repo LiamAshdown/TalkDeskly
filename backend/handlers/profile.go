@@ -25,10 +25,11 @@ type ProfileHandler struct {
 	dispatcher      interfaces.Dispatcher
 	diskManager     storage.Manager
 	securityContext interfaces.SecurityContext
+	logger          interfaces.Logger
 }
 
-func NewProfileHandler(repo repositories.UserRepository, dispatcher interfaces.Dispatcher, diskManager storage.Manager, securityContext interfaces.SecurityContext) *ProfileHandler {
-	return &ProfileHandler{repo: repo, dispatcher: dispatcher, diskManager: diskManager, securityContext: securityContext}
+func NewProfileHandler(repo repositories.UserRepository, dispatcher interfaces.Dispatcher, diskManager storage.Manager, securityContext interfaces.SecurityContext, logger interfaces.Logger) *ProfileHandler {
+	return &ProfileHandler{repo: repo, dispatcher: dispatcher, diskManager: diskManager, securityContext: securityContext, logger: logger}
 }
 
 func (h *ProfileHandler) GetProfile(c *fiber.Ctx) error {

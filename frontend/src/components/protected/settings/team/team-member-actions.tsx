@@ -60,15 +60,19 @@ export function TeamMemberActions({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onEdit(member)}>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
-        </DropdownMenuItem>
+        {member.status !== "Invited" && (
+          <DropdownMenuItem onClick={() => onEdit(member)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Shield className="h-4 w-4 mr-2" />
-            Change Role
-          </DropdownMenuSubTrigger>
+          {member.status !== "Invited" && (
+            <DropdownMenuSubTrigger>
+              <Shield className="h-4 w-4 mr-2" />
+              Change Role
+            </DropdownMenuSubTrigger>
+          )}
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
               <DropdownMenuItem

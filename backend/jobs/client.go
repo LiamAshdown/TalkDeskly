@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -16,15 +17,33 @@ type Client struct {
 func NewClient(redisAddr string) *Client {
 	redisOpt := asynq.RedisClientOpt{Addr: redisAddr}
 	client := asynq.NewClient(redisOpt)
-	
+
 	return &Client{
 		client: client,
 	}
 }
 
 // Enqueue enqueues a task with the given options
-func (c *Client) Enqueue(task *asynq.Task, opts ...asynq.Option) error {
-	_, err := c.client.Enqueue(task, opts...)
+func (c *Client) Enqueue(jobName string, payload interface{}) error {
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	task := asynq.NewTask(jobName, jsonPayload)
+	_, err = c.client.Enqueue(task)
+	return err
+}
+
+// EnqueueWithOptions enqueues a task with custom options
+func (c *Client) EnqueueWithOptions(jobName string, payload interface{}, opts ...asynq.Option) error {
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	task := asynq.NewTask(jobName, jsonPayload)
+	_, err = c.client.Enqueue(task, opts...)
 	return err
 }
 
@@ -59,4 +78,4 @@ var (
 
 	// Low priority queue
 	LowPriority = []asynq.Option{asynq.Queue("low")}
-) 
+)

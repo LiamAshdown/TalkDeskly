@@ -21,7 +21,7 @@ type WebSocketManager interface {
 	RemoveClient(client *types.WebSocketClient)
 	UpdateAgentInboxAccess(userID string)
 	BroadcastToAgent(userID string, message *types.WebSocketMessage)
-	RegisterHandler(eventType types.EventType, handler types.WebSocketHandler)
+	RegisterHandler(eventType types.EventType, handler types.WebSocketHandler, logger interfaces.Logger)
 }
 
 var (
@@ -240,10 +240,10 @@ func (m *Manager) BroadcastToAgent(userID string, message *types.WebSocketMessag
 }
 
 // RegisterHandler registers a new WebSocket message handler
-func (m *Manager) RegisterHandler(eventType types.EventType, handler types.WebSocketHandler) {
+func (m *Manager) RegisterHandler(eventType types.EventType, handler types.WebSocketHandler, logger interfaces.Logger) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	log.Printf("Registering handler for event type: %s", eventType)
+	logger.Info("Registering handler for event type %s", eventType)
 	m.messageHandlers[eventType] = handler
 }
 

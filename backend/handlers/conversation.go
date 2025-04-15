@@ -20,10 +20,21 @@ type ConversationHandler struct {
 	securityContext interfaces.SecurityContext
 	dispatcher      interfaces.Dispatcher
 	inboxRepo       repositories.InboxRepository
+	logger          interfaces.Logger
+	userRepo        repositories.UserRepository
 }
 
-func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, inboxRepo repositories.InboxRepository) *ConversationHandler {
-	return &ConversationHandler{repo: repo, contactRepo: contactRepo, securityContext: securityContext, dispatcher: dispatcher, inboxRepo: inboxRepo}
+func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, inboxRepo repositories.InboxRepository, logger interfaces.Logger, userRepo repositories.UserRepository) *ConversationHandler {
+	handlerLogger := logger.Named("conversation_handler")
+	return &ConversationHandler{
+		repo:            repo,
+		contactRepo:     contactRepo,
+		securityContext: securityContext,
+		dispatcher:      dispatcher,
+		inboxRepo:       inboxRepo,
+		logger:          handlerLogger,
+		userRepo:        userRepo,
+	}
 }
 
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
@@ -114,7 +125,7 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 	return nil
 }
 
-func (h *ConversationHandler) WSHandleConversationStart(client types.WebSocketClient, msg *types.WebSocketMessage) {
+func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 	var payload types.IncomingStartConversationPayload
 	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
 		return
@@ -227,4 +238,37 @@ func (h *ConversationHandler) WSHandleConversationTypingStop(client *types.WebSo
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationTypingStop, conversation)
+}
+
+func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	var payload struct {
+		AssignedToID string `json:"assigned_to_id"`
+	}
+
+	if err := c.BodyParser(&payload); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "failed_to_parse_body", err)
+	}
+
+	if id == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "conversation_id_is_required", nil)
+	}
+
+	assignedToUser, err := h.userRepo.GetUserByID(payload.AssignedToID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_assigned_to_user", err)
+	}
+
+	conversation, err := h.repo.GetConversationByID(id, "Contact", "Inbox", "AssignedTo")
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_conversation", err)
+	}
+
+	conversation.AssignedToID = &assignedToUser.ID
+	conversation.AssignedTo = assignedToUser
+
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationAssign, conversation)
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "conversation_assigned", conversation.ToPayload())
 }

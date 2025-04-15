@@ -3,7 +3,6 @@ package handler
 import (
 	"live-chat-server/config"
 	"live-chat-server/interfaces"
-	"live-chat-server/jobs"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/services"
@@ -36,12 +35,16 @@ type CompanyHandler struct {
 	repo            repositories.CompanyRepository
 	userRepo        repositories.UserRepository
 	dispatcher      interfaces.Dispatcher
-	jobClient       *jobs.Client
+	jobClient       interfaces.JobClient
 	emailProvider   email.EmailProvider
 	securityContext interfaces.SecurityContext
+	logger          interfaces.Logger
 }
 
-func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient *jobs.Client, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext) *CompanyHandler {
+func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient interfaces.JobClient, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger) *CompanyHandler {
+	// Create a named logger for the company handler
+	handlerLogger := logger.Named("company_handler")
+
 	return &CompanyHandler{
 		repo:            repo,
 		userRepo:        userRepo,
@@ -49,16 +52,32 @@ func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositorie
 		jobClient:       jobClient,
 		emailProvider:   emailProvider,
 		securityContext: securityContext,
+		logger:          handlerLogger,
 	}
 }
 
 func (h *CompanyHandler) GetCompany(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
+	h.logger.Debug("Getting company", map[string]interface{}{
+		"user_id":    user.ID,
+		"company_id": *user.User.CompanyID,
+	})
+
 	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
 	if err != nil {
+		h.logger.Error("Failed to get company", map[string]interface{}{
+			"user_id":    user.ID,
+			"company_id": *user.User.CompanyID,
+			"error":      err.Error(),
+		})
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "company_not_found", err)
 	}
+
+	h.logger.Info("Company found", map[string]interface{}{
+		"company_id":   company.ID,
+		"company_name": company.Name,
+	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "company_found", company.ToResponse())
 }
@@ -154,11 +173,10 @@ func (h *CompanyHandler) SendInvite(c *fiber.Ctx) error {
 			continue
 		}
 
-		job := jobs.NewSendInviteJob(h.emailProvider)
 		token := utils.GenerateRandomString(32)
 
 		// Create the accept URL
-		acceptURL := fmt.Sprintf("%s/invite/%s", config.App.FrontendURL, token)
+		acceptURL := fmt.Sprintf("%s/auth/invite/%s", config.App.FrontendURL, token)
 
 		invite := models.CompanyInvite{
 			CompanyID: *authUser.User.CompanyID,
@@ -172,17 +190,14 @@ func (h *CompanyHandler) SendInvite(c *fiber.Ctx) error {
 			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite", err)
 		}
 
-		task, err := job.CreateSendInviteTask(
-			email,
-			*authUser.User.CompanyID,
-			fmt.Sprintf("%s %s", authUser.User.FirstName, authUser.User.LastName),
-			acceptURL,
-		)
-		if err != nil {
-			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite_task", err)
+		payload := map[string]interface{}{
+			"email":       email,
+			"company_id":  *authUser.User.CompanyID,
+			"sender_name": fmt.Sprintf("%s %s", authUser.User.FirstName, authUser.User.LastName),
+			"accept_url":  acceptURL,
 		}
 
-		if err := h.jobClient.Enqueue(task, jobs.ProcessImmediately...); err != nil {
+		if err := h.jobClient.Enqueue("send_invite", payload); err != nil {
 			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_invite", err)
 		}
 	}
@@ -280,20 +295,16 @@ func (h *CompanyHandler) ResendInvite(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, "invite_not_found", nil)
 	}
 
-	acceptURL := fmt.Sprintf("%s/invite/%s", config.App.FrontendURL, invite.Token)
+	acceptURL := fmt.Sprintf("%s/auth/invite/%s", config.App.FrontendURL, invite.Token)
 
-	job := jobs.NewSendInviteJob(h.emailProvider)
-	task, err := job.CreateSendInviteTask(
-		invite.Email,
-		invite.CompanyID,
-		fmt.Sprintf("%s %s", invite.User.FirstName, invite.User.LastName),
-		acceptURL,
-	)
-	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_invite_task", err)
+	payload := map[string]interface{}{
+		"email":       invite.Email,
+		"company_id":  invite.CompanyID,
+		"sender_name": fmt.Sprintf("%s %s", invite.User.FirstName, invite.User.LastName),
+		"accept_url":  acceptURL,
 	}
 
-	if err := h.jobClient.Enqueue(task, jobs.ProcessImmediately...); err != nil {
+	if err := h.jobClient.Enqueue("send_invite", payload); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_invite", err)
 	}
 

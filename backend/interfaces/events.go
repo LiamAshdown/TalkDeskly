@@ -14,11 +14,12 @@ const (
 	EventTypeConversationUpdate      EventType = "conversation_update"
 	EventTypeConversationTyping      EventType = "conversation_typing"
 	EventTypeConversationTypingStop  EventType = "conversation_typing_stop"
+	EventTypeConversationAssign      EventType = "conversation_assign"
 
 	// Contact events
-	EventTypeContactUpdated EventType = "contact_updated"
-	EventTypeContactCreated EventType = "contact_created"
-	EventTypeContactDeleted EventType = "contact_deleted"
+	EventTypeContactUpdated     EventType = "contact_updated"
+	EventTypeContactCreated     EventType = "contact_created"
+	EventTypeContactDeleted     EventType = "contact_deleted"
 	EventTypeContactNoteCreated EventType = "contact_note_created"
 	// Inbox events
 	EventTypeInboxUpdated EventType = "inbox_updated"

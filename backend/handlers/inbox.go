@@ -45,10 +45,18 @@ type InboxHandler struct {
 	userRepo        repositories.UserRepository
 	securityContext interfaces.SecurityContext
 	dispatcher      interfaces.Dispatcher
+	logger          interfaces.Logger
 }
 
-func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher) *InboxHandler {
-	return &InboxHandler{repo: repo, userRepo: userRepo, securityContext: securityContext, dispatcher: dispatcher}
+func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger) *InboxHandler {
+	handlerLogger := logger.Named("inbox_handler")
+	return &InboxHandler{
+		repo:            repo,
+		userRepo:        userRepo,
+		securityContext: securityContext,
+		dispatcher:      dispatcher,
+		logger:          handlerLogger,
+	}
 }
 
 func (h *InboxHandler) HandleGetInbox(c *fiber.Ctx) error {

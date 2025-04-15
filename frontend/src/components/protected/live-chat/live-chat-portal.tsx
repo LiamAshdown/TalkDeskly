@@ -10,11 +10,14 @@ import { useInboxesStore } from "@/stores/inboxes";
 import { useConversationsStore } from "@/stores/conversations";
 import { useWebSocket } from "@/context/websocket-context";
 import { Contact } from "@/lib/interfaces";
+import { conversationService } from "@/lib/api/services/conversations";
+import { useAuthStore } from "@/stores/auth";
 
 export default function LiveChatPortal() {
   const { inboxes, fetchInboxes } = useInboxesStore();
   const { conversations, fetchConversations } = useConversationsStore();
   const { wsService } = useWebSocket();
+  const { user } = useAuthStore();
 
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -58,7 +61,13 @@ export default function LiveChatPortal() {
   const handleAssignConversation = (
     conversationId: string,
     agentId: string
-  ) => {};
+  ) => {
+    if (agentId === "current-user") {
+      agentId = user?.id || "";
+    }
+
+    conversationService.assignConversation(conversationId, agentId);
+  };
 
   // Add a new state variable to track if the contact info panel is open
   const [isContactInfoOpen, setIsContactInfoOpen] = useState(true);

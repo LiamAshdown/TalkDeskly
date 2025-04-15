@@ -26,7 +26,7 @@ func NewConversationEventHandler(handler *ConversationHandler, eventType types.E
 	switch eventType {
 	case types.EventTypeConversationStart:
 		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-			handler.WSHandleConversationStart(*client, msg)
+			handler.WSHandleConversationStart(client, msg)
 		}
 	case types.EventTypeConversationSendMessage:
 		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
@@ -54,8 +54,11 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 	conversationHandler := NewConversationHandler(
 		container.GetConversationRepo(),
 		container.GetContactRepo(),
+		container.GetSecurityContext(),
 		container.GetDispatcher(),
 		container.GetInboxRepo(),
+		container.GetLogger(),
+		container.GetUserRepo(),
 	)
 
 	// Register handlers for all conversation event types
@@ -70,8 +73,8 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 	for _, eventType := range eventTypes {
 		// Create the base handler first
 		baseHandler := NewConversationEventHandler(conversationHandler, eventType)
-		
+
 		// Register the handler with WebSocket manager
-		wsManager.RegisterHandler(eventType, baseHandler)
+		wsManager.RegisterHandler(eventType, baseHandler, container.GetLogger())
 	}
 }

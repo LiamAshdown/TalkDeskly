@@ -25,10 +25,17 @@ type ContactHandler struct {
 	repo            repositories.ContactRepository
 	securityContext interfaces.SecurityContext
 	dispatcher      interfaces.Dispatcher
+	logger          interfaces.Logger
 }
 
-func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher) *ContactHandler {
-	return &ContactHandler{repo: repo, securityContext: securityContext, dispatcher: dispatcher}
+func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger) *ContactHandler {
+	handlerLogger := logger.Named("contact_handler")
+	return &ContactHandler{
+		repo:            repo,
+		securityContext: securityContext,
+		dispatcher:      dispatcher,
+		logger:          handlerLogger,
+	}
 }
 
 func (h *ContactHandler) HandleGetContact(c *fiber.Ctx) error {

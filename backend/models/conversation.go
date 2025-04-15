@@ -44,6 +44,21 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 		ConversationID: c.ID,
 		Status:         string(c.Status),
 		InboxID:        c.InboxID,
+		AssignedTo: func() *struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} {
+			if c.AssignedTo == nil {
+				return nil
+			}
+			return &struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			}{
+				ID:   utils.GetStringValue(c.AssignedToID),
+				Name: c.AssignedTo.GetFullName(),
+			}
+		}(),
 		Contact: struct {
 			ID        string `json:"id"`
 			Name      string `json:"name"`
@@ -51,10 +66,10 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			Phone     string `json:"phone"`
 			CreatedAt string `json:"created_at"`
 		}{
-			ID:    c.ContactID,
-			Name:  utils.GetStringValue(c.Contact.Name),
-			Email: utils.GetStringValue(c.Contact.Email),
-			Phone: utils.GetStringValue(c.Contact.Phone),
+			ID:        c.ContactID,
+			Name:      utils.GetStringValue(c.Contact.Name),
+			Email:     utils.GetStringValue(c.Contact.Email),
+			Phone:     utils.GetStringValue(c.Contact.Phone),
 			CreatedAt: c.Contact.CreatedAt.Format("01/02/2006 15:04:05"),
 		},
 		Messages: MessagesToPayload(c.Messages),
@@ -65,8 +80,8 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			ID:   c.InboxID,
 			Name: c.Inbox.Name,
 		},
-		UpdatedAt:     c.UpdatedAt.Format("01/02/2006 15:04:05"),
-		LastMessage:   c.LastMessage,
+		UpdatedAt:   c.UpdatedAt.Format("01/02/2006 15:04:05"),
+		LastMessage: c.LastMessage,
 		LastMessageAt: func() string {
 			if c.LastMessageAt == nil {
 				return ""
@@ -75,4 +90,3 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 		}(),
 	}
 }
-

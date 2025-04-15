@@ -9,9 +9,21 @@ export const conversationService = {
     );
     return response.data;
   },
-  async getConversation(conversationId: string): Promise<APIResponse<Conversation>> {
+  async getConversation(
+    conversationId: string
+  ): Promise<APIResponse<Conversation>> {
     const response = await apiClient.get<APIResponse<Conversation>>(
       `/conversations/${conversationId}`
+    );
+    return response.data;
+  },
+  async assignConversation(
+    conversationId: string,
+    assignedToId: string
+  ): Promise<APIResponse<Conversation>> {
+    const response = await apiClient.post<APIResponse<Conversation>>(
+      `/conversations/${conversationId}/assign`,
+      { assignedToId }
     );
     return response.data;
   },

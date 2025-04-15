@@ -12,10 +12,10 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const contactId = useContactStore((state) => state.contactId);
   const wsService = new WebSocketService(
-    import.meta.env.VITE_WS_URL || "ws://localhost:6721/ws",
+    "ws://localhost:6721/ws",
     contactId || "",
     "contact",
-    "38f0d24f-7d7b-43a8-b274-52a3199be279"
+    "c1d826d9-a09d-489a-a27e-f9b805f74c83"
   );
 
   return (

@@ -5,7 +5,6 @@ import (
 	"live-chat-server/config"
 	"live-chat-server/email"
 	"live-chat-server/interfaces"
-	"live-chat-server/jobs"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/utils"
@@ -25,13 +24,22 @@ type UserInput struct {
 type OnboardingHandler struct {
 	userRepo        repositories.UserRepository
 	companyRepo     repositories.CompanyRepository
-	jobClient       *jobs.Client
+	jobClient       interfaces.JobClient
 	emailProvider   email.EmailProvider
 	securityContext interfaces.SecurityContext
+	logger          interfaces.Logger
 }
 
-func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient *jobs.Client, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext) *OnboardingHandler {
-	return &OnboardingHandler{userRepo: userRepo, companyRepo: companyRepo, jobClient: jobClient, emailProvider: emailProvider, securityContext: securityContext}
+func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient interfaces.JobClient, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger) *OnboardingHandler {
+	handlerLogger := logger.Named("onboarding_handler")
+	return &OnboardingHandler{
+		userRepo:        userRepo,
+		companyRepo:     companyRepo,
+		jobClient:       jobClient,
+		emailProvider:   emailProvider,
+		securityContext: securityContext,
+		logger:          handlerLogger,
+	}
 }
 
 func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
@@ -154,13 +162,14 @@ func (h *OnboardingHandler) HandleCreateCompany(c *fiber.Ctx) error {
 
 	actionURL := fmt.Sprintf("%s/portal", config.App.FrontendURL)
 
-	job := jobs.NewSendWelcomeJob(h.emailProvider)
-	task, err := job.CreateSendWelcomeTask(user.User.Email, user.User.FirstName, company.Name, actionURL)
-	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_welcome_task", err)
+	payload := map[string]interface{}{
+		"email":        user.User.Email,
+		"first_name":   user.User.FirstName,
+		"company_name": company.Name,
+		"action_url":   actionURL,
 	}
 
-	if err := h.jobClient.Enqueue(task, jobs.ProcessImmediately...); err != nil {
+	if err := h.jobClient.Enqueue("send_welcome", payload); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_welcome_task", err)
 	}
 

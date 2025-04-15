@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 	"strings"
 )
@@ -19,12 +18,24 @@ type Config struct {
 	EmailUsername string
 	EmailPassword string
 	EmailFrom     string
+	Environment   string
+	LogLevel      string
+}
+
+// NewConfig creates a new config instance with loaded configuration
+func NewConfig() Config {
+	return loadConfig()
 }
 
 var App Config
 
 func Load() {
-	App = Config{
+	App = loadConfig()
+}
+
+// loadConfig loads configuration from environment variables
+func loadConfig() Config {
+	return Config{
 		Port:          getEnv("PORT", "3000"),
 		DatabaseDSN:   getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/postgres"),
 		JwtSecret:     getEnv("JWT_SECRET", "secret"),
@@ -37,9 +48,9 @@ func Load() {
 		EmailUsername: getEnv("EMAIL_USERNAME", ""),
 		EmailPassword: getEnv("EMAIL_PASSWORD", ""),
 		EmailFrom:     getEnv("EMAIL_FROM", "noreply@talkdeskly.com"),
+		Environment:   getEnv("ENVIRONMENT", "development"),
+		LogLevel:      getEnv("LOG_LEVEL", "debug"),
 	}
-
-	log.Println("Config loaded")
 }
 
 func getEnv(key, defaultValue string) string {

@@ -15,17 +15,16 @@ var (
 	instance *Manager
 )
 
-func Init(wsService interfaces.WebSocketService) {
-	log.Println("Initializing WebSocket manager...")
+func Init(wsService interfaces.WebSocketService, logger interfaces.Logger) {
+	logger.Info("Initializing WebSocket manager...")
 	// Start the WebSocket manager
 	instance = NewManager(wsService)
 	go instance.Run()
 
 	// Register middlewares
 	RegisterMiddleware(ConversationIDMiddleware)
-	log.Println("Conversation ID middleware registered")
 
-	log.Println("WebSocket manager started")
+	logger.Info("WebSocket manager started")
 }
 
 // GetManager returns the WebSocket manager instance

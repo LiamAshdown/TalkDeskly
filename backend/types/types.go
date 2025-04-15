@@ -88,7 +88,11 @@ type ConversationPayload struct {
 	InboxID        string `json:"inbox_id"`
 	ConversationID string `json:"conversation_id"`
 	Status         string `json:"status"`
-	Contact        struct {
+	AssignedTo     *struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"assigned_to,omitempty"`
+	Contact struct {
 		ID        string `json:"id"`
 		Name      string `json:"name"`
 		Email     string `json:"email"`

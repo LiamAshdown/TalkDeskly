@@ -1,19 +1,20 @@
 package jobs
 
 import (
-	"log"
+	"live-chat-server/email"
+	"live-chat-server/interfaces"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-// InitJobServer initializes and starts the job server
-func InitJobServer(redisAddr string, deps JobDependencies) *Server {
+// RegisterJobServer initializes and starts the job server with an email provider
+func RegisterJobServer(redisAddr string, emailProvider email.EmailProvider, logger interfaces.Logger) *Server {
 	// Initialize job server
 	jobServer := NewServer(redisAddr)
 
 	// Register job handlers
-	RegisterJobHandlers(jobServer, deps)
+	registerJobHandlers(jobServer, emailProvider, logger)
 
 	// Handle graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -21,26 +22,27 @@ func InitJobServer(redisAddr string, deps JobDependencies) *Server {
 
 	// Start job server
 	go func() {
-		log.Println("Starting job server...")
+		logger.Info("Starting job server...")
 		if err := jobServer.Start(); err != nil {
-			log.Fatalf("Failed to start job server: %v", err)
+			logger.Error("Failed to start job server: %v", map[string]interface{}{"error": err})
 		}
 	}()
 
 	// Handle shutdown in a separate goroutine
 	go func() {
 		<-quit
-		log.Println("Shutting down job server...")
+		logger.Info("Shutting down job server...")
 		jobServer.Stop()
 	}()
 
 	return jobServer
 }
 
-func RegisterJobHandlers(jobServer *Server, deps JobDependencies) {
-	sendInviteJob := NewSendInviteJob(deps.GetEmailProvider())
+// registerJobHandlers registers all job handlers
+func registerJobHandlers(jobServer *Server, emailProvider email.EmailProvider, logger interfaces.Logger) {
+	sendInviteJob := NewSendInviteJob(emailProvider, logger)
 	jobServer.RegisterHandler("send_invite", sendInviteJob)
 
-	sendWelcomeJob := NewSendWelcomeJob(deps.GetEmailProvider())
+	sendWelcomeJob := NewSendWelcomeJob(emailProvider)
 	jobServer.RegisterHandler("send_welcome", sendWelcomeJob)
 }
