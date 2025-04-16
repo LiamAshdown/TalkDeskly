@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/lib/interfaces";
-import { Bot } from "lucide-react";
+import { Bot, Info } from "lucide-react";
 import { useWebSocket } from "@/context/websocket-context";
 interface MessageListProps {
   conversation: Conversation;
@@ -23,7 +23,13 @@ const MessageAvatar = ({
       <Avatar className="h-8 w-8 mt-1">
         {avatarUrl && <AvatarImage src={avatarUrl} alt="Agent" />}
         <AvatarFallback>
-          {type === "bot" ? <Bot /> : name.substring(0, 2).toUpperCase()}
+          {type === "bot" ? (
+            <Bot />
+          ) : type === "system" ? (
+            <Info />
+          ) : (
+            name.substring(0, 2).toUpperCase()
+          )}
         </AvatarFallback>
       </Avatar>
     </div>
@@ -96,40 +102,51 @@ export default function MessageList({ conversation }: MessageListProps) {
             key={index}
             className={cn(
               "flex",
-              message.sender.type === "agent" || message.sender.type === "bot"
+              message.sender.type === "system"
+                ? "justify-center"
+                : message.sender.type === "agent" ||
+                  message.sender.type === "bot"
                 ? "justify-end"
                 : "justify-start"
             )}
           >
-            <div className="flex items-start gap-2 max-w-[80%]">
-              {message.sender.type === "contact" && (
-                <MessageAvatar
-                  type={message.sender.type}
-                  name={message.sender.name}
-                  avatarUrl={message.sender.avatarUrl}
-                />
-              )}
-              <div
-                className={cn(
-                  "rounded-lg p-3",
-                  message.sender.type === "agent" ||
-                    message.sender.type === "bot"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                )}
-              >
-                <p>{message.content}</p>
-                <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
+            {message.sender.type === "system" ? (
+              <div className="flex items-center justify-center py-2">
+                <span className="text-sm text-muted-foreground italic px-4 py-1">
+                  {message.content}
+                </span>
               </div>
-              {(message.sender.type === "agent" ||
-                message.sender.type === "bot") && (
-                <MessageAvatar
-                  type={message.sender.type}
-                  name={message.sender.name}
-                  avatarUrl={message.sender.avatarUrl}
-                />
-              )}
-            </div>
+            ) : (
+              <div className={cn("flex items-start gap-2 max-w-[80%]")}>
+                {message.sender.type === "contact" && (
+                  <MessageAvatar
+                    type={message.sender.type}
+                    name={message.sender.name}
+                    avatarUrl={message.sender.avatarUrl}
+                  />
+                )}
+                <div
+                  className={cn(
+                    "rounded-lg p-3",
+                    message.sender.type === "agent" ||
+                      message.sender.type === "bot"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  )}
+                >
+                  <p>{message.content}</p>
+                  <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
+                </div>
+                {(message.sender.type === "agent" ||
+                  message.sender.type === "bot") && (
+                  <MessageAvatar
+                    type={message.sender.type}
+                    name={message.sender.name}
+                    avatarUrl={message.sender.avatarUrl}
+                  />
+                )}
+              </div>
+            )}
           </div>
         ))
       ) : (

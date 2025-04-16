@@ -55,7 +55,7 @@ func loadConfig() Config {
 		LogLevel:      getEnv("LOG_LEVEL", "debug"),
 		// Default language setting
 		DefaultLanguage:    getEnv("DEFAULT_LANGUAGE", "en"),
-		SupportedLanguages: getSupportedLanguages(getEnv("SUPPORTED_LANGUAGES", "en,es,fr")),
+		SupportedLanguages: getSupportedLanguages(getEnv("SUPPORTED_LANGUAGES", "en")),
 	}
 }
 

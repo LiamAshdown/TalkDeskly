@@ -16,20 +16,33 @@ func BroadcastConversationStart(conversation *models.Conversation) {
 func BroadcastConversationSendMessage(conversation *models.Conversation) {
 	message := conversation.Messages[len(conversation.Messages)-1]
 
+	var sender *types.Sender = nil
+
+	if message.SenderType == models.SenderTypeSystem {
+		sender = &types.Sender{
+			ID:        "",
+			Name:      "System",
+			Type:      types.SenderTypeSystem,
+			AvatarUrl: "",
+		}
+	} else {
+		sender = &types.Sender{
+			ID:        *message.SenderID,
+			Name:      message.GetSenderName(),
+			Type:      types.SenderType(message.GetSenderType()),
+			AvatarUrl: message.GetSenderAvatarUrl(),
+		}
+	}
+
 	payload := types.OutgoingSendMessagePayload{
 		ID:             message.ID,
 		ConversationID: conversation.ID,
 		Name:           message.GetSenderName(),
 		Content:        message.Content,
-		Sender: types.Sender{
-			ID:        message.SenderID,
-			Name:      message.GetSenderName(),
-			Type:      types.SenderType(message.GetSenderType()),
-			AvatarUrl: message.GetSenderAvatarUrl(),
-		},
-		Type:      string(message.Type),
-		Metadata:  message.Metadata,
-		Timestamp: message.CreatedAt.Format("01/02/2006 15:04:05"),
+		Sender:         *sender,
+		Type:           string(message.Type),
+		Metadata:       message.Metadata,
+		Timestamp:      message.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 
 	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationSendMessage, payload)

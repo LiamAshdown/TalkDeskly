@@ -31,7 +31,7 @@ type Message struct {
 	ID             string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
 	ConversationID string         `gorm:"type:uuid;not null" json:"conversation_id"`
 	SenderType     SenderType     `gorm:"type:varchar(10);not null" json:"sender_type"`
-	SenderID       string         `gorm:"type:uuid;not null" json:"sender_id"`
+	SenderID       *string        `gorm:"type:uuid" json:"sender_id"`
 	Type           MessageType    `gorm:"type:varchar(20);not null;default:'text'" json:"type"`
 	Content        string         `gorm:"type:text;not null" json:"content"`
 	Metadata       *string        `gorm:"type:jsonb" json:"metadata"` // For storing additional data like file info
@@ -41,13 +41,15 @@ type Message struct {
 
 	// Relationships
 	Conversation  Conversation `gorm:"foreignKey:ConversationID" json:"conversation"`
-	AgentSender   *User        `gorm:"-"`  // Used when SenderType is "agent"
-	ContactSender *Contact     `gorm:"-"`  // Used when SenderType is "contact"
+	AgentSender   *User        `gorm:"-"` // Used when SenderType is "agent"
+	ContactSender *Contact     `gorm:"-"` // Used when SenderType is "contact"
 }
 
 // GetSender returns either the agent or contact who sent the message
 func (m *Message) GetSender() (interface{}, error) {
-	if m.SenderType == SenderTypeAgent {
+	if m.SenderType == SenderTypeSystem {
+		return nil, nil // System messages don't have a specific sender
+	} else if m.SenderType == SenderTypeAgent {
 		if m.AgentSender == nil {
 			return nil, fmt.Errorf("agent sender not loaded")
 		}
@@ -81,6 +83,15 @@ func (m *Message) LoadSender(db *gorm.DB) error {
 
 // BeforeCreate GORM hook to ensure either AgentSender or ContactSender is set based on SenderType
 func (m *Message) BeforeCreate(tx *gorm.DB) error {
+	if m.SenderType == SenderTypeSystem {
+		// System messages don't require a sender
+		return nil
+	}
+
+	if m.SenderID == nil {
+		return fmt.Errorf("sender_id cannot be nil for non-system messages")
+	}
+
 	if m.SenderType == SenderTypeAgent {
 		// Verify the sender exists in the User table
 		var user User
@@ -142,20 +153,32 @@ func (m *Message) GetSenderType() string {
 
 // ToPayload converts a Message to a payload for API responses
 func (m *Message) ToPayload() types.MessagePayload {
-	return types.MessagePayload{
+	payload := types.MessagePayload{
 		ConversationID: m.ConversationID,
-		Name:           m.GetSenderName(),
 		Content:        m.Content,
-		Sender: types.Sender{
-			ID:   m.SenderID,
+		Type:           string(m.Type),
+		Metadata:       m.Metadata,
+		Timestamp:      m.CreatedAt.Format("01/02/2006 15:04:05"),
+	}
+
+	// Handle system messages which don't have a sender
+	if m.SenderType == SenderTypeSystem {
+		payload.Name = "System"
+		payload.Sender = types.Sender{
 			Type: types.SenderType(m.SenderType),
+			Name: "System",
+		}
+	} else if m.SenderID != nil {
+		payload.Name = m.GetSenderName()
+		payload.Sender = types.Sender{
+			ID:        *m.SenderID,
+			Type:      types.SenderType(m.SenderType),
 			Name:      m.GetSenderName(),
 			AvatarUrl: m.GetSenderAvatarUrl(),
-		},
-		Type:      string(m.Type),
-		Metadata:  m.Metadata,
-		Timestamp: m.CreatedAt.Format("01/02/2006 15:04:05"),
+		}
 	}
+
+	return payload
 }
 
 // MessagesToPayload converts a slice of Messages to a slice of MessagePayload

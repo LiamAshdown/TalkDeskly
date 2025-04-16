@@ -42,7 +42,7 @@ func (r *conversationRepository) ApplyPreloads(query *gorm.DB, preloads ...strin
 func (r *conversationRepository) GetConversationsByCompanyID(companyID string, preloads ...string) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	query := r.db.Where("company_id = ?", companyID)
-	
+
 	// Check if we need to load senders
 	loadSenders := false
 	for _, preload := range preloads {
@@ -51,26 +51,26 @@ func (r *conversationRepository) GetConversationsByCompanyID(companyID string, p
 			break
 		}
 	}
-	
+
 	query = r.ApplyPreloads(query, preloads...)
 	if err := query.Find(&conversations).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// If we need to load senders, do it here
 	if loadSenders {
 		if err := r.populateMessageSenders(&conversations); err != nil {
 			return nil, err
 		}
 	}
-	
+
 	return conversations, nil
 }
 
 func (r *conversationRepository) GetConversationByIdAndCompanyID(id string, companyID string, preloads ...string) (*models.Conversation, error) {
 	var conversation models.Conversation
 	query := r.db.Where("id = ? AND company_id = ?", id, companyID)
-	
+
 	// Check if we need to load senders
 	loadSenders := false
 	for _, preload := range preloads {
@@ -79,12 +79,12 @@ func (r *conversationRepository) GetConversationByIdAndCompanyID(id string, comp
 			break
 		}
 	}
-	
+
 	query = r.ApplyPreloads(query, preloads...)
 	if err := query.First(&conversation).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// If we need to load senders, do it here
 	if loadSenders {
 		conversations := []models.Conversation{conversation}
@@ -93,7 +93,7 @@ func (r *conversationRepository) GetConversationByIdAndCompanyID(id string, comp
 		}
 		conversation = conversations[0]
 	}
-	
+
 	return &conversation, nil
 }
 
@@ -104,7 +104,7 @@ func (r *conversationRepository) CreateConversation(conversation *models.Convers
 func (r *conversationRepository) GetConversationByID(id string, preloads ...string) (*models.Conversation, error) {
 	var conversation models.Conversation
 	query := r.db
-	
+
 	// Check if we need to load senders
 	loadSenders := false
 	for _, preload := range preloads {
@@ -113,12 +113,12 @@ func (r *conversationRepository) GetConversationByID(id string, preloads ...stri
 			break
 		}
 	}
-	
+
 	query = r.ApplyPreloads(query, preloads...)
 	if err := query.First(&conversation, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
-	
+
 	// If we need to load senders, do it here
 	if loadSenders {
 		conversations := []models.Conversation{conversation}
@@ -127,7 +127,7 @@ func (r *conversationRepository) GetConversationByID(id string, preloads ...stri
 		}
 		conversation = conversations[0]
 	}
-	
+
 	return &conversation, nil
 }
 
@@ -165,30 +165,30 @@ func (r *conversationRepository) populateMessageSenders(conversations *[]models.
 	// Collect all agent and contact IDs
 	agentIDs := make([]string, 0)
 	contactIDs := make([]string, 0)
-	
+
 	for i := range *conversations {
 		conv := &(*conversations)[i]
 		for j := range conv.Messages {
 			msg := &conv.Messages[j]
 			if msg.SenderType == models.SenderTypeAgent {
-				agentIDs = append(agentIDs, msg.SenderID)
+				agentIDs = append(agentIDs, *msg.SenderID)
 			} else if msg.SenderType == models.SenderTypeContact {
-				contactIDs = append(contactIDs, msg.SenderID)
+				contactIDs = append(contactIDs, *msg.SenderID)
 			}
 		}
 	}
-	
+
 	// Deduplicate IDs
 	agentIDsMap := make(map[string]bool)
 	contactIDsMap := make(map[string]bool)
-	
+
 	for _, id := range agentIDs {
 		agentIDsMap[id] = true
 	}
 	for _, id := range contactIDs {
 		contactIDsMap[id] = true
 	}
-	
+
 	// Fetch all agents
 	agents := make(map[string]models.User)
 	if len(agentIDsMap) > 0 {
@@ -197,16 +197,16 @@ func (r *conversationRepository) populateMessageSenders(conversations *[]models.
 		for id := range agentIDsMap {
 			uniqueAgentIDs = append(uniqueAgentIDs, id)
 		}
-		
+
 		if err := r.db.Where("id IN ?", uniqueAgentIDs).Find(&agentsList).Error; err != nil {
 			return err
 		}
-		
+
 		for _, agent := range agentsList {
 			agents[agent.ID] = agent
 		}
 	}
-	
+
 	// Fetch all contacts
 	contacts := make(map[string]models.Contact)
 	if len(contactIDsMap) > 0 {
@@ -215,33 +215,32 @@ func (r *conversationRepository) populateMessageSenders(conversations *[]models.
 		for id := range contactIDsMap {
 			uniqueContactIDs = append(uniqueContactIDs, id)
 		}
-		
+
 		if err := r.db.Where("id IN ?", uniqueContactIDs).Find(&contactsList).Error; err != nil {
 			return err
 		}
-		
+
 		for _, contact := range contactsList {
 			contacts[contact.ID] = contact
 		}
 	}
-	
+
 	// Assign senders to messages
 	for i := range *conversations {
 		conv := &(*conversations)[i]
 		for j := range conv.Messages {
 			msg := &conv.Messages[j]
 			if msg.SenderType == models.SenderTypeAgent {
-				if agent, ok := agents[msg.SenderID]; ok {
+				if agent, ok := agents[*msg.SenderID]; ok {
 					msg.AgentSender = &agent
 				}
 			} else if msg.SenderType == models.SenderTypeContact {
-				if contact, ok := contacts[msg.SenderID]; ok {
+				if contact, ok := contacts[*msg.SenderID]; ok {
 					msg.ContactSender = &contact
 				}
 			}
 		}
 	}
-	
+
 	return nil
 }
-

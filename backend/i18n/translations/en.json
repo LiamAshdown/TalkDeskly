@@ -1,4 +1,6 @@
 {
+  "failed_to_parse_body": "Failed to parse body",
+
   "company_not_found": "Company not found",
   "company_found": "Company found",
   "bad_request": "Bad request",

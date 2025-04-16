@@ -15,6 +15,7 @@ const (
 	EventTypeConversationTyping      EventType = "conversation_typing"
 	EventTypeConversationTypingStop  EventType = "conversation_typing_stop"
 	EventTypeConversationAssign      EventType = "conversation_assign"
+	EventTypeConversationClose       EventType = "conversation_close"
 
 	// Contact events
 	EventTypeContactUpdated     EventType = "contact_updated"

@@ -65,6 +65,7 @@ type SenderType string
 const (
 	SenderTypeContact SenderType = "contact"
 	SenderTypeAgent   SenderType = "agent"
+	SenderTypeSystem  SenderType = "system"
 )
 
 type Sender struct {

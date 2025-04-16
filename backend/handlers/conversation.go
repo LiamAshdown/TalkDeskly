@@ -8,7 +8,6 @@ import (
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"live-chat-server/utils"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -73,13 +72,15 @@ func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
 }
 
 // SendMessage is a centralized method for sending messages in a conversation
-func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}) error {
+func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}) error {
 	// Convert metadata to JSON string if it's not nil
 	var metadataStr *string
 	if metadata != nil {
 		metadataBytes, err := json.Marshal(metadata)
 		if err != nil {
-			log.Printf("Error marshaling metadata: %v", err)
+			h.logger.Error("Error marshaling metadata", fiber.Map{
+				"error": err,
+			})
 		} else {
 			str := string(metadataBytes)
 			metadataStr = &str
@@ -90,16 +91,22 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 	newMessage := models.Message{
 		Content:        content,
 		Type:           messageType,
-		SenderID:       senderID,
 		SenderType:     senderType,
 		ConversationID: conversation.ID,
 		Metadata:       metadataStr,
 	}
 
+	// System does not have a sender id
+	if senderID != nil {
+		newMessage.SenderID = senderID
+	}
+
 	// Save the new message
 	createdMessage, err := h.repo.CreateMessage(&newMessage)
 	if err != nil {
-		log.Printf("Error creating message: %v", err)
+		h.logger.Error("Error creating message", fiber.Map{
+			"error": err,
+		})
 		return err
 	}
 
@@ -109,13 +116,17 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 	conversation.LastMessageAt = &now
 
 	if err := h.repo.UpdateConversation(conversation); err != nil {
-		log.Printf("Error updating conversation: %v", err)
+		h.logger.Error("Error updating conversation", fiber.Map{
+			"error": err,
+		})
 		return err
 	}
 
 	createdMessage, err = h.repo.PopulateSender(createdMessage)
 	if err != nil {
-		log.Printf("Error populating sender: %v", err)
+		h.logger.Error("Error populating sender", fiber.Map{
+			"error": err,
+		})
 		return err
 	}
 
@@ -129,7 +140,7 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 }
 
 func (h *ConversationHandler) SendSystemMessage(conversation *models.Conversation, content string) error {
-	return h.SendMessage(conversation, "", models.SenderTypeSystem, content, models.MessageTypeText, nil)
+	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, nil)
 }
 
 func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketClient, msg *types.WebSocketMessage) {
@@ -164,16 +175,19 @@ func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketC
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
 
 	if inbox.WelcomeMessage != "" {
+		clientID := client.GetID()
 		err := h.SendMessage(
 			conversationPtr,
-			client.GetID(),
+			&clientID,
 			models.SenderTypeBot,
 			inbox.WelcomeMessage,
 			models.MessageTypeText,
 			nil,
 		)
 		if err != nil {
-			log.Printf("Error sending welcome message: %v", err)
+			h.logger.Error("Error sending welcome message", fiber.Map{
+				"error": err,
+			})
 		}
 	}
 }
@@ -206,16 +220,19 @@ func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg
 		return
 	}
 
+	clientID := client.GetID()
 	err = h.SendMessage(
 		conversation,
-		client.GetID(),
+		&clientID,
 		models.SenderType(client.GetType()),
 		payload.Content,
 		models.MessageTypeText,
 		payload.Metadata,
 	)
 	if err != nil {
-		log.Printf("Error sending message: %v", err)
+		h.logger.Error("Error sending message", fiber.Map{
+			"error": err,
+		})
 	}
 }
 
@@ -255,28 +272,28 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&payload); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "failed_to_parse_body", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "failed_to_parse_body"), err)
 	}
 
 	if id == "" {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "conversation_id_is_required", nil)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_id_is_required"), nil)
 	}
 
 	assignedToUser, err := h.userRepo.GetUserByID(payload.AssignedToID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_assigned_to_user", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_assigned_to_user"), err)
 	}
 
 	conversation, err := h.repo.GetConversationByID(id, "Contact", "Inbox", "AssignedTo")
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_get_conversation", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
 	}
 
 	conversation.AssignedToID = &assignedToUser.ID
 	conversation.AssignedTo = assignedToUser
 
 	if err := h.repo.UpdateConversation(conversation); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_conversation", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_conversation"), err)
 	}
 
 	h.SendSystemMessage(
@@ -286,7 +303,7 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationAssign, conversation)
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "conversation_assigned", conversation.ToPayload())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_assigned"), conversation.ToPayload())
 }
 
 func (h *ConversationHandler) HandleGetAssignableAgents(c *fiber.Ctx) error {
@@ -306,4 +323,27 @@ func (h *ConversationHandler) HandleGetAssignableAgents(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "agents_retrieved"), payload)
+}
+
+func (h *ConversationHandler) HandleCloseConversation(c *fiber.Ctx) error {
+	id := c.Params("id")
+
+	if id == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_id_is_required"), nil)
+	}
+
+	conversation, err := h.repo.GetConversationByID(id, "Contact", "Inbox", "AssignedTo")
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
+	}
+
+	conversation.Status = models.ConversationStatusClosed
+
+	if err := h.repo.UpdateConversation(conversation); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_conversation"), err)
+	}
+
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationClose, conversation)
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_closed"), conversation.ToPayload())
 }
