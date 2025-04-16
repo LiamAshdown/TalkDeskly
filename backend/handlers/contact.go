@@ -26,15 +26,17 @@ type ContactHandler struct {
 	securityContext interfaces.SecurityContext
 	dispatcher      interfaces.Dispatcher
 	logger          interfaces.Logger
+	langContext     interfaces.LanguageContext
 }
 
-func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger) *ContactHandler {
+func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext) *ContactHandler {
 	handlerLogger := logger.Named("contact_handler")
 	return &ContactHandler{
 		repo:            repo,
 		securityContext: securityContext,
 		dispatcher:      dispatcher,
 		logger:          handlerLogger,
+		langContext:     langContext,
 	}
 }
 
@@ -44,10 +46,10 @@ func (h *ContactHandler) HandleGetContact(c *fiber.Ctx) error {
 
 	contact, err := h.repo.GetContactByIDAndCompanyID(contactID, *user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusNotFound, "contact_not_found", err)
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "contact_not_found"), err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "contact_found", contact.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_found"), contact.ToResponse())
 }
 
 func (h *ContactHandler) HandleListContacts(c *fiber.Ctx) error {
@@ -55,7 +57,7 @@ func (h *ContactHandler) HandleListContacts(c *fiber.Ctx) error {
 
 	contacts, err := h.repo.GetContactsByCompanyID(*user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_fetch_contacts", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_fetch_contacts"), err)
 	}
 
 	responses := make([]interface{}, len(contacts))
@@ -63,13 +65,13 @@ func (h *ContactHandler) HandleListContacts(c *fiber.Ctx) error {
 		responses[i] = contact.ToResponse()
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "contacts_fetched", responses)
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contacts_fetched"), responses)
 }
 
 func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 	var input ContactInput
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	if err := utils.ValidateStruct(input); err != nil {
@@ -87,12 +89,12 @@ func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 	}
 
 	if err := h.repo.CreateContact(&contact); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_contact", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_contact"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeContactCreated, &contact)
 
-	return utils.SuccessResponse(c, fiber.StatusCreated, "contact_created", contact.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_created"), contact.ToResponse())
 }
 
 func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
@@ -101,7 +103,7 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 
 	var input ContactInput
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	if err := utils.ValidateStruct(input); err != nil {
@@ -110,7 +112,7 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 
 	contact, err := h.repo.GetContactByIDAndCompanyID(contactID, *user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusNotFound, "contact_not_found", err)
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "contact_not_found"), err)
 	}
 
 	contact.Name = input.Name
@@ -119,12 +121,12 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 	contact.Company = input.Company
 
 	if err := h.repo.UpdateContact(contact); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_contact", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_contact"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeContactUpdated, &contact)
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "contact_updated", contact.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_updated"), contact.ToResponse())
 }
 
 func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
@@ -133,16 +135,16 @@ func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 
 	contact, err := h.repo.GetContactByID(contactID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusNotFound, "contact_not_found", err)
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "contact_not_found"), err)
 	}
 
 	if err := h.repo.DeleteContactByIDAndCompanyID(contactID, *user.User.CompanyID); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_delete_contact", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_contact"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, &contact)
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "contact_deleted", nil)
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_deleted"), nil)
 }
 
 func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
@@ -151,7 +153,7 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 
 	var input ContactNoteInput
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	if err := utils.ValidateStruct(input); err != nil {
@@ -165,7 +167,7 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 	}
 
 	if err := h.repo.CreateContactNote(&contactNote); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_contact_note", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_contact_note"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, map[string]interface{}{
@@ -173,7 +175,7 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 		"companyID": *user.User.CompanyID,
 	})
 
-	return utils.SuccessResponse(c, fiber.StatusCreated, "contact_note_created", contactNote.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_note_created"), contactNote.ToResponse())
 }
 
 func (h *ContactHandler) HandleListContactNotes(c *fiber.Ctx) error {
@@ -181,7 +183,7 @@ func (h *ContactHandler) HandleListContactNotes(c *fiber.Ctx) error {
 	orderBy := "created_at DESC"
 	contactNotes, err := h.repo.GetContactNotesByContactID(contactID, &orderBy)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_fetch_contact_notes", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_fetch_contact_notes"), err)
 	}
 
 	responses := make([]types.ContactNotePayload, len(contactNotes))
@@ -189,5 +191,5 @@ func (h *ContactHandler) HandleListContactNotes(c *fiber.Ctx) error {
 		responses[i] = note.ToResponse()
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "contact_notes_fetched", responses)
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_notes_fetched"), responses)
 }

@@ -29,5 +29,7 @@ type Container interface {
 	GetSecurityContext() SecurityContext
 	GetLogger() Logger
 	GetConfig() config.Config
+	GetI18n() I18n
+	GetLanguageContext() LanguageContext
 	GetDig() *dig.Container
 }

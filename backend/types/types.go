@@ -84,6 +84,11 @@ type MessagePayload struct {
 	Timestamp      string      `json:"timestamp"`
 }
 
+type AgentPayload struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type ConversationPayload struct {
 	InboxID        string `json:"inbox_id"`
 	ConversationID string `json:"conversation_id"`

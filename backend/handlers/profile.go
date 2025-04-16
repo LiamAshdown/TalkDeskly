@@ -13,6 +13,7 @@ type ProfileUpdateInput struct {
 	FirstName string `json:"first_name" validate:"required"`
 	LastName  string `json:"last_name" validate:"required"`
 	Email     string `json:"email" validate:"required,email"`
+	Language  string `json:"language" validate:"omitempty"`
 }
 
 type ProfilePasswordUpdateInput struct {
@@ -71,6 +72,11 @@ func (h *ProfileHandler) UpdateProfile(c *fiber.Ctx) error {
 	user.FirstName = input.FirstName
 	user.LastName = input.LastName
 	user.Email = input.Email
+
+	// Update language if provided
+	if input.Language != "" {
+		user.Language = input.Language
+	}
 
 	if err := h.repo.UpdateUser(user); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_user", err)

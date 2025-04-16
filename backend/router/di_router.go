@@ -22,6 +22,7 @@ type DIParams struct {
 	InboxHandler        *handler.InboxHandler
 	OnboardingHandler   *handler.OnboardingHandler
 	ConversationHandler *handler.ConversationHandler
+	LanguageHandler     *handler.LanguageHandler
 	WebSocketService    interfaces.WebSocketService
 }
 
@@ -36,6 +37,11 @@ func SetupRoutesWithDI(params DIParams) {
 	app.Static("/uploads", disk.GetBasePath())
 
 	apiGroup := app.Group("/api")
+
+	// Language routes
+	languageGroup := apiGroup.Group("/language")
+	languageGroup.Get("/", params.LanguageHandler.GetSupportedLanguages)
+	languageGroup.Post("/", params.LanguageHandler.SetLanguage)
 
 	onboardingGroup := apiGroup.Group("/onboarding")
 	onboardingGroup.Post("/user", params.OnboardingHandler.HandleCreateUser)
@@ -90,6 +96,7 @@ func SetupRoutesWithDI(params DIParams) {
 
 	conversationGroup := apiGroup.Group("/conversations", middleware.Auth(), middleware.RequireCompany())
 	conversationGroup.Get("/", params.ConversationHandler.HandleListConversations)
+	conversationGroup.Get("/assignable-agents", params.ConversationHandler.HandleGetAssignableAgents)
 	conversationGroup.Get("/:id", params.ConversationHandler.HandleGetConversation)
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)
 }

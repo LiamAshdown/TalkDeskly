@@ -1,6 +1,6 @@
 import apiClient from "@/lib/api/client";
 import { APIResponse } from "@/lib/api/types";
-import { Conversation } from "@/lib/interfaces";
+import { Agent, Conversation } from "@/lib/interfaces";
 
 export const conversationService = {
   async getConversations(): Promise<APIResponse<Conversation[]>> {
@@ -24,6 +24,12 @@ export const conversationService = {
     const response = await apiClient.post<APIResponse<Conversation>>(
       `/conversations/${conversationId}/assign`,
       { assignedToId }
+    );
+    return response.data;
+  },
+  async getAssignableAgents(): Promise<APIResponse<Agent[]>> {
+    const response = await apiClient.get<APIResponse<Agent[]>>(
+      "/conversations/assignable-agents"
     );
     return response.data;
   },

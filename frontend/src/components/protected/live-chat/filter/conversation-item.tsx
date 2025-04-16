@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,9 +10,10 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { User, Users } from "lucide-react";
+import { User, Users, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Conversation } from "@/lib/interfaces";
+import { Conversation, Agent } from "@/lib/interfaces";
+import { conversationService } from "@/lib/api/services/conversations";
 
 // ConversationItem Component
 function ConversationItem({
@@ -25,6 +27,31 @@ function ConversationItem({
   setActiveConversationId: (id: string) => void;
   onAssignConversation?: (conversationId: string, agentId: string) => void;
 }) {
+  const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const [assignableAgents, setAssignableAgents] = useState<Agent[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const fetchAssignableAgents = async () => {
+    if (assignableAgents.length === 0) {
+      setIsLoadingAgents(true);
+      try {
+        const response = await conversationService.getAssignableAgents();
+        setAssignableAgents(response.data);
+      } catch (error) {
+        console.error("Failed to fetch assignable agents:", error);
+      } finally {
+        setIsLoadingAgents(false);
+      }
+    }
+  };
+
+  const handleContextMenuOpen = (open: boolean) => {
+    setMenuOpen(open);
+    if (open) {
+      fetchAssignableAgents();
+    }
+  };
+
   const handleAssignToMe = () => {
     if (onAssignConversation) {
       onAssignConversation(conversation.conversationId, "current-user"); // Use the current user's ID
@@ -48,11 +75,14 @@ function ConversationItem({
   };
 
   return (
-    <ContextMenu key={conversation.conversationId}>
+    <ContextMenu
+      key={conversation.conversationId}
+      onOpenChange={handleContextMenuOpen}
+    >
       <ContextMenuTrigger>
         <div
           className={cn(
-            "flex items-center gap-3 rounded-lg p-3 cursor-pointer",
+            "rounded-lg p-3 cursor-pointer",
             activeConversationId === conversation.conversationId
               ? "bg-accent text-accent-foreground"
               : "hover:bg-muted"
@@ -68,30 +98,36 @@ function ConversationItem({
             }
           }}
         >
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={""} alt={conversation.contact.name} />
-            <AvatarFallback>
-              {conversation.contact.name.substring(0, 2).toUpperCase() || "CA"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium truncate">
-                {conversation.contact.name || "Unnamed Contact"}
-              </h3>
-              <span className="text-xs text-muted-foreground">
-                {/* {conversation.time} */}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground truncate">
-              {/* {conversation.lastMessage} */}
-            </p>
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={""} alt={conversation.contact.name} />
+              <AvatarFallback>
+                {conversation.contact.name.substring(0, 2).toUpperCase() ||
+                  "CA"}
+              </AvatarFallback>
+            </Avatar>
+            <h3 className="font-medium truncate">
+              {conversation.contact.name || "Unnamed Contact"}
+            </h3>
           </div>
-          {conversation.unread > 0 && (
+          {/* {conversation.unread > 0 && (
             <Badge variant="default" className="ml-auto">
               {conversation.unread}
             </Badge>
-          )}
+          )} */}
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground truncate">
+                {/* {conversation.lastMessage} */}
+              </p>
+              {conversation.assignedTo && (
+                <Badge variant="outline" className="text-xs ml-1">
+                  {conversation.assignedTo.name}
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
@@ -100,28 +136,33 @@ function ConversationItem({
           <span>Assign to me</span>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem>
+        <ContextMenuItem disabled>
           <Users className="mr-2 h-4 w-4" />
           <span>Assign to...</span>
         </ContextMenuItem>
-        <ContextMenuItem
-          className="pl-8"
-          onClick={() => handleAssignToAgent("agent1")}
-        >
-          Sarah Johnson
-        </ContextMenuItem>
-        <ContextMenuItem
-          className="pl-8"
-          onClick={() => handleAssignToAgent("agent2")}
-        >
-          Michael Chen
-        </ContextMenuItem>
-        <ContextMenuItem
-          className="pl-8"
-          onClick={() => handleAssignToAgent("agent3")}
-        >
-          Alex Rodriguez
-        </ContextMenuItem>
+
+        {isLoadingAgents ? (
+          <ContextMenuItem disabled>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span>Loading agents...</span>
+          </ContextMenuItem>
+        ) : (
+          assignableAgents.map((agent) => (
+            <ContextMenuItem
+              key={agent.id}
+              className="pl-8"
+              onClick={() => handleAssignToAgent(agent.id)}
+            >
+              {agent.name}
+              {conversation.assignedTo?.id === agent.id && (
+                <Badge variant="outline" className="ml-auto">
+                  Assigned
+                </Badge>
+              )}
+            </ContextMenuItem>
+          ))
+        )}
+
         <ContextMenuSeparator />
         <ContextMenuItem onClick={handleMarkAsUnread}>
           Mark as unread

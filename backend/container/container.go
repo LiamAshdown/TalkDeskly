@@ -2,10 +2,12 @@ package container
 
 import (
 	"live-chat-server/config"
+	"live-chat-server/context"
 	"live-chat-server/disk"
 	"live-chat-server/email"
 	"live-chat-server/factory"
 	handler "live-chat-server/handlers"
+	"live-chat-server/i18n"
 	"live-chat-server/interfaces"
 	"live-chat-server/jobs"
 	"live-chat-server/repositories"
@@ -14,6 +16,7 @@ import (
 	"live-chat-server/websocket"
 	"log"
 
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/dig"
 	"gorm.io/gorm"
 )
@@ -138,6 +141,24 @@ func (c *DIContainer) GetLogger() interfaces.Logger {
 	return logger
 }
 
+// GetI18n retrieves the i18n service
+func (c *DIContainer) GetI18n() interfaces.I18n {
+	var i18n interfaces.I18n
+	c.dig.Invoke(func(s interfaces.I18n) {
+		i18n = s
+	})
+	return i18n
+}
+
+// GetLanguageContext retrieves the language context
+func (c *DIContainer) GetLanguageContext() interfaces.LanguageContext {
+	var langContext interfaces.LanguageContext
+	c.dig.Invoke(func(lc interfaces.LanguageContext) {
+		langContext = lc
+	})
+	return langContext
+}
+
 // GetConfig retrieves the config
 func (c *DIContainer) GetConfig() config.Config {
 	var cfg config.Config
@@ -153,7 +174,7 @@ func (c *DIContainer) GetDig() *dig.Container {
 }
 
 // NewContainer creates a new container with DI
-func NewContainer(db *gorm.DB) interfaces.Container {
+func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	digContainer := dig.New()
 
 	// Register DB
@@ -161,9 +182,9 @@ func NewContainer(db *gorm.DB) interfaces.Container {
 		log.Fatalf("Failed to provide db: %v", err)
 	}
 
-	// Register logger
-	if err := digContainer.Provide(factory.NewLogger); err != nil {
-		log.Fatalf("Failed to provide logger: %v", err)
+	// Register the Fiber app in the DI container
+	if err := digContainer.Provide(func() *fiber.App { return app }); err != nil {
+		panic(err)
 	}
 
 	// Register config
@@ -188,6 +209,12 @@ func NewContainer(db *gorm.DB) interfaces.Container {
 
 	// Register WebSocket services
 	websocket.RegisterWebSocketServices(digContainer)
+
+	// Register i18n services
+	i18n.RegisterI18nServices(digContainer)
+
+	// Register contexts
+	context.RegisterContexts(digContainer)
 
 	// Register handlers
 	handler.RegisterHandlers(digContainer)

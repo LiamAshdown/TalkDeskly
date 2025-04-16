@@ -13,7 +13,7 @@ func RegisterServices(container *dig.Container) {
 		log.Fatalf("Failed to provide dispatcher: %v", err)
 	}
 
-	if err := container.Provide(NewSecurityContext); err != nil {
-		log.Fatalf("Failed to provide security context: %v", err)
+	if err := container.Provide(NewLogger); err != nil {
+		log.Fatalf("Failed to provide logger: %v", err)
 	}
 }

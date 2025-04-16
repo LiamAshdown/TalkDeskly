@@ -4,6 +4,7 @@ import (
 	"live-chat-server/config"
 	"live-chat-server/container"
 	handler "live-chat-server/handlers"
+	"live-chat-server/i18n"
 	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/router"
@@ -28,12 +29,10 @@ func main() {
 	}))
 
 	// Initialize dependency container and provide Fiber app
-	c := container.NewContainer(models.DB)
+	c := container.NewContainer(models.DB, app)
 
-	// Register the Fiber app in the DI container
-	if err := c.GetDig().Provide(func() *fiber.App { return app }); err != nil {
-		panic(err)
-	}
+	// Apply i18n middleware to detect language from request headers
+	app.Use(i18n.Middleware(c.GetI18n()))
 
 	// For backwards compatibility during transition
 	websocket.Init(c.GetWebSocketService(), c.GetLogger())

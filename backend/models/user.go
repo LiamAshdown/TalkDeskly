@@ -24,6 +24,7 @@ type User struct {
 	LastName             string                `gorm:"not null"`
 	Password             string                `gorm:"not null"`
 	Role                 string                `gorm:"not null"`
+	Language             string                `gorm:"type:varchar(10);default:'en'"`
 	AvatarPath           *string               `gorm:"type:text"`
 	CreatedAt            time.Time             `gorm:""`
 	UpdatedAt            time.Time             `gorm:""`
@@ -53,6 +54,7 @@ func (u *User) ToResponse() interface{} {
 		"name":       u.GetFullName(),
 		"avatar":     u.GetAvatar(),
 		"role":       u.Role,
+		"language":   u.Language,
 		"company_id": u.CompanyID,
 		"company":    u.Company,
 		"created_at": u.CreatedAt,
@@ -69,6 +71,7 @@ func (u *User) ToProfileResponse() interface{} {
 		"name":                  u.GetFullName(),
 		"avatar":                u.GetAvatar(),
 		"role":                  u.Role,
+		"language":              u.Language,
 		"created_at":            u.CreatedAt,
 		"updated_at":            u.UpdatedAt,
 		"notification_settings": u.NotificationSettings,

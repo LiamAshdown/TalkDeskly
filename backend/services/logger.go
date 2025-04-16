@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"live-chat-server/config"
 	"live-chat-server/interfaces"
 
 	"go.uber.org/zap"
@@ -14,11 +15,11 @@ type ZapLogger struct {
 }
 
 // NewLogger creates a new ZapLogger instance
-func NewLogger(env string) interfaces.Logger {
+func NewLogger(config config.Config) interfaces.Logger {
 	var logger *zap.Logger
 	var err error
 
-	if env == "production" {
+	if config.Environment == "production" {
 		// Production config: JSON format, higher performance
 		config := zap.NewProductionConfig()
 		config.EncoderConfig.TimeKey = "timestamp"

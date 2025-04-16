@@ -20,6 +20,9 @@ type Config struct {
 	EmailFrom     string
 	Environment   string
 	LogLevel      string
+	// Internationalization settings
+	DefaultLanguage    string
+	SupportedLanguages []string
 }
 
 // NewConfig creates a new config instance with loaded configuration
@@ -50,6 +53,9 @@ func loadConfig() Config {
 		EmailFrom:     getEnv("EMAIL_FROM", "noreply@talkdeskly.com"),
 		Environment:   getEnv("ENVIRONMENT", "development"),
 		LogLevel:      getEnv("LOG_LEVEL", "debug"),
+		// Default language setting
+		DefaultLanguage:    getEnv("DEFAULT_LANGUAGE", "en"),
+		SupportedLanguages: getSupportedLanguages(getEnv("SUPPORTED_LANGUAGES", "en,es,fr")),
 	}
 }
 
@@ -67,4 +73,8 @@ func getRedisAddr(url string) string {
 	// Remove any trailing slashes
 	url = strings.TrimSuffix(url, "/")
 	return url
+}
+
+func getSupportedLanguages(languages string) []string {
+	return strings.Split(languages, ",")
 }

@@ -1,4 +1,4 @@
-package services
+package context
 
 import (
 	"live-chat-server/interfaces"

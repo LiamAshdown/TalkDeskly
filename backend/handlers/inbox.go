@@ -46,9 +46,10 @@ type InboxHandler struct {
 	securityContext interfaces.SecurityContext
 	dispatcher      interfaces.Dispatcher
 	logger          interfaces.Logger
+	langContext     interfaces.LanguageContext
 }
 
-func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger) *InboxHandler {
+func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext) *InboxHandler {
 	handlerLogger := logger.Named("inbox_handler")
 	return &InboxHandler{
 		repo:            repo,
@@ -56,6 +57,7 @@ func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.Us
 		securityContext: securityContext,
 		dispatcher:      dispatcher,
 		logger:          handlerLogger,
+		langContext:     langContext,
 	}
 }
 
@@ -65,10 +67,10 @@ func (h *InboxHandler) HandleGetInbox(c *fiber.Ctx) error {
 
 	inbox, err := h.repo.GetInboxByIDAndCompanyID(inboxID, *user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusNotFound, "inbox_not_found", err)
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "inbox_not_found"), err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "inbox_found", inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_found"), inbox.ToResponse())
 }
 
 func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
@@ -76,7 +78,7 @@ func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
 
 	inboxes, err := h.repo.GetInboxesByCompanyID(*user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_list_inboxes", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_list_inboxes"), err)
 	}
 
 	responses := make([]interface{}, len(inboxes))
@@ -84,13 +86,13 @@ func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
 		responses[i] = inbox.ToResponse()
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "inboxes_listed", responses)
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inboxes_listed"), responses)
 }
 
 func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 	var input CreateInboxInput
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	if err := utils.ValidateStruct(input); err != nil {
@@ -112,12 +114,12 @@ func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 	// TODO; Implement different inbox types
 
 	if err := h.repo.CreateInbox(&inbox); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_create_inbox", err.Error())
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_inbox"), err.Error())
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxCreated, &inbox)
 
-	return utils.SuccessResponse(c, fiber.StatusCreated, "inbox_created", inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "inbox_created"), inbox.ToResponse())
 }
 
 func (h *InboxHandler) UpdateInboxUsers(tx *gorm.DB, inbox *models.Inbox, newUserIDs []string, companyID string) ([]string, error) {
@@ -161,7 +163,7 @@ func (h *InboxHandler) UpdateInboxUsers(tx *gorm.DB, inbox *models.Inbox, newUse
 func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 	var input UpdateInboxInput
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	if err := utils.ValidateStruct(input); err != nil {
@@ -172,7 +174,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 
 	inbox, err := h.repo.GetInboxByIDAndCompanyID(input.ID, *user.User.CompanyID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusNotFound, "inbox_not_found", err)
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "inbox_not_found"), err)
 	}
 
 	// Update inbox fields
@@ -198,7 +200,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 		}
 		return tx.Save(inbox).Error
 	}); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_inbox", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_inbox"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &types.InboxUpdatedPayload{
@@ -206,7 +208,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 		RemovedUserIDs: removedUserIDs,
 	})
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "inbox_updated", inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_updated"), inbox.ToResponse())
 }
 
 func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
@@ -214,10 +216,10 @@ func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
 	if err := h.repo.DeleteInboxByIDAndCompanyID(inboxID, *user.User.CompanyID); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_delete_inbox", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_inbox"), err)
 	}
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "inbox_deleted", nil)
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_deleted"), nil)
 }
 
 func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
@@ -228,7 +230,7 @@ func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 		AgentIDs []string `json:"agent_ids"`
 	}
 	if err := c.BodyParser(&input); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusBadRequest, "bad_request", err)
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
 	}
 
 	// Ensure current user is always included and get unique IDs
@@ -250,14 +252,14 @@ func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 		removedUserIDs, err = h.UpdateInboxUsers(tx, inbox, input.AgentIDs, *user.User.CompanyID)
 		return err
 	}); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_inbox_users", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_inbox_users"), err)
 	}
 
 	// Reload inbox with users
 	var err error
 	inbox, err = h.repo.GetInboxByID(inboxID)
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_reload_inbox", err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, map[string]interface{}{
@@ -265,5 +267,5 @@ func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 		"removed_user_ids": removedUserIDs,
 	})
 
-	return utils.SuccessResponse(c, fiber.StatusOK, "inbox_users_updated", inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_users_updated"), inbox.ToResponse())
 }

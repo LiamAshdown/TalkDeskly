@@ -149,11 +149,20 @@ export interface Message {
   timestamp: string;
 }
 
+export interface Agent {
+  id: string;
+  name: string;
+}
+
 export interface Conversation {
   inboxId: string;
   conversationId: string;
   status: ConversationStatus;
   messages: Message[];
+  assignedTo?: {
+    id: string;
+    name: string;
+  };
   contact: {
     id: string;
     name: string;

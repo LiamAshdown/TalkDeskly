@@ -9,9 +9,10 @@ import (
 )
 
 type AuthenticatedUser struct {
-	ID    string
-	Token string
-	User  *models.User
+	ID       string
+	Token    string
+	Language string
+	User     *models.User
 }
 
 func GetAuthUser(c *fiber.Ctx) *AuthenticatedUser {
