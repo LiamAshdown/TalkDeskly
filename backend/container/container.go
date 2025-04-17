@@ -168,6 +168,15 @@ func (c *DIContainer) GetConfig() config.Config {
 	return cfg
 }
 
+// GetWebSocketHandler retrieves the websocket handler
+func (c *DIContainer) GetWebSocketHandler() interfaces.WebSocketHandlerInterface {
+	var handler interfaces.WebSocketHandlerInterface
+	c.dig.Invoke(func(h interfaces.WebSocketHandlerInterface) {
+		handler = h
+	})
+	return handler
+}
+
 // GetDig returns the underlying dig container
 func (c *DIContainer) GetDig() *dig.Container {
 	return c.dig

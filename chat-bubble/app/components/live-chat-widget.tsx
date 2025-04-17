@@ -17,19 +17,13 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { useConversationStore } from "~/stores/conversation";
+import { useChatState } from "~/stores/chat-state";
 
 export function LiveChatWidget() {
-  const { conversation } = useConversationStore();
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const [isConversationEnded, setIsConversationEnded] = useState(false);
-  const [showEndDialog, setShowEndDialog] = useState(false);
-  const [conversationStarted, setConversationStarted] = useState(false);
+  const { conversation, endConversation } = useConversationStore();
+  const [chatState, dispatch] = useChatState();
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(1);
-  const [hasNewMessage, setHasNewMessage] = useState(true);
   const { wsService } = useWebSocket();
   const wsServiceConnected = useRef(false);
 
@@ -43,20 +37,19 @@ export function LiveChatWidget() {
 
   // Reset unread count when chat is opened
   useEffect(() => {
-    if (isOpen) {
-      setUnreadCount(0);
-      setHasNewMessage(false);
+    if (chatState.isOpen) {
+      dispatch({ type: "UPDATE_UNREAD", count: 0 });
+      dispatch({ type: "NEW_MESSAGE", hasNew: false });
     }
 
     if (conversation) {
-      // wsService.getConversationById(conversation.conversationId);
-      setConversationStarted(true);
+      wsService.getConversationById(conversation.conversationId);
+      dispatch({ type: "START_CONVERSATION" });
     }
-  }, [isOpen]);
+  }, [chatState.isOpen]);
 
   const startConversation = () => {
-    setConversationStarted(true);
-
+    dispatch({ type: "START_CONVERSATION" });
     wsService.sendCreateConversation();
   };
 
@@ -77,7 +70,8 @@ export function LiveChatWidget() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newMessage.trim() || isConversationEnded || !conversation) return;
+    if (!newMessage.trim() || chatState.isConversationEnded || !conversation)
+      return;
 
     wsService.sendMessage(conversation.conversationId, newMessage);
     wsService.stopTyping(conversation.conversationId);
@@ -85,28 +79,30 @@ export function LiveChatWidget() {
   };
 
   const toggleFullScreen = () => {
-    setIsFullScreen(!isFullScreen);
+    dispatch({ type: "TOGGLE_FULLSCREEN" });
   };
 
   const handleEndConversation = () => {
-    setShowEndDialog(true);
+    dispatch({ type: "OPEN_END_DIALOG" });
   };
 
-  const confirmEndConversation = () => {};
+  const confirmEndConversation = () => {
+    wsService.closeConversation(conversation?.conversationId || "");
+    endConversation();
+    dispatch({ type: "END_CONVERSATION" });
+  };
 
   const startNewConversation = () => {};
 
   const resetChat = () => {
-    setIsOpen(false);
-    setConversationStarted(false);
-    setIsConversationEnded(false);
+    dispatch({ type: "RESET_CHAT" });
   };
 
   return (
     <>
       {/* Floating chat bubble */}
       <AnimatePresence>
-        {!isOpen && (
+        {!chatState.isOpen && (
           <motion.div
             className="fixed bottom-4 right-4 z-50"
             initial={{ scale: 0.8, opacity: 0 }}
@@ -120,7 +116,7 @@ export function LiveChatWidget() {
           >
             <motion.div
               animate={
-                hasNewMessage
+                chatState.hasNewMessage
                   ? {
                       scale: [1, 1.1, 1],
                       rotate: [0, -5, 5, -5, 0],
@@ -129,17 +125,17 @@ export function LiveChatWidget() {
               }
               transition={{
                 duration: 0.5,
-                repeat: hasNewMessage ? 3 : 0,
+                repeat: chatState.hasNewMessage ? 3 : 0,
                 repeatType: "loop",
                 repeatDelay: 2,
               }}
             >
               <Button
-                onClick={() => setIsOpen(true)}
+                onClick={() => dispatch({ type: "TOGGLE_CHAT", payload: true })}
                 className="h-14 w-14 rounded-full shadow-lg flex items-center justify-center bg-primary hover:bg-primary/90"
               >
                 <MessageCircle className="h-6 w-6" />
-                {unreadCount > 0 && (
+                {chatState.unreadCount > 0 && (
                   <motion.span
                     className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground"
                     initial={{ scale: 0 }}
@@ -150,7 +146,7 @@ export function LiveChatWidget() {
                       damping: 15,
                     }}
                   >
-                    {unreadCount}
+                    {chatState.unreadCount}
                   </motion.span>
                 )}
               </Button>
@@ -161,11 +157,11 @@ export function LiveChatWidget() {
 
       {/* Chat window */}
       <AnimatePresence>
-        {isOpen && (
+        {chatState.isOpen && (
           <motion.div
             className={cn(
               "fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-xl",
-              isFullScreen
+              chatState.isFullScreen
                 ? "inset-4 md:inset-6 lg:inset-8"
                 : "bottom-4 right-4 h-[500px] w-[350px]"
             )}
@@ -178,17 +174,18 @@ export function LiveChatWidget() {
               damping: 25,
             }}
           >
-            {!conversationStarted ? (
+            {!chatState.conversationStarted ? (
               <WelcomeScreen
                 onClose={resetChat}
                 onStartConversation={startConversation}
               />
             ) : (
               <ChatWindow
-                isFullScreen={isFullScreen}
-                isConversationEnded={isConversationEnded}
+                isFullScreen={chatState.isFullScreen}
+                isConversationEnded={chatState.isConversationEnded}
                 messages={conversation?.messages || []}
                 newMessage={newMessage}
+                status={conversation?.status || ""}
                 onToggleFullScreen={toggleFullScreen}
                 onEndConversation={handleEndConversation}
                 onStartNewConversation={startNewConversation}
@@ -202,7 +199,12 @@ export function LiveChatWidget() {
       </AnimatePresence>
 
       {/* End Conversation Confirmation Dialog */}
-      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+      <AlertDialog
+        open={chatState.showEndDialog}
+        onOpenChange={(open) =>
+          dispatch({ type: open ? "OPEN_END_DIALOG" : "CLOSE_END_DIALOG" })
+        }
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>End Conversation</AlertDialogTitle>
@@ -221,12 +223,4 @@ export function LiveChatWidget() {
       </AlertDialog>
     </>
   );
-}
-
-// Helper function to format time
-function formatTime(date: Date): string {
-  const hours = date.getHours() % 12 || 12;
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = date.getHours() >= 12 ? "PM" : "AM";
-  return `${hours}:${minutes} ${ampm}`;
 }

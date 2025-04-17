@@ -6,9 +6,13 @@ import EmojiPicker from "@/components/protected/emoji-picker";
 
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
+  disabled?: boolean;
 }
 
-export default function MessageInput({ onSendMessage }: MessageInputProps) {
+export default function MessageInput({
+  onSendMessage,
+  disabled,
+}: MessageInputProps) {
   const [newMessage, setNewMessage] = useState("");
   const messageInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +51,10 @@ export default function MessageInput({ onSendMessage }: MessageInputProps) {
           className="flex-1"
         />
         <EmojiPicker onEmojiSelect={handleEmojiSelect} />
-        <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
+        <Button
+          onClick={handleSendMessage}
+          disabled={!newMessage.trim() || disabled}
+        >
           <Send className="h-4 w-4 mr-2" />
           <span className="hidden sm:inline">Send</span>
         </Button>

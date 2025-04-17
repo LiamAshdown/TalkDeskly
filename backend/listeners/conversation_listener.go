@@ -5,15 +5,19 @@ import (
 	"live-chat-server/models"
 	"live-chat-server/types"
 	"live-chat-server/websocket"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type ConversationListener struct {
 	dispatcher interfaces.Dispatcher
+	wsHandler  *websocket.WebSocketHandler
 }
 
-func NewConversationListener(dispatcher interfaces.Dispatcher) *ConversationListener {
+func NewConversationListener(dispatcher interfaces.Dispatcher, wsHandler *websocket.WebSocketHandler) *ConversationListener {
 	listener := &ConversationListener{
 		dispatcher: dispatcher,
+		wsHandler:  wsHandler,
 	}
 	listener.subscribe()
 	return listener
@@ -26,18 +30,19 @@ func (l *ConversationListener) subscribe() {
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationTyping, l.HandleConversationTyping)
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationTypingStop, l.HandleConversationTypingStop)
 	l.dispatcher.Subscribe(interfaces.EventTypeConversationAssign, l.HandleConversationAssign)
+	l.dispatcher.Subscribe(interfaces.EventTypeConversationClose, l.HandleConversationClose)
 }
 
 func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		websocket.BroadcastConversationStart(conversation)
+		l.wsHandler.BroadcastConversationStart(conversation)
 	}
 }
 
 func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		websocket.BroadcastConversationSendMessage(conversation)
-		websocket.BroadcastConversationUpdate(conversation)
+		l.wsHandler.BroadcastConversationSendMessage(conversation)
+		l.wsHandler.BroadcastConversationUpdate(conversation)
 	}
 }
 
@@ -45,7 +50,7 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 	if payload, ok := event.Payload.(map[string]interface{}); ok {
 		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
 			if client, ok := payload["client"].(*types.WebSocketClient); ok {
-				websocket.BroadcastConversationGetByID(conversation, client)
+				l.wsHandler.BroadcastConversationGetByID(conversation, client)
 			}
 		}
 	}
@@ -53,18 +58,33 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 
 func (l *ConversationListener) HandleConversationTyping(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		websocket.BroadcastConversationTyping(conversation)
+		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTyping, map[string]interface{}{
+			"conversation_id": conversation.ID,
+		})
 	}
 }
 
 func (l *ConversationListener) HandleConversationTypingStop(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		websocket.BroadcastConversationTypingStop(conversation)
+		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTypingStop, map[string]interface{}{
+			"conversation_id": conversation.ID,
+		})
 	}
 }
 
 func (l *ConversationListener) HandleConversationAssign(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		websocket.BroadcastConversationUpdate(conversation)
+		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, conversation.ToPayload())
+	}
+}
+
+func (l *ConversationListener) HandleConversationClose(event interfaces.Event) {
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		l.wsHandler.BroadcastToCompanyAgents(conversation.InboxID, types.EventTypeConversationClose, conversation.ToPayload())
+
+		l.wsHandler.BroadcastToContact(conversation.ContactID, types.EventTypeConversationClose, fiber.Map{
+			"conversation_id": conversation.ID,
+			"status":          string(conversation.Status),
+		})
 	}
 }

@@ -11,34 +11,46 @@ import (
 	"github.com/gofiber/websocket/v2"
 )
 
-var (
-	instance *Manager
-)
+// WebSocketHandler handles WebSocket connections and operations
+type WebSocketHandler struct {
+	manager *Manager
+	logger  interfaces.Logger
+}
 
-func Init(wsService interfaces.WebSocketService, logger interfaces.Logger) {
+// NewWebSocketHandler creates a new WebSocketHandler with dependencies
+func NewWebSocketHandler(wsService interfaces.WebSocketService, logger interfaces.Logger) *WebSocketHandler {
 	logger.Info("Initializing WebSocket manager...")
 	// Start the WebSocket manager
-	instance = NewManager(wsService)
-	go instance.Run()
+	manager := NewManager(wsService)
+	go manager.Run()
 
 	// Register middlewares
 	RegisterMiddleware(ConversationIDMiddleware)
 
 	logger.Info("WebSocket manager started")
+	return &WebSocketHandler{
+		manager: manager,
+		logger:  logger,
+	}
 }
 
 // GetManager returns the WebSocket manager instance
-func GetManager() *Manager {
-	return instance
+func (h *WebSocketHandler) GetManager() *Manager {
+	return h.manager
+}
+
+// GetManagerInterface returns the WebSocket manager instance as an interface
+func (h *WebSocketHandler) GetManagerInterface() interface{} {
+	return h.manager
 }
 
 // Broadcast sends a message to the broadcast channel
-func Broadcast(msg *types.WebSocketMessage) {
-	instance.broadcast <- msg
+func (h *WebSocketHandler) Broadcast(msg *types.WebSocketMessage) {
+	h.manager.broadcast <- msg
 }
 
 // HandleWebSocket upgrades the connection to WebSocket and handles the connection
-func HandleWebSocket(c *fiber.Ctx) error {
+func (h *WebSocketHandler) HandleWebSocket(c *fiber.Ctx) error {
 	log.Println("New WebSocket connection request")
 
 	// IsWebSocketUpgrade returns true if the client requested upgrade to the WebSocket protocol
@@ -75,21 +87,14 @@ func HandleWebSocket(c *fiber.Ctx) error {
 
 		log.Printf("New WebSocket connection established for user %s of type %s", userID, userType)
 
-		wsManager := GetManager()
-		if wsManager == nil {
-			log.Println("WebSocket manager is nil!")
-			conn.Close()
-			return
-		}
-
 		// Create new client
-		client := wsManager.HandleNewConnection(conn, userID, userType, inboxID)
+		client := h.manager.HandleNewConnection(conn, userID, userType, inboxID)
 		if client == nil {
 			log.Println("Failed to create client, closing connection")
 			conn.Close()
 			return
 		}
-		defer wsManager.RemoveClient(client)
+		defer h.manager.RemoveClient(client)
 
 		// Send a welcome message
 		if err := client.SendMessage(types.EventTypeConnectionEstablished, map[string]string{
@@ -114,7 +119,7 @@ func HandleWebSocket(c *fiber.Ctx) error {
 			msg.Timestamp = time.Now()
 
 			// Handle different event types
-			HandleMessage(client, &msg)
+			h.manager.HandleMessage(client, &msg)
 		}
 
 		log.Printf("WebSocket connection closed for user %s", userID)

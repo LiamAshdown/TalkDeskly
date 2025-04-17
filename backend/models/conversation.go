@@ -90,3 +90,7 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 		}(),
 	}
 }
+
+func (c *Conversation) IsClosed() bool {
+	return c.Status == ConversationStatusClosed
+}

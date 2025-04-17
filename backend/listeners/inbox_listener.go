@@ -9,11 +9,13 @@ import (
 
 type InboxListener struct {
 	dispatcher interfaces.Dispatcher
+	wsHandler  *websocket.WebSocketHandler
 }
 
-func NewInboxListener(dispatcher interfaces.Dispatcher) *InboxListener {
+func NewInboxListener(dispatcher interfaces.Dispatcher, wsHandler *websocket.WebSocketHandler) *InboxListener {
 	listener := &InboxListener{
 		dispatcher: dispatcher,
+		wsHandler:  wsHandler,
 	}
 	listener.subscribe()
 	return listener
@@ -27,17 +29,17 @@ func (l *InboxListener) subscribe() {
 
 func (l *InboxListener) HandleInboxCreated(event interfaces.Event) {
 	if inbox, ok := event.Payload.(*models.Inbox); ok {
-		websocket.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxCreated, inbox.ToPayload())
+		l.wsHandler.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxCreated, inbox.ToPayload())
 	}
 }
 
 func (l *InboxListener) HandleInboxUpdated(event interfaces.Event) {
 	if payload, ok := event.Payload.(*types.InboxUpdatedPayload); ok {
 		if inbox, ok := payload.Inbox.(*models.Inbox); ok {
-			websocket.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxUpdated, inbox.ToPayload())
+			l.wsHandler.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxUpdated, inbox.ToPayload())
 
 			for _, userID := range payload.RemovedUserIDs {
-				websocket.BroadcastToAgent(userID, types.EventTypeInboxDeleted, types.InboxDeletedPayload{
+				l.wsHandler.BroadcastToAgent(userID, types.EventTypeInboxDeleted, types.InboxDeletedPayload{
 					ID: inbox.ID,
 				})
 			}

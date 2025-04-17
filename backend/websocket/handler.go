@@ -23,7 +23,7 @@ func ConversationIDMiddleware(client *types.WebSocketClient, msg *types.WebSocke
 		if conversationID, ok := payload["conversation_id"].(string); ok && conversationID != "" {
 			// Update client's conversation ID
 			if client.ConversationID != conversationID {
-				log.Printf("Updating conversation ID for client %s from %s to %s", 
+				log.Printf("Updating conversation ID for client %s from %s to %s",
 					client.ID, client.ConversationID, conversationID)
 				client.SetConversationID(conversationID)
 			}
@@ -35,7 +35,7 @@ func ConversationIDMiddleware(client *types.WebSocketClient, msg *types.WebSocke
 }
 
 // HandleMessage dispatches a message to the appropriate handler with middleware support
-func HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+func (h *WebSocketHandler) HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 	// Create a middleware chain
 	var index int
 	var next func()
@@ -43,7 +43,7 @@ func HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 	next = func() {
 		// If we've executed all middlewares, call the actual handler
 		if index >= len(middlewares) {
-			executeHandler(client, msg)
+			h.executeHandler(client, msg)
 			return
 		}
 
@@ -60,10 +60,11 @@ func HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 }
 
 // executeHandler calls the actual handler for the message
-func executeHandler(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	manager := GetManager()
-	if handler, exists := manager.GetHandler(msg.Event); exists {
-		// No need to convert the client since it's already a types.WebSocketClient
-		handler.HandleMessage(client, msg)
+func (h *WebSocketHandler) executeHandler(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+	// First try to use the current handler instance
+	handler := h
+
+	if eventHandler, exists := handler.manager.GetHandler(msg.Event); exists {
+		eventHandler.HandleMessage(client, msg)
 	}
 }

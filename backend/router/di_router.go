@@ -5,7 +5,6 @@ import (
 	handler "live-chat-server/handlers"
 	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
-	"live-chat-server/websocket"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/dig"
@@ -24,6 +23,7 @@ type DIParams struct {
 	ConversationHandler *handler.ConversationHandler
 	LanguageHandler     *handler.LanguageHandler
 	WebSocketService    interfaces.WebSocketService
+	WebSocketHandler    interfaces.WebSocketHandlerInterface
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -31,7 +31,7 @@ func SetupRoutesWithDI(params DIParams) {
 	app := params.App
 
 	// WebSocket route
-	app.Get("/ws", websocket.HandleWebSocket)
+	app.Get("/ws", params.WebSocketHandler.HandleWebSocket)
 
 	// Static file route
 	app.Static("/uploads", disk.GetBasePath())
@@ -99,4 +99,5 @@ func SetupRoutesWithDI(params DIParams) {
 	conversationGroup.Get("/assignable-agents", params.ConversationHandler.HandleGetAssignableAgents)
 	conversationGroup.Get("/:id", params.ConversationHandler.HandleGetConversation)
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)
+	conversationGroup.Post("/:id/close", params.ConversationHandler.HandleCloseConversation)
 }

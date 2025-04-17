@@ -134,6 +134,13 @@ export class WebSocketService {
     this.send(message);
   }
 
+  public closeConversation(conversationId: string) {
+    const message = this.createWebSocketMessage("conversation_close", {
+      conversationId,
+    });
+    this.send(message);
+  }
+
   private send(message: WebSocketMessage) {
     switch (this.ws?.readyState) {
       case WebSocket.OPEN:

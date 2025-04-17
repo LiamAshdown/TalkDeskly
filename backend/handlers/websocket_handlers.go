@@ -44,6 +44,10 @@ func NewConversationEventHandler(handler *ConversationHandler, eventType types.E
 		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
 			handler.WSHandleConversationTypingStop(client, msg)
 		}
+	case types.EventTypeConversationClose:
+		handlerFunc = func(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+			handler.WSHandleCloseConversation(client, msg)
+		}
 	}
 
 	return &ConversationHandlerWrapper{handlerFunc: handlerFunc}
@@ -69,6 +73,7 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 		types.EventTypeConversationGetByID,
 		types.EventTypeConversationTyping,
 		types.EventTypeConversationTypingStop,
+		types.EventTypeConversationClose,
 	}
 
 	for _, eventType := range eventTypes {

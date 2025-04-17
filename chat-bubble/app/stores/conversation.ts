@@ -6,8 +6,10 @@ import type { Conversation, Message } from "~/types/conversation";
 interface ConversationState {
   conversation: Conversation | null;
   setConversation: (conversation: Conversation) => void;
+  setStatus: (status: string) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
+  endConversation: () => void;
 }
 
 export const useConversationStore = create<ConversationState>()(
@@ -16,6 +18,15 @@ export const useConversationStore = create<ConversationState>()(
       conversation: null,
       setConversation: (conversation: Conversation) => {
         set({ conversation });
+      },
+      setStatus: (status: string) => {
+        set(
+          produce((state: ConversationState) => {
+            if (state.conversation) {
+              state.conversation.status = status;
+            }
+          })
+        );
       },
       setMessages: (messages: Message[]) => {
         set(
@@ -26,6 +37,7 @@ export const useConversationStore = create<ConversationState>()(
           })
         );
       },
+
       addMessage: (message: Message) => {
         set(
           produce((state: ConversationState) => {
@@ -34,6 +46,9 @@ export const useConversationStore = create<ConversationState>()(
             }
           })
         );
+      },
+      endConversation: () => {
+        set({ conversation: null });
       },
     }),
     {

@@ -12,11 +12,12 @@ type WebSocketConn = websocket.Conn
 // WebSocketClient represents a connected WebSocket client
 type WebSocketClient struct {
 	Conn           *WebSocketConn
-	ID             string   // User ID or Contact ID
-	Type           string   // "agent" or "contact"
-	ConversationID string   // Current conversation ID
-	CompanyID      string   // Company ID for the agent
-	InboxIDs       []string // List of inbox IDs the agent or contact has access to
+	ID             string                 // User ID or Contact ID
+	Type           string                 // "agent" or "contact"
+	ConversationID string                 // Current conversation ID
+	CompanyID      string                 // Company ID for the agent
+	InboxIDs       []string               // List of inbox IDs the agent or contact has access to
+	Locals         map[string]interface{} // Store local context data
 	mu             sync.Mutex
 }
 

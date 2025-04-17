@@ -33,4 +33,12 @@ export const conversationService = {
     );
     return response.data;
   },
+  async closeConversation(
+    conversationId: string
+  ): Promise<APIResponse<Conversation>> {
+    const response = await apiClient.post<APIResponse<Conversation>>(
+      `/conversations/${conversationId}/close`
+    );
+    return response.data;
+  },
 };

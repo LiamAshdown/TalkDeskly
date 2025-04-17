@@ -3,17 +3,24 @@ package websocket
 import (
 	"live-chat-server/models"
 	"live-chat-server/types"
+	"time"
 )
 
-// BroadcastConversationCreated broadcasts a conversation creation event to all agents in the inbox
-func BroadcastConversationStart(conversation *models.Conversation) {
+// BroadcastConversationStart broadcasts a conversation creation event to all agents in the inbox
+func (h *WebSocketHandler) BroadcastConversationStart(conversation *models.Conversation) {
 	payload := conversation.ToPayload()
 
-	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationStart, payload)
-	BroadcastToContact(conversation.ContactID, types.EventTypeConversationStart, payload)
+	message := &types.WebSocketMessage{
+		Event:     types.EventTypeConversationStart,
+		Payload:   payload,
+		Timestamp: time.Now(),
+	}
+
+	h.manager.BroadcastToInboxAgents(conversation.InboxID, message)
+	h.manager.BroadcastToContact(conversation.ContactID, message)
 }
 
-func BroadcastConversationSendMessage(conversation *models.Conversation) {
+func (h *WebSocketHandler) BroadcastConversationSendMessage(conversation *models.Conversation) {
 	message := conversation.Messages[len(conversation.Messages)-1]
 
 	var sender *types.Sender = nil
@@ -45,34 +52,62 @@ func BroadcastConversationSendMessage(conversation *models.Conversation) {
 		Timestamp:      message.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 
-	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationSendMessage, payload)
-	BroadcastToContact(conversation.ContactID, types.EventTypeConversationSendMessage, payload)
+	wsMessage := &types.WebSocketMessage{
+		Event:     types.EventTypeConversationSendMessage,
+		Payload:   payload,
+		Timestamp: time.Now(),
+	}
+
+	h.manager.BroadcastToInboxAgents(conversation.InboxID, wsMessage)
+	h.manager.BroadcastToContact(conversation.ContactID, wsMessage)
 }
 
-func BroadcastConversationUpdate(conversation *models.Conversation) {
+func (h *WebSocketHandler) BroadcastConversationUpdate(conversation *models.Conversation) {
 	payload := conversation.ToPayload()
 
-	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, payload)
-	BroadcastToContact(conversation.ContactID, types.EventTypeConversationUpdate, payload)
+	message := &types.WebSocketMessage{
+		Event:     types.EventTypeConversationUpdate,
+		Payload:   payload,
+		Timestamp: time.Now(),
+	}
+
+	h.manager.BroadcastToInboxAgents(conversation.InboxID, message)
+	h.manager.BroadcastToContact(conversation.ContactID, message)
 }
 
-func BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
+func (h *WebSocketHandler) BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
 	payload := conversation.ToPayload()
+	message := &types.WebSocketMessage{
+		Event:     types.EventTypeConversationGetByID,
+		Payload:   payload,
+		Timestamp: time.Now(),
+	}
+
 	if client.GetType() == string(types.SenderTypeContact) {
-		BroadcastToContact(conversation.ContactID, types.EventTypeConversationGetByID, payload)
+		h.manager.BroadcastToContact(conversation.ContactID, message)
 	} else {
-		BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationGetByID, payload)
+		h.manager.BroadcastToInboxAgents(conversation.InboxID, message)
 	}
 }
 
-func BroadcastConversationTyping(conversation *models.Conversation) {
-	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTyping, map[string]interface{}{
-		"conversation_id": conversation.ID,
-	})
+func (h *WebSocketHandler) BroadcastConversationTyping(conversation *models.Conversation) {
+	message := &types.WebSocketMessage{
+		Event: types.EventTypeConversationTyping,
+		Payload: map[string]interface{}{
+			"conversation_id": conversation.ID,
+		},
+		Timestamp: time.Now(),
+	}
+	h.manager.BroadcastToInboxAgents(conversation.InboxID, message)
 }
 
-func BroadcastConversationTypingStop(conversation *models.Conversation) {
-	BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTypingStop, map[string]interface{}{
-		"conversation_id": conversation.ID,
-	})
+func (h *WebSocketHandler) BroadcastConversationTypingStop(conversation *models.Conversation) {
+	message := &types.WebSocketMessage{
+		Event: types.EventTypeConversationTypingStop,
+		Payload: map[string]interface{}{
+			"conversation_id": conversation.ID,
+		},
+		Timestamp: time.Now(),
+	}
+	h.manager.BroadcastToInboxAgents(conversation.InboxID, message)
 }

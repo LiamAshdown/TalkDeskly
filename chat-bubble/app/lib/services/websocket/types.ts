@@ -15,6 +15,7 @@ export type EventType =
   | "conversation_typing_stop"
   | "conversation_send_message"
   | "conversation_get_by_id"
+  | "conversation_close"
   | "agent_assigned"
   | "contact_updated"
   | "contact_created"

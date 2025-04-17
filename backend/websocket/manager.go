@@ -171,10 +171,18 @@ func (m *Manager) BroadcastToConversation(conversationID string, message *types.
 	}
 }
 
-// HandleNewConnection creates a new client for a WebSocket connection
+// HandleNewConnection handles a new WebSocket connection
 func (m *Manager) HandleNewConnection(c *websocket.Conn, userID, userType, inboxID string) *types.WebSocketClient {
+	// Create new client
+	client := &types.WebSocketClient{
+		Conn:   c,
+		ID:     userID,
+		Type:   userType,
+		Locals: make(map[string]interface{}),
+	}
+
 	// Use the WebSocketService to initialize the client directly
-	client := m.wsService.InitializeClient((*types.WebSocketConn)(c), userID, userType, inboxID)
+	client = m.wsService.InitializeClient((*types.WebSocketConn)(c), userID, userType, inboxID)
 	if client == nil {
 		return nil
 	}
@@ -210,11 +218,43 @@ func (m *Manager) UpdateAgentInboxAccess(userID string) {
 	}
 }
 
+// HandleMessage dispatches a message to the appropriate handler with middleware support
+func (m *Manager) HandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+	// Create a middleware chain
+	var index int
+	var next func()
+
+	next = func() {
+		// If we've executed all middlewares, call the actual handler
+		if index >= len(middlewares) {
+			m.executeHandler(client, msg)
+			return
+		}
+
+		// Get current middleware
+		middleware := middlewares[index]
+		index++
+
+		// Execute middleware
+		middleware(client, msg, next)
+	}
+
+	// Start the middleware chain
+	next()
+}
+
+// executeHandler calls the actual handler for the message
+func (m *Manager) executeHandler(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+	if eventHandler, exists := m.GetHandler(msg.Event); exists {
+		eventHandler.HandleMessage(client, msg)
+	}
+}
+
 // HandleContactDisconnection handles the disconnection of a contact
 func (m *Manager) HandleContactDisconnection(client *types.WebSocketClient) {
 	// Send a typing stop event to the agent
 	if client.ConversationID != "" {
-		HandleMessage(client, &types.WebSocketMessage{
+		m.HandleMessage(client, &types.WebSocketMessage{
 			Event:   types.EventTypeConversationTypingStop,
 			Payload: map[string]string{"conversation_id": client.ConversationID},
 		})

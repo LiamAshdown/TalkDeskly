@@ -18,11 +18,12 @@ const (
 	EventTypeConversationUpdate      EventType = "conversation_update"
 	EventTypeConversationTyping      EventType = "conversation_typing"
 	EventTypeConversationTypingStop  EventType = "conversation_typing_stop"
+	EventTypeConversationClose       EventType = "conversation_close"
 
 	// Contact events
-	EventTypeContactUpdated EventType = "contact_updated"
-	EventTypeContactCreated EventType = "contact_created"
-	EventTypeContactDeleted EventType = "contact_deleted"
+	EventTypeContactUpdated     EventType = "contact_updated"
+	EventTypeContactCreated     EventType = "contact_created"
+	EventTypeContactDeleted     EventType = "contact_deleted"
 	EventTypeContactNoteCreated EventType = "contact_note_created"
 	// Inbox events
 	EventTypeInboxUpdated EventType = "inbox_updated"
@@ -59,6 +60,10 @@ type IncomingMessagePayload struct {
 
 type IncomingStartConversationPayload struct {
 	InboxID string `mapstructure:"inbox_id"`
+}
+
+type IncomingCloseConversationPayload struct {
+	ConversationID string `mapstructure:"conversation_id"`
 }
 
 type IncomingSendMessagePayload struct {

@@ -220,6 +220,12 @@ func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg
 		return
 	}
 
+	// Conversation is closed
+	// Don't send message
+	if conversation.IsClosed() {
+		return
+	}
+
 	clientID := client.GetID()
 	err = h.SendMessage(
 		conversation,
@@ -289,6 +295,10 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
 	}
 
+	if conversation.AssignedToID != nil && *conversation.AssignedToID == assignedToUser.ID {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_already_assigned"), nil)
+	}
+
 	conversation.AssignedToID = &assignedToUser.ID
 	conversation.AssignedTo = assignedToUser
 
@@ -325,6 +335,25 @@ func (h *ConversationHandler) HandleGetAssignableAgents(c *fiber.Ctx) error {
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "agents_retrieved"), payload)
 }
 
+func (h *ConversationHandler) handleCloseConversation(id string) (*models.Conversation, error) {
+	conversation, err := h.repo.GetConversationByID(id, "Contact", "Inbox", "AssignedTo")
+	if err != nil {
+		return nil, err
+	}
+
+	conversation.Status = models.ConversationStatusClosed
+
+	if err := h.repo.UpdateConversation(conversation); err != nil {
+		return nil, err
+	}
+
+	h.SendSystemMessage(conversation, "This conversation has been closed.")
+
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationClose, conversation)
+
+	return conversation, nil
+}
+
 func (h *ConversationHandler) HandleCloseConversation(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -332,18 +361,19 @@ func (h *ConversationHandler) HandleCloseConversation(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_id_is_required"), nil)
 	}
 
-	conversation, err := h.repo.GetConversationByID(id, "Contact", "Inbox", "AssignedTo")
+	conversation, err := h.handleCloseConversation(id)
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
 	}
 
-	conversation.Status = models.ConversationStatusClosed
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_closed"), conversation.ToPayload())
+}
 
-	if err := h.repo.UpdateConversation(conversation); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_conversation"), err)
+func (h *ConversationHandler) WSHandleCloseConversation(client *types.WebSocketClient, msg *types.WebSocketMessage) {
+	var payload types.IncomingCloseConversationPayload
+	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
+		return
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationClose, conversation)
-
-	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_closed"), conversation.ToPayload())
+	h.handleCloseConversation(payload.ConversationID)
 }

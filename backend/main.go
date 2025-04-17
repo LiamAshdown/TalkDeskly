@@ -34,13 +34,16 @@ func main() {
 	// Apply i18n middleware to detect language from request headers
 	app.Use(i18n.Middleware(c.GetI18n()))
 
-	// For backwards compatibility during transition
-	websocket.Init(c.GetWebSocketService(), c.GetLogger())
-	handler.InitWebSocketHandlers(websocket.GetManager(), c)
+	// Get WebSocketHandler from container
+	wsHandler := c.GetWebSocketHandler().(*websocket.WebSocketHandler)
 
-	listeners.NewContactListener(c.GetDispatcher())
-	listeners.NewInboxListener(c.GetDispatcher())
-	listeners.NewConversationListener(c.GetDispatcher())
+	// Initialize WebSocket handlers
+	handler.InitWebSocketHandlers(wsHandler.GetManager(), c)
+
+	// Initialize listeners with WebSocketHandler
+	listeners.NewContactListener(c.GetDispatcher(), wsHandler)
+	listeners.NewInboxListener(c.GetDispatcher(), wsHandler)
+	listeners.NewConversationListener(c.GetDispatcher(), wsHandler)
 
 	// Start the job server
 	container.StartJobServer(c)

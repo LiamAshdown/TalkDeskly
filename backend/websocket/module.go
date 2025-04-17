@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"live-chat-server/factory"
+	"live-chat-server/interfaces"
 	"log"
 
 	"go.uber.org/dig"
@@ -14,8 +15,10 @@ func RegisterWebSocketServices(container *dig.Container) {
 		log.Fatalf("Failed to provide websocket service: %v", err)
 	}
 
-	// WebSocket manager
-	if err := container.Provide(GetManager); err != nil {
-		log.Fatalf("Failed to provide websocket manager: %v", err)
+	// WebSocket handler
+	if err := container.Provide(func(s interfaces.WebSocketService, l interfaces.Logger) interfaces.WebSocketHandlerInterface {
+		return NewWebSocketHandler(s, l)
+	}); err != nil {
+		log.Fatalf("Failed to provide WebSocketHandler: %v", err)
 	}
 }

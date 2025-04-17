@@ -9,6 +9,7 @@ interface ChatWindowProps {
   isConversationEnded: boolean;
   messages: Message[];
   newMessage: string;
+  status: string;
   onToggleFullScreen: () => void;
   onEndConversation: () => void;
   onStartNewConversation: () => void;
@@ -22,6 +23,7 @@ export function ChatWindow({
   isConversationEnded,
   messages,
   newMessage,
+  status,
   onToggleFullScreen,
   onEndConversation,
   onStartNewConversation,
@@ -55,6 +57,7 @@ export function ChatWindow({
             value={newMessage}
             onChange={onNewMessageChange}
             onSubmit={onSendMessage}
+            disabled={isConversationEnded || status === "closed"}
           />
         )}
       </div>

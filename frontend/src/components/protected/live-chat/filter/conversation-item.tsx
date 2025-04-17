@@ -70,8 +70,8 @@ function ConversationItem({
     );
   };
 
-  const handleCloseConversation = () => {
-    console.log(`Closing conversation ${conversation.conversationId}`);
+  const handleCloseConversation = async () => {
+    await conversationService.closeConversation(conversation.conversationId);
   };
 
   return (
