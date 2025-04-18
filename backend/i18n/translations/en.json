@@ -89,5 +89,7 @@
   "failed_to_close_conversation": "Failed to close conversation",
   "conversation_reopened": "Conversation reopened successfully",
   "failed_to_reopen_conversation": "Failed to reopen conversation",
-  "conversation_already_assigned": "Conversation already assigned"
+  "conversation_already_assigned": "Conversation already assigned",
+
+  "missing_required_fields": "Missing required fields"
 }

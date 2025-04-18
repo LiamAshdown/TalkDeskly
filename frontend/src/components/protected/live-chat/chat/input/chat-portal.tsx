@@ -8,6 +8,8 @@ import type { Agent } from "@/components/protected/live-chat/chat/input/types";
 import { useActiveConversation } from "@/context/active-conversation-context";
 import { Conversation } from "@/lib/interfaces";
 import { useWebSocket } from "@/context/websocket-context";
+import { conversationService } from "@/lib/api/services/conversations";
+import { useAuthStore } from "@/stores/auth";
 
 // Sample agent data - in a real app, this would come from your API
 const agents: Agent[] = [
@@ -49,20 +51,22 @@ export default function ChatPortal({
 }: ChatPortalProps) {
   const [activeTab, setActiveTab] = useState("customer");
   const { wsService } = useWebSocket();
+  const { user } = useAuthStore();
 
   // Handle sending customer message
-  const handleSendCustomerMessage = (
-    message: string,
-    files: FileWithPreview[]
-  ) => {
+  const handleSendCustomerMessage = async (message: string, files: File[]) => {
+    await conversationService.sendMessageAttachment(
+      conversation?.conversationId,
+      "agent",
+      user!.id,
+      files
+    );
+
     wsService.sendMessage(conversation?.conversationId, message, false);
   };
 
   // Handle sending private note
-  const handleSendPrivateNote = async (
-    message: string,
-    files: FileWithPreview[]
-  ) => {
+  const handleSendPrivateNote = async (message: string, files: File[]) => {
     wsService.sendMessage(conversation?.conversationId, message, true);
   };
 

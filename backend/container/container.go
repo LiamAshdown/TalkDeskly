@@ -177,6 +177,15 @@ func (c *DIContainer) GetWebSocketHandler() interfaces.WebSocketHandlerInterface
 	return handler
 }
 
+// GetUploadService retrieves the upload service
+func (c *DIContainer) GetUploadService() interfaces.UploadService {
+	var service interfaces.UploadService
+	c.dig.Invoke(func(s interfaces.UploadService) {
+		service = s
+	})
+	return service
+}
+
 // GetDig returns the underlying dig container
 func (c *DIContainer) GetDig() *dig.Container {
 	return c.dig

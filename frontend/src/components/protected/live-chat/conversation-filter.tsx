@@ -9,6 +9,7 @@ import ConversationList from "@/components/protected/live-chat/filter/conversati
 import { useActiveConversation } from "@/context/active-conversation-context";
 import { conversationService } from "@/lib/api/services/conversations";
 import { useMobileView } from "@/context/mobile-view-context";
+import { useAuthStore } from "@/stores/auth";
 
 interface ConversationFilterProps {
   conversations: Conversation[];
@@ -30,12 +31,17 @@ export default function ConversationFilter({
   const [activeTab, setActiveTab] = useState("all");
   const [filteredConversations, setFilteredConversations] =
     useState<Conversation[]>(conversations);
+  const { user } = useAuthStore();
 
   // Function to handle conversation assignment
   const handleAssignConversation = (
     conversationId: string,
     agentId: string
   ) => {
+    if (agentId === "current-user") {
+      agentId = user!.id;
+    }
+
     conversationService.assignConversation(conversationId, agentId);
   };
 

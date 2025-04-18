@@ -28,11 +28,11 @@ type Storage interface {
 
 // Config holds configuration for storage
 type Config struct {
-	Type       StorageType
-	BasePath   string
-	S3Client   interface{}
-	S3Bucket   string
-	S3Prefix   string
+	Type     StorageType
+	BasePath string
+	S3Client interface{}
+	S3Bucket string
+	S3Prefix string
 }
 
 // Manager interface defines methods for managing storage
@@ -42,13 +42,13 @@ type Manager interface {
 	// CreateStorage creates a new storage adapter
 	CreateStorage(config Config) error
 	// Store stores a file
-	Store(fileType string, filename string, reader io.Reader) (string, error)
+	Store(path string, reader io.Reader) (string, error)
 	// Get retrieves a file
-	Get(fileType string, filename string) (io.ReadCloser, error)
+	Get(path string) (io.ReadCloser, error)
 	// Delete deletes a file
-	Delete(fileType string, filename string) error
+	Delete(path string) error
 	// Exists checks if a file exists
-	Exists(fileType string, filename string) (bool, error)
+	Exists(path string) (bool, error)
 	// GetBasePath returns the base path
 	GetBasePath() string
-} 
+}

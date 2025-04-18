@@ -118,13 +118,13 @@ func (h *ProfileHandler) UpdateProfilePassword(c *fiber.Ctx) error {
 func (h *ProfileHandler) UpdateProfileAvatar(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
-	filename, err := fileService.UploadFile(c, "avatar", "user-avatars")
+	filename, err := imageUploadService.UploadFile(c, "avatar", "user-avatars")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, "file_upload_failed", err)
 	}
 
 	if user.User.AvatarPath != nil {
-		if err := h.diskManager.Delete("user-avatars", *user.User.AvatarPath); err != nil {
+		if err := h.diskManager.Delete(*user.User.AvatarPath); err != nil {
 			// Log the error but continue with the update
 			// The old file might have been already deleted
 		}
@@ -133,7 +133,7 @@ func (h *ProfileHandler) UpdateProfileAvatar(c *fiber.Ctx) error {
 	user.User.AvatarPath = &filename
 	if err := h.repo.UpdateUser(user.User); err != nil {
 		// Clean up the uploaded file if database update fails
-		h.diskManager.Delete("user-avatars", filename)
+		h.diskManager.Delete("user-avatars/" + filename)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_update_avatar", err)
 	}
 

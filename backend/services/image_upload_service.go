@@ -42,18 +42,18 @@ var (
 	}
 )
 
-type FileService struct {
+type ImageUploadService struct {
 	config FileUploadConfig
 }
 
-func NewFileService(config FileUploadConfig) *FileService {
-	return &FileService{
+func NewImageUploadService(config FileUploadConfig) *ImageUploadService {
+	return &ImageUploadService{
 		config: config,
 	}
 }
 
 // UploadFile uploads a file to the specified disk location
-func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string, diskLocation string) (string, error) {
+func (s *ImageUploadService) UploadFile(c *fiber.Ctx, fieldName string, diskLocation string) (string, error) {
 	// Get and validate the uploaded file
 	file, err := s.ValidateAndGetFile(c, fieldName)
 	if err != nil {
@@ -76,7 +76,7 @@ func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string, diskLocation st
 	}
 
 	// Store the processed image using the disk system
-	filePath, err := disk.Store(diskLocation, filename, buf)
+	filePath, err := disk.Store(diskLocation+"/"+filename, buf)
 	if err != nil {
 		return "", fmt.Errorf("failed to store image: %w", err)
 	}
@@ -84,7 +84,7 @@ func (s *FileService) UploadFile(c *fiber.Ctx, fieldName string, diskLocation st
 	return filePath, nil
 }
 
-func (s *FileService) ValidateAndGetFile(c *fiber.Ctx, fieldName string) (*multipart.FileHeader, error) {
+func (s *ImageUploadService) ValidateAndGetFile(c *fiber.Ctx, fieldName string) (*multipart.FileHeader, error) {
 	file, err := c.FormFile(fieldName)
 	if err != nil {
 		return nil, err
@@ -101,12 +101,12 @@ func (s *FileService) ValidateAndGetFile(c *fiber.Ctx, fieldName string) (*multi
 	return file, nil
 }
 
-func (s *FileService) GenerateOutputFilename(originalFilename string) string {
+func (s *ImageUploadService) GenerateOutputFilename(originalFilename string) string {
 	filename := utils.GenerateUniqueFilename(originalFilename)
 	return strings.TrimSuffix(filename, filepath.Ext(filename)) + "." + s.config.Format
 }
 
-func (s *FileService) ProcessImage(c *fiber.Ctx, file *multipart.FileHeader) (image.Image, error) {
+func (s *ImageUploadService) ProcessImage(c *fiber.Ctx, file *multipart.FileHeader) (image.Image, error) {
 	// Create and manage temporary file
 	tempFile, tempPath, err := s.CreateTempFile(file)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *FileService) ProcessImage(c *fiber.Ctx, file *multipart.FileHeader) (im
 	return s.DecodeImage(tempPath)
 }
 
-func (s *FileService) CreateTempFile(file *multipart.FileHeader) (*os.File, string, error) {
+func (s *ImageUploadService) CreateTempFile(file *multipart.FileHeader) (*os.File, string, error) {
 	ext := filepath.Ext(file.Filename)
 	tempFile, err := os.CreateTemp("", "upload-*"+ext)
 	if err != nil {
@@ -135,14 +135,14 @@ func (s *FileService) CreateTempFile(file *multipart.FileHeader) (*os.File, stri
 	return tempFile, tempFile.Name(), nil
 }
 
-func (s *FileService) SaveToTemp(c *fiber.Ctx, file *multipart.FileHeader, tempPath string) error {
+func (s *ImageUploadService) SaveToTemp(c *fiber.Ctx, file *multipart.FileHeader, tempPath string) error {
 	if err := c.SaveFile(file, tempPath); err != nil {
 		return fmt.Errorf("failed to save uploaded file: %w", err)
 	}
 	return nil
 }
 
-func (s *FileService) DecodeImage(tempPath string) (image.Image, error) {
+func (s *ImageUploadService) DecodeImage(tempPath string) (image.Image, error) {
 	ext := strings.ToLower(filepath.Ext(tempPath))
 	switch ext {
 	case ".webp":
@@ -152,7 +152,7 @@ func (s *FileService) DecodeImage(tempPath string) (image.Image, error) {
 	}
 }
 
-func (s *FileService) DecodeWebP(tempPath string) (image.Image, error) {
+func (s *ImageUploadService) DecodeWebP(tempPath string) (image.Image, error) {
 	webpFile, err := os.Open(tempPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open webp file: %w", err)
@@ -166,7 +166,7 @@ func (s *FileService) DecodeWebP(tempPath string) (image.Image, error) {
 	return src, nil
 }
 
-func (s *FileService) DecodeOtherFormats(tempPath string) (image.Image, error) {
+func (s *ImageUploadService) DecodeOtherFormats(tempPath string) (image.Image, error) {
 	src, err := imaging.Open(tempPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open image: %w", err)
@@ -174,14 +174,14 @@ func (s *FileService) DecodeOtherFormats(tempPath string) (image.Image, error) {
 	return src, nil
 }
 
-func (s *FileService) ResizeIfNeeded(src image.Image) image.Image {
+func (s *ImageUploadService) ResizeIfNeeded(src image.Image) image.Image {
 	if src.Bounds().Dx() > s.config.MaxWidth || src.Bounds().Dy() > s.config.MaxHeight {
 		return imaging.Fit(src, s.config.MaxWidth, s.config.MaxHeight, imaging.Lanczos)
 	}
 	return src
 }
 
-func (s *FileService) EncodeAndSave(w io.Writer, src image.Image) error {
+func (s *ImageUploadService) EncodeAndSave(w io.Writer, src image.Image) error {
 	// Resize if needed
 	src = s.ResizeIfNeeded(src)
 
@@ -195,10 +195,9 @@ func (s *FileService) EncodeAndSave(w io.Writer, src image.Image) error {
 	}
 }
 
-func (s *FileService) DeleteFile(filename string, diskLocation string) error {
+func (s *ImageUploadService) DeleteFile(filename string, diskLocation string) error {
 	if filename == "" {
 		return nil
 	}
-	return disk.Delete(diskLocation, filename)
+	return disk.Delete(diskLocation + "/" + filename)
 }
-

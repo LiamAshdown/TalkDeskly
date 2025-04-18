@@ -49,4 +49,31 @@ export const conversationService = {
     );
     return response.data;
   },
+  async sendMessageAttachment(
+    conversationId: string,
+    senderType: string,
+    senderId: string,
+    files: File[]
+  ): Promise<APIResponse<null>> {
+    const formData = new FormData();
+    formData.append("conversation_id", conversationId);
+    formData.append("sender_type", senderType);
+    formData.append("sender_id", senderId);
+
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    const response = await apiClient.post<APIResponse<null>>(
+      `/conversations/${conversationId}/attachments`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  },
 };

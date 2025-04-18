@@ -37,6 +37,7 @@ type Container interface {
 	GetLogger() Logger
 	GetI18n() I18n
 	GetLanguageContext() LanguageContext
+	GetUploadService() UploadService
 	GetConfig() config.Config
 	GetDig() *dig.Container
 }

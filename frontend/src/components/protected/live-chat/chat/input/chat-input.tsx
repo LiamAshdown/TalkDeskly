@@ -14,7 +14,7 @@ import EmojiPicker from "@/components/protected/emoji-picker";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, files: FileWithPreview[]) => void;
+  onSendMessage: (message: string, files: File[]) => void;
   disabled?: boolean;
   placeholder: string;
   buttonText: string;
@@ -148,8 +148,11 @@ export default function ChatInput({
   const handleSend = () => {
     if (disabled) return;
 
+    // Convert FileWithPreview[] to File[]
+    const fileArray: File[] = files.map((file) => file as File);
+
     // Call the parent's onSendMessage with current message and files
-    onSendMessage(message, files);
+    onSendMessage(message, fileArray);
 
     // Clear the input after sending
     setMessage("");

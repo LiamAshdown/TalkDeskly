@@ -64,6 +64,7 @@ func InitWebSocketHandlers(wsManager websocket.WebSocketManager, container inter
 		container.GetLogger(),
 		container.GetUserRepo(),
 		container.GetLanguageContext(),
+		container.GetUploadService(),
 	)
 
 	// Register handlers for all conversation event types

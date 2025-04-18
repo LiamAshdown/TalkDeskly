@@ -23,9 +23,14 @@ type ConversationHandler struct {
 	logger          interfaces.Logger
 	userRepo        repositories.UserRepository
 	langContext     interfaces.LanguageContext
+	uploadService   interfaces.UploadService
 }
 
-func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, inboxRepo repositories.InboxRepository, logger interfaces.Logger, userRepo repositories.UserRepository, langContext interfaces.LanguageContext) *ConversationHandler {
+func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository,
+	securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher,
+	inboxRepo repositories.InboxRepository, logger interfaces.Logger,
+	userRepo repositories.UserRepository, langContext interfaces.LanguageContext,
+	uploadService interfaces.UploadService) *ConversationHandler {
 	handlerLogger := logger.Named("conversation_handler")
 	return &ConversationHandler{
 		repo:            repo,
@@ -36,6 +41,7 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 		logger:          handlerLogger,
 		userRepo:        userRepo,
 		langContext:     langContext,
+		uploadService:   uploadService,
 	}
 }
 
@@ -142,6 +148,10 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 
 func (h *ConversationHandler) SendSystemMessage(conversation *models.Conversation, content string) error {
 	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, nil, false)
+}
+
+func (h *ConversationHandler) SendMessageAttachment(conversation *models.Conversation, senderID *string, senderType models.SenderType, uploadResult *types.UploadResult) error {
+	return h.SendMessage(conversation, senderID, senderType, uploadResult.Path, models.MessageTypeFile, uploadResult, false)
 }
 
 func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketClient, msg *types.WebSocketMessage) {
@@ -401,4 +411,72 @@ func (h *ConversationHandler) WSHandleCloseConversation(client *types.WebSocketC
 	}
 
 	h.handleCloseConversation(payload.ConversationID)
+}
+
+func (h *ConversationHandler) HandleSendMessageAttachment(c *fiber.Ctx) error {
+	conversationID := c.FormValue("conversation_id")
+	senderType := c.FormValue("sender_type")
+	senderID := c.FormValue("sender_id")
+
+	if conversationID == "" || senderType == "" || senderID == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "missing_required_fields"), nil)
+	}
+
+	conversation, err := h.repo.GetConversationByID(conversationID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
+	}
+
+	// Verify the sender exists
+	if senderType == string(types.SenderTypeContact) {
+		_, err = h.contactRepo.GetContactByID(senderID)
+	} else {
+		_, err = h.userRepo.GetUserByID(senderID)
+	}
+
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_sender"), err)
+	}
+
+	var senderIDPtr *string
+	if senderType == string(types.SenderTypeContact) {
+		senderIDPtr = &senderID
+	} else {
+		senderIDPtr = &senderID
+	}
+
+	oneOrMoreFailed := false
+
+	// Get the form files
+	form, err := c.MultipartForm()
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "failed_to_parse_form"), err)
+	}
+
+	files := form.File["files"]
+	if len(files) == 0 {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "no_files_provided"), nil)
+	}
+
+	for _, file := range files {
+		uploadResult, err := h.uploadService.UploadFile(file, "conversation-attachments/"+conversationID)
+		if err != nil {
+			oneOrMoreFailed = true
+			continue
+		}
+
+		err = h.SendMessageAttachment(conversation, senderIDPtr, models.SenderType(senderType), uploadResult)
+		if err != nil {
+			oneOrMoreFailed = true
+			continue
+		}
+	}
+
+	message := h.langContext.T(c, "files_uploaded")
+
+	if oneOrMoreFailed {
+		message = h.langContext.T(c, "failed_to_upload_files")
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusCreated, message, nil)
 }

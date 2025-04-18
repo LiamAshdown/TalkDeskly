@@ -1,7 +1,7 @@
 "use client";
 
 import ConversationItem from "@/components/protected/live-chat/filter/conversation-item";
-import type { Conversation } from "@/types/chat";
+import type { Conversation } from "@/lib/interfaces";
 
 // ConversationList Component
 function ConversationList({

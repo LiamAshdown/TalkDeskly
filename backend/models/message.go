@@ -1,9 +1,11 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"live-chat-server/types"
 	"live-chat-server/utils"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -154,11 +156,30 @@ func (m *Message) GetSenderType() string {
 
 // ToPayload converts a Message to a payload for API responses
 func (m *Message) ToPayload() types.MessagePayload {
+
+	// Parse metadata
+	var metadata map[string]interface{}
+	if m.Metadata != nil {
+		err := json.Unmarshal([]byte(*m.Metadata), &metadata)
+		if err != nil {
+			log.Printf("Error parsing metadata: %v", err)
+		}
+	}
+
+	// Create the full URL to the content (which holds the path to the file)
+	if m.Type == MessageTypeFile {
+		m.Content = utils.Asset(m.Content)
+
+		if metadata != nil {
+			metadata["path"] = m.Content
+		}
+	}
+
 	payload := types.MessagePayload{
 		ConversationID: m.ConversationID,
 		Content:        m.Content,
 		Type:           string(m.Type),
-		Metadata:       m.Metadata,
+		Metadata:       metadata,
 		Private:        m.Private,
 		Timestamp:      m.CreatedAt.Format("01/02/2006 15:04:05"),
 	}

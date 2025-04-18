@@ -1,58 +1,16 @@
+"use client";
+
 import { useRef, useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import type { Conversation } from "@/lib/interfaces";
-import { Bot, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useWebSocket } from "@/context/websocket-context";
 import MessageSkeleton from "./message-skeleton";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-interface MessageListProps {
-  conversation: Conversation;
-  isLoading?: boolean;
-}
-
-// MessageAvatar component to avoid duplication
-const MessageAvatar = ({
-  type,
-  name,
-  avatarUrl,
-}: {
-  type: string;
-  name: string;
-  avatarUrl?: string;
-}) => {
-  return (
-    <TooltipProvider delayDuration={0}>
-      <div className="flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Avatar className="h-8 w-8 mt-1">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt="Agent" />}
-              <AvatarFallback>
-                {type === "bot" ? (
-                  <Bot />
-                ) : type === "system" ? (
-                  <Info />
-                ) : (
-                  name.substring(0, 2).toUpperCase()
-                )}
-              </AvatarFallback>
-            </Avatar>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{name}</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
-  );
-};
+  MessageListProps,
+  FileMessage,
+  MessageAvatar,
+  TypingIndicator,
+} from "./list";
 
 export default function MessageList({
   conversation,
@@ -74,29 +32,29 @@ export default function MessageList({
     }
   }, [conversation]);
 
-  const handleConversationTyping = (data: {
-    event: string;
-    payload: {
-      conversationId: string;
-    };
-  }) => {
-    if (data.payload.conversationId === conversation.conversationId) {
-      setIsTyping(true);
-    }
-  };
-
-  const handleConversationTypingStop = (data: {
-    event: string;
-    payload: {
-      conversationId: string;
-    };
-  }) => {
-    if (data.payload.conversationId === conversation.conversationId) {
-      setIsTyping(false);
-    }
-  };
-
   useEffect(() => {
+    const handleConversationTyping = (data: {
+      event: string;
+      payload: {
+        conversationId: string;
+      };
+    }) => {
+      if (data.payload.conversationId === conversation.conversationId) {
+        setIsTyping(true);
+      }
+    };
+
+    const handleConversationTypingStop = (data: {
+      event: string;
+      payload: {
+        conversationId: string;
+      };
+    }) => {
+      if (data.payload.conversationId === conversation.conversationId) {
+        setIsTyping(false);
+      }
+    };
+
     wsService.registerHandler("conversation_typing", handleConversationTyping);
     wsService.registerHandler(
       "conversation_typing_stop",
@@ -120,7 +78,7 @@ export default function MessageList({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 h-full max-h-[calc(100vh-12rem)] relative">
+    <div className="flex-1 overflow-y-auto p-4 space-y-5 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 h-full max-h-[calc(100vh-12rem)]">
       {conversation?.messages && conversation?.messages.length > 0 ? (
         conversation?.messages.map((message, index) => (
           <div
@@ -137,68 +95,83 @@ export default function MessageList({
           >
             {message.sender.type === "system" ? (
               <div className="flex items-center justify-center py-2">
-                <span className="text-sm text-muted-foreground italic px-4 py-1">
+                <Badge
+                  variant="outline"
+                  className="text-xs text-muted-foreground font-normal px-4 py-1"
+                >
                   {message.content}
-                </span>
+                </Badge>
               </div>
             ) : (
-              <div className={cn("flex items-start gap-2 max-w-[80%]")}>
-                {message.sender.type === "contact" && (
-                  <MessageAvatar
-                    type={message.sender.type}
-                    name={message.sender.name}
-                    avatarUrl={message.sender.avatarUrl}
-                  />
+              <div
+                className={cn(
+                  "flex items-start gap-3 max-w-[85%]",
+                  message.sender.type === "contact"
+                    ? "flex-row"
+                    : "flex-row-reverse"
                 )}
+              >
+                <MessageAvatar
+                  type={message.sender.type}
+                  name={message.sender.name}
+                  avatarUrl={message.sender.avatarUrl}
+                />
                 <div
                   className={cn(
-                    "rounded-lg p-3",
-                    (message.sender.type === "agent" ||
-                      message.sender.type === "bot") &&
-                      message.private
-                      ? "bg-orange-500 text-white"
-                      : message.sender.type === "agent" ||
-                        message.sender.type === "bot"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    "rounded-lg p-3.5 shadow-sm",
+                    message.sender.type === "contact"
+                      ? "bg-muted rounded-tl-none"
+                      : message.private
+                      ? "bg-orange-500 text-white rounded-tr-none"
+                      : "bg-primary text-primary-foreground rounded-tr-none"
                   )}
                 >
-                  <p>{message.content}</p>
-                  <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
+                  {message.type === "file" ? (
+                    <FileMessage
+                      content={message.content}
+                      metadata={message.metadata}
+                    />
+                  ) : (
+                    <p className="leading-relaxed">{message.content}</p>
+                  )}
+
                   {message.private && (
                     <>
-                      <div className="h-px bg-white/30 my-1.5"></div>
-                      <p className="text-xs font-medium opacity-90">
-                        Private note
-                      </p>
+                      <div className="h-px bg-white/30 my-2"></div>
+                      <p className="text-xs font-medium">Private note</p>
                     </>
                   )}
+
+                  <p
+                    className={cn(
+                      "text-[10px] mt-1.5",
+                      message.sender.type === "contact"
+                        ? "text-muted-foreground"
+                        : message.private
+                        ? "text-white/70"
+                        : "text-primary-foreground/70"
+                    )}
+                  >
+                    {message.timestamp}
+                  </p>
                 </div>
-                {(message.sender.type === "agent" ||
-                  message.sender.type === "bot") && (
-                  <MessageAvatar
-                    type={message.sender.type}
-                    name={message.sender.name}
-                    avatarUrl={message.sender.avatarUrl}
-                  />
-                )}
               </div>
             )}
           </div>
         ))
       ) : (
-        <div className="text-center text-muted-foreground py-8">
-          No messages in this conversation yet.
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center text-muted-foreground p-8 rounded-lg border border-dashed">
+            <p>No messages in this conversation yet.</p>
+            <p className="text-xs mt-1">
+              Start typing to begin the conversation
+            </p>
+          </div>
         </div>
       )}
-      {isTyping && (
-        <div className="rounded-lg p-3 bg-muted w-16 h-8 flex items-center justify-center gap-2  bottom-4 left-4">
-          <div className="w-1 h-1 bg-primary rounded-full animate-pulse "></div>
-          <div className="w-1 h-1 bg-primary rounded-full animate-pulse delay-100"></div>
-          <div className="w-1 h-1 bg-primary rounded-full animate-pulse delay-200"></div>
-        </div>
-      )}
-      <div ref={messagesEndRef} />
+
+      {isTyping && <TypingIndicator />}
+      <div ref={messagesEndRef} className="h-1" />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"path/filepath"
 
 	"live-chat-server/disk/adapters/local"
 	"live-chat-server/disk/adapters/s3"
@@ -59,38 +58,34 @@ func (m *DiskManager) CreateStorage(config storage.Config) error {
 }
 
 // Store stores a file in the specified path
-func (m *DiskManager) Store(fileType string, filename string, reader io.Reader) (string, error) {
+func (m *DiskManager) Store(path string, reader io.Reader) (string, error) {
 	if m.storage == nil {
 		return "", fmt.Errorf("storage not initialized")
 	}
-	path := filepath.Join(fileType, filename)
 	return m.storage.Store(path, reader)
 }
 
 // Get retrieves a file from the specified path
-func (m *DiskManager) Get(fileType string, filename string) (io.ReadCloser, error) {
+func (m *DiskManager) Get(path string) (io.ReadCloser, error) {
 	if m.storage == nil {
 		return nil, fmt.Errorf("storage not initialized")
 	}
-	path := filepath.Join(fileType, filename)
 	return m.storage.Get(path)
 }
 
 // Delete removes a file from the specified path
-func (m *DiskManager) Delete(fileType string, filename string) error {
+func (m *DiskManager) Delete(path string) error {
 	if m.storage == nil {
 		return fmt.Errorf("storage not initialized")
 	}
-	path := filepath.Join(fileType, filename)
 	return m.storage.Delete(path)
 }
 
 // Exists checks if a file exists at the specified path
-func (m *DiskManager) Exists(fileType string, filename string) (bool, error) {
+func (m *DiskManager) Exists(path string) (bool, error) {
 	if m.storage == nil {
 		return false, fmt.Errorf("storage not initialized")
 	}
-	path := filepath.Join(fileType, filename)
 	return m.storage.Exists(path)
 }
 

@@ -16,7 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var fileService = services.NewFileService(services.DefaultImageConfig)
+var imageUploadService = services.NewImageUploadService(services.DefaultImageConfig)
 
 type CompanyInput struct {
 	Name    string `json:"name" validate:"required,min=2,max=255"`
@@ -120,7 +120,7 @@ func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
 	// Upload the file
-	filename, err := fileService.UploadFile(c, "logo", "company-logos")
+	filename, err := imageUploadService.UploadFile(c, "logo", "company-logos")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "file_upload_failed"), err)
 	}
@@ -129,12 +129,12 @@ func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
 	company, err := h.repo.GetCompanyByID(*user.User.CompanyID)
 	if err != nil {
 		// Clean up the uploaded file if company not found
-		fileService.DeleteFile(filename, "company-logos")
+		imageUploadService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "company_not_found"), err)
 	}
 
 	// Delete old logo if exists
-	if err := fileService.DeleteFile(company.Logo, "company-logos"); err != nil {
+	if err := imageUploadService.DeleteFile(company.Logo, "company-logos"); err != nil {
 		// Log the error but continue with the update
 		// The old file might have been already deleted
 	}
@@ -142,7 +142,7 @@ func (h *CompanyHandler) UploadCompanyLogo(c *fiber.Ctx) error {
 	company.Logo = filename
 	if err := h.repo.UpdateCompany(company); err != nil {
 		// Clean up the uploaded file if database update fails
-		fileService.DeleteFile(filename, "company-logos")
+		imageUploadService.DeleteFile(filename, "company-logos")
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_company_logo"), err)
 	}
 

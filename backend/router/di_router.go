@@ -101,4 +101,5 @@ func SetupRoutesWithDI(params DIParams) {
 	conversationGroup.Get("/:id/messages", params.ConversationHandler.HandleGetConversationMessages)
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)
 	conversationGroup.Post("/:id/close", params.ConversationHandler.HandleCloseConversation)
+	conversationGroup.Post("/:id/attachments", params.ConversationHandler.HandleSendMessageAttachment)
 }
