@@ -8,29 +8,13 @@ import ResponsiveLayout from "@/components/protected/live-chat/responsive-layout
 import { useMobileView } from "@/context/mobile-view-context";
 import { useInboxesStore } from "@/stores/inboxes";
 import { useConversationsStore } from "@/stores/conversations";
-import { useWebSocket } from "@/context/websocket-context";
-import { Contact } from "@/lib/interfaces";
-import { conversationService } from "@/lib/api/services/conversations";
-import { useAuthStore } from "@/stores/auth";
+import { ActiveConversationProvider } from "@/context/active-conversation-context";
 
 export default function LiveChatPortal() {
   const { inboxes, fetchInboxes } = useInboxesStore();
   const { conversations, fetchConversations } = useConversationsStore();
-  const { wsService } = useWebSocket();
-  const { user } = useAuthStore();
-
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >(null);
   const [activeInboxId, setActiveInboxId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
-  const { setMobileView } = useMobileView();
-
-  // Find active conversation and contact
-  const activeConversation =
-    conversations.find(
-      (conv) => conv.conversationId === activeConversationId
-    ) || null;
 
   // Filter conversations based on the selected inbox
   const filteredConversations = conversations.filter((conv) => {
@@ -50,82 +34,32 @@ export default function LiveChatPortal() {
     fetchConversations();
   }, []);
 
-  // Function to send a message
-  const handleSendMessage = (message: string) => {
-    if (!activeConversationId) return;
-
-    wsService.sendMessage(activeConversationId, message);
-  };
-
-  // Add a new function to handle conversation assignment
-  const handleAssignConversation = (
-    conversationId: string,
-    agentId: string
-  ) => {
-    if (agentId === "current-user") {
-      agentId = user?.id || "";
-    }
-
-    conversationService.assignConversation(conversationId, agentId);
-  };
-
-  // Add a new state variable to track if the contact info panel is open
-  const [isContactInfoOpen, setIsContactInfoOpen] = useState(true);
-
-  // Update the ResponsiveLayout component to hande mobile navigation
+  // Update the ResponsiveLayout component to use ActiveConversationProvider
   return (
-    <ResponsiveLayout
-      inboxSidebar={
-        <InboxSidebar
-          inboxes={inboxes}
-          activeInboxId={activeInboxId}
-          onInboxChange={setActiveInboxId}
-        />
-      }
-      conversationList={
-        <ConversationFilter
-          conversations={filteredConversations}
-          inboxes={inboxes}
-          activeConversationId={activeConversationId}
-          setActiveConversationId={(id: string) => {
-            setActiveConversationId(id);
-            setMobileView("chat"); // Switch to chat view on mobile when a conversation is selected
-          }}
-          filter={filter}
-          setFilter={setFilter}
-          onMobileBack={() => setMobileView("conversations")}
-          onAssignConversation={handleAssignConversation}
-        />
-      }
-      chatPanel={
-        <div className="h-full overflow-hidden flex flex-col">
-          <ChatPanel
-            conversation={activeConversation}
-            onSendMessage={handleSendMessage}
-            isContactInfoOpen={isContactInfoOpen}
-            onToggleContactInfo={() => {
-              setIsContactInfoOpen(!isContactInfoOpen);
-              if (isContactInfoOpen) {
-                setMobileView("chat");
-              } else {
-                setMobileView("contact");
-              }
-            }}
+    <ActiveConversationProvider>
+      <ResponsiveLayout
+        inboxSidebar={
+          <InboxSidebar
+            inboxes={inboxes}
+            activeInboxId={activeInboxId}
+            onInboxChange={setActiveInboxId}
           />
-        </div>
-      }
-      contactInfo={
-        isContactInfoOpen && (
-          <ContactInfo
-            contact={activeConversation?.contact as Contact | null}
-            onClose={() => {
-              setIsContactInfoOpen(false);
-              setMobileView("chat");
-            }}
+        }
+        conversationList={
+          <ConversationFilter
+            conversations={filteredConversations}
+            inboxes={inboxes}
+            filter={filter}
+            setFilter={setFilter}
           />
-        )
-      }
-      isContactInfoOpen={isContactInfoOpen}
-    />
+        }
+        chatPanel={
+          <div className="h-full overflow-hidden flex flex-col">
+            <ChatPanel />
+          </div>
+        }
+        contactInfo={<ContactInfo />}
+      />
+    </ActiveConversationProvider>
   );
 }

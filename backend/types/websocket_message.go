@@ -70,6 +70,7 @@ type IncomingSendMessagePayload struct {
 	ConversationID string      `mapstructure:"conversation_id"`
 	Content        string      `mapstructure:"content"`
 	Type           string      `mapstructure:"type"`
+	Private        bool        `mapstructure:"private,omitempty"`
 	Metadata       interface{} `mapstructure:"metadata,omitempty"`
 }
 
@@ -111,6 +112,7 @@ type OutgoingSendMessagePayload struct {
 	Type           string      `json:"type"`
 	Metadata       interface{} `json:"metadata,omitempty"`
 	Timestamp      string      `json:"timestamp"`
+	Private        bool        `json:"private,omitempty"`
 }
 
 // OutgoingGetConversationByIDPayload is now using ConversationPayload type

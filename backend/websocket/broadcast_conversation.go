@@ -8,7 +8,7 @@ import (
 
 // BroadcastConversationStart broadcasts a conversation creation event to all agents in the inbox
 func (h *WebSocketHandler) BroadcastConversationStart(conversation *models.Conversation) {
-	payload := conversation.ToPayload()
+	payload := conversation.ToPayloadWithMessages()
 
 	message := &types.WebSocketMessage{
 		Event:     types.EventTypeConversationStart,
@@ -48,6 +48,7 @@ func (h *WebSocketHandler) BroadcastConversationSendMessage(conversation *models
 		Content:        message.Content,
 		Sender:         *sender,
 		Type:           string(message.Type),
+		Private:        message.Private,
 		Metadata:       message.Metadata,
 		Timestamp:      message.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
@@ -59,11 +60,14 @@ func (h *WebSocketHandler) BroadcastConversationSendMessage(conversation *models
 	}
 
 	h.manager.BroadcastToInboxAgents(conversation.InboxID, wsMessage)
-	h.manager.BroadcastToContact(conversation.ContactID, wsMessage)
+
+	if message.Private == false {
+		h.manager.BroadcastToContact(conversation.ContactID, wsMessage)
+	}
 }
 
 func (h *WebSocketHandler) BroadcastConversationUpdate(conversation *models.Conversation) {
-	payload := conversation.ToPayload()
+	payload := conversation.ToPayloadWithoutMessages()
 
 	message := &types.WebSocketMessage{
 		Event:     types.EventTypeConversationUpdate,
@@ -76,7 +80,12 @@ func (h *WebSocketHandler) BroadcastConversationUpdate(conversation *models.Conv
 }
 
 func (h *WebSocketHandler) BroadcastConversationGetByID(conversation *models.Conversation, client *types.WebSocketClient) {
-	payload := conversation.ToPayload()
+	payload := conversation.ToPayloadWithMessages()
+
+	if client.GetType() == string(types.SenderTypeContact) {
+		payload = conversation.ToPayloadWithoutPrivateMessages()
+	}
+
 	message := &types.WebSocketMessage{
 		Event:     types.EventTypeConversationGetByID,
 		Payload:   payload,

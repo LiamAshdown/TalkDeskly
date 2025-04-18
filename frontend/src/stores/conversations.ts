@@ -1,5 +1,5 @@
 import { conversationService } from "@/lib/api/services/conversations";
-import { Conversation } from "@/lib/interfaces";
+import { Conversation, Message } from "@/lib/interfaces";
 import {
   ConversationPayload,
   ConversationSendMessagePayload,
@@ -16,8 +16,13 @@ interface ConversationsState {
   ) => void;
   handleConversationUpdate: (payload: ConversationPayload) => void;
   addMessageToConversation: (conversationId: string, message: any) => void;
+  updateConversation: (conversation: Conversation) => void;
   fetchConversations: () => Promise<void>;
   fetchConversation: (conversationId: string) => Promise<void>;
+  setConversationMessages: (
+    conversationId: string,
+    messages: Message[]
+  ) => void;
 }
 
 // Helper function to sort conversations by last message timestamp
@@ -142,13 +147,34 @@ export const useConversationsStore = create<ConversationsState>()(
 
       handleConversationUpdate: (payload: ConversationPayload) => {
         set((state) => {
-          const conversation = state.conversations.find(
+          let conversation = state.conversations.find(
             (c) => c.conversationId === payload.conversationId
           );
           if (conversation) {
+            conversation = {
+              ...conversation,
+              ...payload,
+              messages: payload.messages || conversation.messages,
+            };
+
             state.conversations = sortConversationsByLastMessage(
               state.conversations
             );
+          }
+        });
+      },
+
+      setConversationMessages: (
+        conversationId: string,
+        messages: Message[]
+      ) => {
+        set((state) => {
+          const conversation = state.conversations.find(
+            (c) => c.conversationId === conversationId
+          );
+
+          if (conversation) {
+            conversation.messages = messages;
           }
         });
       },

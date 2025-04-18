@@ -98,6 +98,7 @@ func SetupRoutesWithDI(params DIParams) {
 	conversationGroup.Get("/", params.ConversationHandler.HandleListConversations)
 	conversationGroup.Get("/assignable-agents", params.ConversationHandler.HandleGetAssignableAgents)
 	conversationGroup.Get("/:id", params.ConversationHandler.HandleGetConversation)
+	conversationGroup.Get("/:id/messages", params.ConversationHandler.HandleGetConversationMessages)
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)
 	conversationGroup.Post("/:id/close", params.ConversationHandler.HandleCloseConversation)
 }

@@ -18,7 +18,7 @@ export default function EmojiPicker({ onEmojiSelect }: EmojiPickerProps) {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           className="h-9 w-9"
           aria-label="Insert emoji"

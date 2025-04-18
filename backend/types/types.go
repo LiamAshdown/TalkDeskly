@@ -81,6 +81,7 @@ type MessagePayload struct {
 	Content        string      `json:"content"`
 	Sender         Sender      `json:"sender"`
 	Type           string      `json:"type"`
+	Private        bool        `json:"private"`
 	Metadata       interface{} `json:"metadata,omitempty"`
 	Timestamp      string      `json:"timestamp"`
 }

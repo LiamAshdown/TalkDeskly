@@ -42,14 +42,14 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
-	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Contact", "Inbox", "Messages", "AssignedTo")
+	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Contact", "Inbox", "AssignedTo")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_list_conversations"), err)
 	}
 
 	payload := make([]types.ConversationPayload, 0)
 	for _, conversation := range conversations {
-		payload = append(payload, *conversation.ToPayload())
+		payload = append(payload, *conversation.ToPayloadWithoutMessages())
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversations_listed"), payload)
@@ -72,7 +72,7 @@ func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
 }
 
 // SendMessage is a centralized method for sending messages in a conversation
-func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}) error {
+func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}, private bool) error {
 	// Convert metadata to JSON string if it's not nil
 	var metadataStr *string
 	if metadata != nil {
@@ -94,6 +94,7 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 		SenderType:     senderType,
 		ConversationID: conversation.ID,
 		Metadata:       metadataStr,
+		Private:        private,
 	}
 
 	// System does not have a sender id
@@ -140,7 +141,7 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 }
 
 func (h *ConversationHandler) SendSystemMessage(conversation *models.Conversation, content string) error {
-	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, nil)
+	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, nil, false)
 }
 
 func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketClient, msg *types.WebSocketMessage) {
@@ -183,6 +184,7 @@ func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketC
 			inbox.WelcomeMessage,
 			models.MessageTypeText,
 			nil,
+			false,
 		)
 		if err != nil {
 			h.logger.Error("Error sending welcome message", fiber.Map{
@@ -226,6 +228,12 @@ func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg
 		return
 	}
 
+	var private bool = false
+
+	if payload.Private && client.IsAgent() {
+		private = true
+	}
+
 	clientID := client.GetID()
 	err = h.SendMessage(
 		conversation,
@@ -234,6 +242,7 @@ func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg
 		payload.Content,
 		models.MessageTypeText,
 		payload.Metadata,
+		private,
 	)
 	if err != nil {
 		h.logger.Error("Error sending message", fiber.Map{
@@ -268,6 +277,22 @@ func (h *ConversationHandler) WSHandleConversationTypingStop(client *types.WebSo
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationTypingStop, conversation)
+}
+
+func (h *ConversationHandler) HandleGetConversationMessages(c *fiber.Ctx) error {
+	id := c.Params("id")
+	authUser := h.securityContext.GetAuthenticatedUser(c)
+
+	if id == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_id_is_required"), nil)
+	}
+
+	conversation, err := h.repo.GetConversationByIdAndCompanyID(id, *authUser.User.CompanyID, "Messages")
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_messages_retrieved"), conversation.GetMessages())
 }
 
 func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {

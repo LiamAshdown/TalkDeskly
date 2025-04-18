@@ -147,6 +147,7 @@ export interface Message {
   type: string;
   metadata: any;
   timestamp: string;
+  private?: boolean;
 }
 
 export interface Agent {
@@ -177,6 +178,7 @@ export interface Conversation {
     id: string;
     name: string;
   };
+  private: boolean;
   updatedAt: string;
   lastMessage: string;
   lastMessageAt: string;

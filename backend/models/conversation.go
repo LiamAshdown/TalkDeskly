@@ -72,7 +72,8 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			Phone:     utils.GetStringValue(c.Contact.Phone),
 			CreatedAt: c.Contact.CreatedAt.Format("01/02/2006 15:04:05"),
 		},
-		Messages: MessagesToPayload(c.Messages),
+		Messages: []types.MessagePayload{}, // Use `PayloadWithoutPrivateMessages` to get the messages
+		// Reason this is not included due to heavy processing
 		Inbox: struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
@@ -89,6 +90,38 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			return c.LastMessageAt.Format("01/02/2006 15:04:05")
 		}(),
 	}
+}
+
+func (c *Conversation) ToPayloadWithMessages() *types.ConversationPayload {
+	payload := c.ToPayload()
+	payload.Messages = MessagesToPayload(c.Messages)
+	return payload
+}
+
+func (c *Conversation) ToPayloadWithoutMessages() *types.ConversationPayload {
+	payload := c.ToPayload()
+	payload.Messages = make([]types.MessagePayload, 0)
+	return payload
+}
+
+func (c *Conversation) ToPayloadWithoutPrivateMessages() *types.ConversationPayload {
+	payload := c.ToPayload()
+	payload.Messages = MessagesToPayload(c.Messages)
+
+	// Another pass to filter out the messages
+	messages := make([]types.MessagePayload, 0)
+	for _, message := range payload.Messages {
+		if !message.Private {
+			messages = append(messages, message)
+		}
+	}
+	payload.Messages = messages
+
+	return payload
+}
+
+func (c *Conversation) GetMessages() []types.MessagePayload {
+	return MessagesToPayload(c.Messages)
 }
 
 func (c *Conversation) IsClosed() bool {

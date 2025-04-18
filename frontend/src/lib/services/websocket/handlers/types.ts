@@ -1,4 +1,4 @@
-import { Contact, ContactNote, Inbox } from "@/lib/interfaces";
+import { Contact, ContactNote, Conversation, Inbox } from "@/lib/interfaces";
 
 export interface WebSocketMessage {
   event: EventType;
@@ -43,26 +43,7 @@ export interface InboxPayload extends Inbox {}
 
 export interface ContactNotePayload extends ContactNote {}
 
-export interface ConversationPayload {
-  id: string;
-  inboxId: string;
-  conversationId: string;
-  status: ConversationStatus;
-  contact: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
-  agent: {
-    id: string;
-    name: string;
-  };
-  inbox: {
-    id: string;
-    name: string;
-  };
-}
+export interface ConversationPayload extends Conversation {}
 export interface ConversationSendMessagePayload {
   conversationId: string;
   name: string;

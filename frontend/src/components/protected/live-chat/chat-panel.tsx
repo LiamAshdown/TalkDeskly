@@ -1,28 +1,22 @@
 "use client";
 
-import type { Conversation } from "@/lib/interfaces";
 import { useMobileView } from "@/context/mobile-view-context";
+import { useActiveConversation } from "@/context/active-conversation-context";
 import EmptyChatState from "./chat/empty-chat-state";
 import ChatHeader from "./chat/chat-header";
 import MessageList from "./chat/message-list";
-import MessageInput from "./chat/message-input";
+import ChatPortal from "./chat/input/chat-portal";
 
-interface ChatPanelProps {
-  conversation: Conversation | null;
-  onSendMessage: (message: string) => void;
-  isContactInfoOpen?: boolean;
-  onToggleContactInfo?: () => void;
-}
-
-export default function ChatPanel({
-  conversation,
-  onSendMessage,
-  isContactInfoOpen = true,
-  onToggleContactInfo = () => {},
-}: ChatPanelProps) {
+export default function ChatPanel() {
+  const {
+    activeConversation,
+    isLoadingMessages,
+    isContactInfoOpen,
+    setIsContactInfoOpen,
+  } = useActiveConversation();
   const { setMobileView } = useMobileView();
 
-  if (!conversation) {
+  if (!activeConversation) {
     return (
       <EmptyChatState
         onViewConversations={() => setMobileView("conversations")}
@@ -30,16 +24,28 @@ export default function ChatPanel({
     );
   }
 
+  const handleToggleContactInfo = () => {
+    const newState = !isContactInfoOpen;
+    setIsContactInfoOpen(newState);
+    setMobileView(newState ? "contact" : "chat");
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <ChatHeader
-        conversation={conversation}
+        conversation={activeConversation}
         isContactInfoOpen={isContactInfoOpen}
-        onToggleContactInfo={onToggleContactInfo}
+        onToggleContactInfo={handleToggleContactInfo}
         onBackToConversations={() => setMobileView("conversations")}
       />
-      <MessageList conversation={conversation} />
-      <MessageInput onSendMessage={onSendMessage} />
+      <MessageList
+        conversation={activeConversation}
+        isLoading={isLoadingMessages}
+      />
+      <ChatPortal
+        conversation={activeConversation}
+        disabled={activeConversation.status === "closed"}
+      />
     </div>
   );
 }

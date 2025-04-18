@@ -6,13 +6,13 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useMobileView } from "@/context/mobile-view-context";
+import { useActiveConversation } from "@/context/active-conversation-context";
 
 interface ResponsiveLayoutProps {
   inboxSidebar: React.ReactNode;
   conversationList: React.ReactNode;
   chatPanel: React.ReactNode;
   contactInfo: React.ReactNode;
-  isContactInfoOpen?: boolean;
 }
 
 export default function ResponsiveLayout({
@@ -20,9 +20,9 @@ export default function ResponsiveLayout({
   conversationList,
   chatPanel,
   contactInfo,
-  isContactInfoOpen = true,
 }: ResponsiveLayoutProps) {
   const { mobileView } = useMobileView();
+  const { isContactInfoOpen } = useActiveConversation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   console.log("mobileView", mobileView);

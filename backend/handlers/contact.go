@@ -92,7 +92,7 @@ func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactCreated, &contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactCreated, contact)
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_created"), contact.ToResponse())
 }
@@ -124,7 +124,7 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactUpdated, &contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactUpdated, contact)
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_updated"), contact.ToResponse())
 }
@@ -142,7 +142,7 @@ func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, &contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, contact)
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_deleted"), nil)
 }

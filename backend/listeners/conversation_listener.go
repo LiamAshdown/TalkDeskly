@@ -42,6 +42,9 @@ func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
 func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
 		l.wsHandler.BroadcastConversationSendMessage(conversation)
+
+		// We need to also send the conversation update
+		// So clients recieves last message and last update
 		l.wsHandler.BroadcastConversationUpdate(conversation)
 	}
 }
@@ -51,6 +54,7 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
 			if client, ok := payload["client"].(*types.WebSocketClient); ok {
 				l.wsHandler.BroadcastConversationGetByID(conversation, client)
+
 			}
 		}
 	}
@@ -74,13 +78,13 @@ func (l *ConversationListener) HandleConversationTypingStop(event interfaces.Eve
 
 func (l *ConversationListener) HandleConversationAssign(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, conversation.ToPayload())
+		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
 	}
 }
 
 func (l *ConversationListener) HandleConversationClose(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToCompanyAgents(conversation.InboxID, types.EventTypeConversationClose, conversation.ToPayload())
+		l.wsHandler.BroadcastToCompanyAgents(conversation.InboxID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
 
 		l.wsHandler.BroadcastToContact(conversation.ContactID, types.EventTypeConversationClose, fiber.Map{
 			"conversation_id": conversation.ID,

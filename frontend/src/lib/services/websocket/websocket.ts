@@ -37,6 +37,7 @@ export class WebSocketService {
 
     this.handlers.set("conversation_start", conversationHandler);
     this.handlers.set("conversation_send_message", conversationHandler);
+    this.handlers.set("conversation_update", conversationHandler);
   }
 
   private createWebSocketMessage(
@@ -116,11 +117,16 @@ export class WebSocketService {
     }
   }
 
-  public sendMessage(conversationId: string, content: string) {
+  public sendMessage(
+    conversationId: string,
+    content: string,
+    isPrivate: boolean = false
+  ) {
     const message = this.createWebSocketMessage("conversation_send_message", {
       conversationId,
       content,
       type: "text",
+      private: isPrivate,
     });
     this.send(message);
   }

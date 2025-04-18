@@ -49,6 +49,14 @@ func (c *WebSocketClient) GetType() string {
 	return c.Type
 }
 
+func (c *WebSocketClient) IsAgent() bool {
+	return c.Type == "agent"
+}
+
+func (c *WebSocketClient) IsContact() bool {
+	return c.Type == "contact"
+}
+
 // GetCompanyID returns the company ID
 func (c *WebSocketClient) GetCompanyID() string {
 	return c.CompanyID

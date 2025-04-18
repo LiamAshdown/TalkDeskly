@@ -35,6 +35,7 @@ type Message struct {
 	Type           MessageType    `gorm:"type:varchar(20);not null;default:'text'" json:"type"`
 	Content        string         `gorm:"type:text;not null" json:"content"`
 	Metadata       *string        `gorm:"type:jsonb" json:"metadata"` // For storing additional data like file info
+	Private        bool           `gorm:"type:boolean;not null;default:false" json:"private"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
@@ -158,6 +159,7 @@ func (m *Message) ToPayload() types.MessagePayload {
 		Content:        m.Content,
 		Type:           string(m.Type),
 		Metadata:       m.Metadata,
+		Private:        m.Private,
 		Timestamp:      m.CreatedAt.Format("01/02/2006 15:04:05"),
 	}
 
