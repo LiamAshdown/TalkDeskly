@@ -48,7 +48,6 @@ export default function LiveChatPortal() {
         conversationList={
           <ConversationFilter
             conversations={filteredConversations}
-            inboxes={inboxes}
             filter={filter}
             setFilter={setFilter}
           />

@@ -74,6 +74,19 @@ function ConversationItem({
     await conversationService.closeConversation(conversation.conversationId);
   };
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "closed":
+        return "bg-red-200 text-red-800 hover:bg-red-200";
+      case "pending":
+        return "bg-yellow-200 text-yellow-800 hover:bg-yellow-200";
+      case "active":
+        return "bg-green-200 text-green-800 hover:bg-green-200";
+      default:
+        return "";
+    }
+  };
+
   return (
     <ContextMenu
       key={conversation.conversationId}
@@ -117,16 +130,29 @@ function ConversationItem({
           )} */}
 
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-1">
               <p className="text-sm text-muted-foreground truncate">
-                {/* {conversation.lastMessage} */}
+                {conversation.lastMessage}
               </p>
-              {conversation.assignedTo && (
-                <Badge variant="outline" className="text-xs ml-1">
-                  {conversation.assignedTo.name}
+              {conversation.status && (
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "text-xs ml-1 capitalize",
+                    getStatusBadgeVariant(conversation.status)
+                  )}
+                >
+                  {conversation.status}
                 </Badge>
               )}
             </div>
+            {conversation.assignedTo && (
+              <div className="flex items-center">
+                <Badge variant="outline" className="text-xs">
+                  {conversation.assignedTo.name}
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       </ContextMenuTrigger>

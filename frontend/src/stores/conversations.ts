@@ -169,8 +169,9 @@ export const useConversationsStore = create<ConversationsState>()(
               ...state.conversations[conversationIndex],
               ...payload,
               messages:
-                payload.messages ||
-                state.conversations[conversationIndex].messages,
+                payload.messages && payload.messages.length > 0
+                  ? payload.messages
+                  : state.conversations[conversationIndex].messages,
             };
 
             state.conversations = sortConversationsByLastMessage(

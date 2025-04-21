@@ -13,7 +13,6 @@ import { useAuthStore } from "@/stores/auth";
 
 interface ConversationFilterProps {
   conversations: Conversation[];
-  inboxes: Inbox[];
   filter: string;
   setFilter: (filter: string) => void;
 }
@@ -21,7 +20,6 @@ interface ConversationFilterProps {
 // Updated ConversationFilter component
 export default function ConversationFilter({
   conversations,
-  inboxes,
   filter,
   setFilter,
 }: ConversationFilterProps) {

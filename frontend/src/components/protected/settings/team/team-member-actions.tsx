@@ -67,12 +67,6 @@ export function TeamMemberActions({
           </DropdownMenuItem>
         )}
         <DropdownMenuSub>
-          {member.status !== "Invited" && (
-            <DropdownMenuSubTrigger>
-              <Shield className="h-4 w-4 mr-2" />
-              Change Role
-            </DropdownMenuSubTrigger>
-          )}
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
               <DropdownMenuItem

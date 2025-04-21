@@ -159,6 +159,7 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_already_assigned"), nil)
 	}
 
+	conversation.Status = models.ConversationStatusActive
 	conversation.AssignedToID = &assignedToUser.ID
 	conversation.AssignedTo = assignedToUser
 
