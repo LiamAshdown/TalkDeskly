@@ -1,17 +1,7 @@
-import { Contact, ContactNote, Conversation, Inbox } from "@/lib/interfaces";
-
 export interface WebSocketMessage {
   event: EventType;
   payload: any;
   timestamp: Date;
-}
-
-export interface IWebSocketHandler {
-  handle(message: WebSocketMessage): void;
-}
-
-export interface IWebSocketHandlerFactory {
-  createHandler(): IWebSocketHandler;
 }
 
 export type EventType =
@@ -45,26 +35,3 @@ export type EventType =
   | "publish"
   | "subscribed"
   | "unsubscribed";
-
-type ConversationStatus = "active" | "closed" | "pending";
-
-export interface ContactPayload extends Contact {}
-
-export interface InboxPayload extends Inbox {}
-
-export interface ContactNotePayload extends ContactNote {}
-
-export interface ConversationPayload extends Conversation {}
-export interface ConversationSendMessagePayload {
-  conversationId: string;
-  name: string;
-  content: string;
-  sender: {
-    name: string;
-    type: string;
-    id: string;
-  };
-  type: string;
-  metadata: any;
-  timestamp: string;
-}

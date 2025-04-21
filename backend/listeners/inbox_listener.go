@@ -4,18 +4,17 @@ import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/types"
-	"live-chat-server/websocket"
 )
 
 type InboxListener struct {
 	dispatcher interfaces.Dispatcher
-	wsHandler  *websocket.WebSocketHandler
+	pubSub     interfaces.PubSub
 }
 
-func NewInboxListener(dispatcher interfaces.Dispatcher, wsHandler *websocket.WebSocketHandler) *InboxListener {
+func NewInboxListener(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub) *InboxListener {
 	listener := &InboxListener{
 		dispatcher: dispatcher,
-		wsHandler:  wsHandler,
+		pubSub:     pubSub,
 	}
 	listener.subscribe()
 	return listener
@@ -29,26 +28,21 @@ func (l *InboxListener) subscribe() {
 
 func (l *InboxListener) HandleInboxCreated(event interfaces.Event) {
 	if inbox, ok := event.Payload.(*models.Inbox); ok {
-		l.wsHandler.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxCreated, inbox.ToPayload())
+		// Broadcast to company channel
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxCreated, inbox)
 	}
 }
 
 func (l *InboxListener) HandleInboxUpdated(event interfaces.Event) {
-	if payload, ok := event.Payload.(*types.InboxUpdatedPayload); ok {
-		if inbox, ok := payload.Inbox.(*models.Inbox); ok {
-			l.wsHandler.BroadcastToCompanyAgents(inbox.CompanyID, types.EventTypeInboxUpdated, inbox.ToPayload())
-
-			for _, userID := range payload.RemovedUserIDs {
-				l.wsHandler.BroadcastToAgent(userID, types.EventTypeInboxDeleted, types.InboxDeletedPayload{
-					ID: inbox.ID,
-				})
-			}
-		}
+	if inbox, ok := event.Payload.(*models.Inbox); ok {
+		// Broadcast to company channel
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxUpdated, inbox)
 	}
 }
 
 func (l *InboxListener) HandleInboxDeleted(event interfaces.Event) {
-	// if inbox, ok := event.Payload.(*models.Inbox); ok {
-	// 	websocket.BroadcastInboxDeleted(inbox)
-	// }
+	if inbox, ok := event.Payload.(*models.Inbox); ok {
+		// Broadcast to company channel
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxDeleted, inbox)
+	}
 }

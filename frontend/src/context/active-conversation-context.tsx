@@ -51,6 +51,12 @@ export function ActiveConversationProvider({
         conversationId
       );
 
+      wsService.subscribeToConversation(conversationId);
+
+      if (activeConversationId) {
+        wsService.unsubscribeFromConversation(activeConversationId);
+      }
+
       setConversationMessages(conversationId, response.data);
       setActiveConversationId(conversationId);
     } catch (error) {

@@ -11,6 +11,9 @@ const (
 	// Connection events
 	EventTypeConnectionEstablished EventType = "connection_established"
 
+	EventTypeSubscribe   EventType = "subscribe"
+	EventTypeUnsubscribe EventType = "unsubscribe"
+
 	// Conversation events
 	EventTypeConversationStart       EventType = "conversation_start"
 	EventTypeConversationSendMessage EventType = "conversation_send_message"
@@ -101,18 +104,6 @@ type OutGoingInboxCreatedPayload struct {
 	InboxID string `json:"inbox_id"`
 	Name    string `json:"name"`
 	Type    string `json:"type"`
-}
-
-type OutgoingSendMessagePayload struct {
-	ID             string      `json:"id"`
-	ConversationID string      `json:"conversation_id"`
-	Name           string      `json:"name"`
-	Content        string      `json:"content"`
-	Sender         Sender      `json:"sender"`
-	Type           string      `json:"type"`
-	Metadata       interface{} `json:"metadata,omitempty"`
-	Timestamp      string      `json:"timestamp"`
-	Private        bool        `json:"private,omitempty"`
 }
 
 // OutgoingGetConversationByIDPayload is now using ConversationPayload type

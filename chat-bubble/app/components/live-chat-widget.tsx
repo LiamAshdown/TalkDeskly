@@ -18,6 +18,8 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useConversationStore } from "~/stores/conversation";
 import { useChatState } from "~/stores/chat-state";
+import { useContactStore } from "~/stores/contact-store";
+import type { WebSocketMessage } from "~/lib/services/websocket/types";
 
 export function LiveChatWidget() {
   const { conversation, endConversation } = useConversationStore();
@@ -25,14 +27,29 @@ export function LiveChatWidget() {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const { wsService } = useWebSocket();
-  const wsServiceConnected = useRef(false);
+  const contactId = useContactStore((state) => state.contactId);
+  const [isConnected, setIsConnected] = useState(false);
 
+  const wsServiceConnected = useRef(false);
   useEffect(() => {
+    wsService.registerHandler(
+      "connection_established",
+      (message: WebSocketMessage) => {
+        setIsConnected(true);
+        wsService.setUserId(message.payload.userId);
+      }
+    );
+
     if (wsServiceConnected.current) return;
     console.log("wsService", wsService);
     wsService.initializeHandlers();
-    wsService.connect();
+    const inboxId = "bac9f89b-802f-4207-94fc-a8c1adca387f"; // Your inbox ID
+    wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;
+
+    return () => {
+      wsService.disconnect();
+    };
   }, []);
 
   // Reset unread count when chat is opened
@@ -178,6 +195,7 @@ export function LiveChatWidget() {
               <WelcomeScreen
                 onClose={resetChat}
                 onStartConversation={startConversation}
+                isConnected={isConnected}
               />
             ) : (
               <ChatWindow

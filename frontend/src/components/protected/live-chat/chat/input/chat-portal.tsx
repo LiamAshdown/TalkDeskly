@@ -53,21 +53,31 @@ export default function ChatPortal({
   const { wsService } = useWebSocket();
   const { user } = useAuthStore();
 
+  const sendMessage = async (
+    message: string,
+    files: File[],
+    isPrivate: boolean
+  ) => {
+    if (files.length > 0) {
+      await conversationService.sendMessageAttachment(
+        conversation?.conversationId,
+        "agent",
+        user!.id,
+        files
+      );
+    }
+
+    wsService.sendMessage(conversation?.conversationId, message, isPrivate);
+  };
+
   // Handle sending customer message
   const handleSendCustomerMessage = async (message: string, files: File[]) => {
-    await conversationService.sendMessageAttachment(
-      conversation?.conversationId,
-      "agent",
-      user!.id,
-      files
-    );
-
-    wsService.sendMessage(conversation?.conversationId, message, false);
+    sendMessage(message, files, false);
   };
 
   // Handle sending private note
   const handleSendPrivateNote = async (message: string, files: File[]) => {
-    wsService.sendMessage(conversation?.conversationId, message, true);
+    sendMessage(message, files, true);
   };
 
   return (

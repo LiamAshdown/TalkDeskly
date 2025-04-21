@@ -10,7 +10,7 @@ import (
 
 // RegisterServices registers all services in the DI container
 func RegisterServices(container *dig.Container) {
-	if err := container.Provide(GetDispatcher); err != nil {
+	if err := container.Provide(func() interfaces.Dispatcher { return GetDispatcher() }); err != nil {
 		log.Fatalf("Failed to provide dispatcher: %v", err)
 	}
 
@@ -23,5 +23,12 @@ func RegisterServices(container *dig.Container) {
 		return NewUploadService(storage, DefaultUploadConfig())
 	}); err != nil {
 		log.Fatalf("Failed to provide upload service: %v", err)
+	}
+
+	if err := container.Provide(NewPubSubService); err != nil {
+		panic(err)
+	}
+	if err := container.Provide(NewWebSocketService); err != nil {
+		panic(err)
 	}
 }

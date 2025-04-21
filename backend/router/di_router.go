@@ -3,10 +3,10 @@ package router
 import (
 	"live-chat-server/disk"
 	handler "live-chat-server/handlers"
-	"live-chat-server/interfaces"
 	"live-chat-server/middleware"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 	"go.uber.org/dig"
 )
 
@@ -22,21 +22,50 @@ type DIParams struct {
 	OnboardingHandler   *handler.OnboardingHandler
 	ConversationHandler *handler.ConversationHandler
 	LanguageHandler     *handler.LanguageHandler
-	WebSocketService    interfaces.WebSocketService
-	WebSocketHandler    interfaces.WebSocketHandlerInterface
+	WebSocketHandler    *handler.WebSocketHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
 func SetupRoutesWithDI(params DIParams) {
 	app := params.App
 
-	// WebSocket route
-	app.Get("/ws", params.WebSocketHandler.HandleWebSocket)
-
 	// Static file route
 	app.Static("/uploads", disk.GetBasePath())
 
 	apiGroup := app.Group("/api")
+
+	// WebSocket routes
+	wsGroup := app.Group("/ws")
+
+	// Agent WebSocket endpoint
+	wsGroup.Use("/agents/:user_id", func(c *fiber.Ctx) error {
+		// Check if it's a WebSocket upgrade request
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade to WebSocket required")
+	})
+
+	// Use the actual WebSocket handler
+	wsGroup.Get("/agents/:user_id", websocket.New(func(c *websocket.Conn) {
+		// Pass to the WebSocketHandler
+		params.WebSocketHandler.HandleAgentWebSocket(c)
+	}))
+
+	// Contact WebSocket endpoint
+	wsGroup.Use("/contacts/:contact_id", func(c *fiber.Ctx) error {
+		// Check if it's a WebSocket upgrade request
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade to WebSocket required")
+	})
+
+	// Use the actual WebSocket handler
+	wsGroup.Get("/contacts", websocket.New(func(c *websocket.Conn) {
+		// Pass to the WebSocketHandler
+		params.WebSocketHandler.HandleContactWebSocket(c)
+	}))
 
 	// Language routes
 	languageGroup := apiGroup.Group("/language")

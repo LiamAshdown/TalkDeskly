@@ -140,6 +140,10 @@ func (r *conversationRepository) CreateMessage(message *models.Message) (*models
 	if err != nil {
 		return nil, err
 	}
+
+	// Now update conversation's last message and last message at
+	r.db.Model(&models.Conversation{}).Where("id = ?", message.ConversationID).Update("last_message", message.Content).Update("last_message_at", message.CreatedAt)
+
 	return message, nil
 }
 

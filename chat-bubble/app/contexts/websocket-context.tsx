@@ -1,8 +1,6 @@
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { WebSocketService } from "~/lib/services/websocket/websocket";
-import { useContactStore } from "~/stores/contact-store";
-
 interface WebSocketContextType {
   wsService: WebSocketService;
 }
@@ -10,13 +8,8 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-  const contactId = useContactStore((state) => state.contactId);
-  const wsService = new WebSocketService(
-    "ws://localhost:6721/ws",
-    contactId || "",
-    "contact",
-    "9eae572d-7128-41bd-846b-820f86691fe8"
-  );
+  // Create WebSocket service with only URL parameter
+  const wsService = new WebSocketService("ws://localhost:6721/ws");
 
   return (
     <WebSocketContext.Provider value={{ wsService }}>

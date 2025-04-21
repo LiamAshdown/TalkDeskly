@@ -10,10 +10,10 @@ import (
 	"live-chat-server/i18n"
 	"live-chat-server/interfaces"
 	"live-chat-server/jobs"
+	"live-chat-server/listeners"
 	"live-chat-server/repositories"
 	"live-chat-server/services"
 	"live-chat-server/storage"
-	"live-chat-server/websocket"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -85,15 +85,6 @@ func (c *DIContainer) GetDispatcher() interfaces.Dispatcher {
 		dispatcher = d
 	})
 	return dispatcher
-}
-
-// GetWebSocketService retrieves the websocket service
-func (c *DIContainer) GetWebSocketService() interfaces.WebSocketService {
-	var service interfaces.WebSocketService
-	c.dig.Invoke(func(s interfaces.WebSocketService) {
-		service = s
-	})
-	return service
 }
 
 // GetDiskManager retrieves the disk manager
@@ -168,15 +159,6 @@ func (c *DIContainer) GetConfig() config.Config {
 	return cfg
 }
 
-// GetWebSocketHandler retrieves the websocket handler
-func (c *DIContainer) GetWebSocketHandler() interfaces.WebSocketHandlerInterface {
-	var handler interfaces.WebSocketHandlerInterface
-	c.dig.Invoke(func(h interfaces.WebSocketHandlerInterface) {
-		handler = h
-	})
-	return handler
-}
-
 // GetUploadService retrieves the upload service
 func (c *DIContainer) GetUploadService() interfaces.UploadService {
 	var service interfaces.UploadService
@@ -210,32 +192,19 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		log.Fatalf("Failed to provide config: %v", err)
 	}
 
-	// Register dependencies using modular approach
 	repositories.RegisterRepositories(digContainer)
 	services.RegisterServices(digContainer)
-
-	// Register email provider using factory
 	email.RegisterEmailService(digContainer, factory.NewEmailProvider)
+	disk.RegisterStorageServices(digContainer)
+	i18n.RegisterI18nServices(digContainer)
+	context.RegisterContexts(digContainer)
+	handler.RegisterHandlers(digContainer)
+	listeners.RegisterListeners(digContainer)
 
 	// Create container
 	containerImpl := &DIContainer{
 		dig: digContainer,
 	}
-
-	// Register storage services
-	disk.RegisterStorageServices(digContainer)
-
-	// Register WebSocket services
-	websocket.RegisterWebSocketServices(digContainer)
-
-	// Register i18n services
-	i18n.RegisterI18nServices(digContainer)
-
-	// Register contexts
-	context.RegisterContexts(digContainer)
-
-	// Register handlers
-	handler.RegisterHandlers(digContainer)
 
 	// Register container itself
 	if err := digContainer.Provide(func() interfaces.Container { return containerImpl }); err != nil {

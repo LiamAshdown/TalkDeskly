@@ -21,7 +21,12 @@ export type EventType =
   | "contact_created"
   | "contact_deleted"
   | "inbox_updated"
-  | "team_member_updated";
+  | "team_member_updated"
+  // PubSub events
+  | "subscribe"
+  | "unsubscribe"
+  | "subscribed"
+  | "unsubscribed";
 
 export interface WebSocketMessage {
   event: EventType;
@@ -57,3 +62,22 @@ export interface ConversationSendMessagePayload {
 
 export interface ConversationGetByIdResponsePayload extends Conversation {}
 export interface ConversationUpdatePayload extends Conversation {}
+
+// PubSub related interfaces
+export interface SubscribePayload {
+  topic: string;
+}
+
+export interface UnsubscribePayload {
+  topic: string;
+}
+
+export interface SubscribedPayload {
+  topic: string;
+  status: string;
+}
+
+export interface UnsubscribedPayload {
+  topic: string;
+  status: string;
+}

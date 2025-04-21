@@ -3,12 +3,9 @@ package main
 import (
 	"live-chat-server/config"
 	"live-chat-server/container"
-	handler "live-chat-server/handlers"
 	"live-chat-server/i18n"
-	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/router"
-	"live-chat-server/websocket"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -33,17 +30,6 @@ func main() {
 
 	// Apply i18n middleware to detect language from request headers
 	app.Use(i18n.Middleware(c.GetI18n()))
-
-	// Get WebSocketHandler from container
-	wsHandler := c.GetWebSocketHandler().(*websocket.WebSocketHandler)
-
-	// Initialize WebSocket handlers
-	handler.InitWebSocketHandlers(wsHandler.GetManager(), c)
-
-	// Initialize listeners with WebSocketHandler
-	listeners.NewContactListener(c.GetDispatcher(), wsHandler)
-	listeners.NewInboxListener(c.GetDispatcher(), wsHandler)
-	listeners.NewConversationListener(c.GetDispatcher(), wsHandler)
 
 	// Start the job server
 	container.StartJobServer(c)

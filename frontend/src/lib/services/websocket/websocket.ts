@@ -1,176 +1,196 @@
-import type {
-  EventType,
-  WebSocketMessage,
-} from "@/lib/services/websocket/handlers/types";
-import {
-  convertKeysToCamelCase,
-  convertKeysToSnakeCase,
-} from "@/lib/utils/string-transforms";
-import {
-  ConversationHandler,
-  InboxHandler,
-  ContactHandler,
-} from "@/lib/services/websocket/handlers";
+import type { EventType } from "@/lib/services/websocket/handlers/types";
+import { ConnectionManager } from "./connection-manager";
+import { SubscriptionManager } from "./subscription-manager";
+import { EventDispatcher } from "./event-dispatcher";
+import { MessageFactory } from "./message-factory";
 
+// Connection configuration
+export interface ConnectionConfig {
+  userId: string;
+  userType: string;
+  companyId: string;
+}
+
+/**
+ * Main WebSocket service that composes the functionality of other classes
+ */
 export class WebSocketService {
-  private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
-  private handlers: Map<EventType, any> = new Map();
-  private eventListeners: Map<EventType, ((message: any) => void)[]> =
-    new Map();
+  private connectionManager: ConnectionManager;
+  private subscriptionManager: SubscriptionManager;
+  private eventDispatcher: EventDispatcher;
 
-  constructor(private url: string) {}
+  constructor(private url: string) {
+    this.connectionManager = new ConnectionManager(url);
+    this.subscriptionManager = new SubscriptionManager();
+    this.eventDispatcher = new EventDispatcher();
+
+    // Set up callbacks
+    this.connectionManager.setCallbacks(
+      (message) => this.eventDispatcher.dispatch(message),
+      () => {
+        // When connected, give the subscription manager access to the websocket
+        this.subscriptionManager.setWebSocket(
+          this.connectionManager.getWebSocket()!
+        );
+
+        // Resubscribe to previous topics
+        this.subscriptionManager.resubscribeAll();
+      }
+    );
+  }
 
   public initializeHandlers() {
-    const contactHandler = new ContactHandler();
-    const inboxHandler = new InboxHandler();
-    const conversationHandler = new ConversationHandler();
+    this.eventDispatcher.registerTypeHandlers();
 
-    this.handlers.set("contact_updated", contactHandler);
-    this.handlers.set("contact_created", contactHandler);
-    this.handlers.set("contact_deleted", contactHandler);
-
-    this.handlers.set("inbox_updated", inboxHandler);
-    this.handlers.set("inbox_created", inboxHandler);
-
-    this.handlers.set("conversation_start", conversationHandler);
-    this.handlers.set("conversation_send_message", conversationHandler);
-    this.handlers.set("conversation_update", conversationHandler);
-  }
-
-  private createWebSocketMessage(
-    event: EventType,
-    payload: any
-  ): WebSocketMessage {
-    return {
-      event,
-      payload,
-      timestamp: new Date(),
-    };
-  }
-
-  public connect(userId: string, userType: string) {
-    try {
-      this.ws = new WebSocket(`${this.url}?type=${userType}&user_id=${userId}`);
-      this.setupEventHandlers();
-      this.reconnectAttempts = 0;
-    } catch (error) {
-      console.error("WebSocket connection error:", error);
-      this.handleReconnect(userId, userType);
-    }
-  }
-
-  private setupEventHandlers() {
-    if (!this.ws) return;
-
-    this.ws.onopen = () => {
-      console.log("WebSocket connected");
-    };
-
-    this.ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        this.handleMessage(message);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
-
-    this.ws.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
-
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-  }
-
-  private handleReconnect(userId: string, userType: string) {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      );
-      setTimeout(
-        () => this.connect(userId, userType),
-        this.reconnectDelay * this.reconnectAttempts
-      );
-    } else {
-      console.error("Max reconnection attempts reached");
-    }
-  }
-
-  private handleMessage(message: WebSocketMessage) {
-    const handler = this.handlers.get(message.event);
-    if (handler) {
-      handler.handle(convertKeysToCamelCase(message));
-    }
-
-    // Call any registered event listeners
-    const listeners = this.eventListeners.get(message.event);
-    if (listeners) {
-      listeners.forEach((listener) =>
-        listener(convertKeysToCamelCase(message))
-      );
-    }
-  }
-
-  public sendMessage(
-    conversationId: string,
-    content: string,
-    isPrivate: boolean = false
-  ) {
-    const message = this.createWebSocketMessage("conversation_send_message", {
-      conversationId,
-      content,
-      type: "text",
-      private: isPrivate,
+    // Add handlers for subscription confirmations
+    this.eventDispatcher.registerHandler("subscribed", (message) => {
+      console.log(`Successfully subscribed to topic: ${message.payload.topic}`);
     });
-    this.send(message);
+
+    this.eventDispatcher.registerHandler("unsubscribed", (message) => {
+      console.log(
+        `Successfully unsubscribed from topic: ${message.payload.topic}`
+      );
+    });
   }
 
-  private send(message: WebSocketMessage) {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      message.payload = convertKeysToSnakeCase(message.payload);
-      this.ws.send(JSON.stringify(message));
-    } else {
-      console.error("WebSocket is not connected");
-    }
+  // Connection methods
+  public connect(userId: string, userType: string, companyId: string) {
+    this.connectionManager.connect({ userId, userType, companyId });
   }
 
   public disconnect() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    this.connectionManager.disconnect();
   }
 
-  public getWebSocket(): WebSocket | null {
-    return this.ws;
+  public isConnected(): boolean {
+    return this.connectionManager.isConnected();
   }
 
+  // Event handling methods
   public registerHandler(
     eventType: EventType,
     handler: (message: any) => void
-  ): void {
-    if (!this.eventListeners.has(eventType)) {
-      this.eventListeners.set(eventType, []);
-    }
-    this.eventListeners.get(eventType)?.push(handler);
+  ) {
+    this.eventDispatcher.registerHandler(eventType, handler);
   }
 
   public unregisterHandler(
     eventType: EventType,
     handler: (message: any) => void
-  ): void {
-    const listeners = this.eventListeners.get(eventType);
-    if (listeners) {
-      const index = listeners.indexOf(handler);
-      if (index !== -1) {
-        listeners.splice(index, 1);
-      }
-    }
+  ) {
+    this.eventDispatcher.unregisterHandler(eventType, handler);
+  }
+
+  // Subscription methods
+  public subscribe(topic: string): boolean {
+    return this.subscriptionManager.subscribe(topic);
+  }
+
+  public unsubscribe(topic: string): boolean {
+    return this.subscriptionManager.unsubscribe(topic);
+  }
+
+  public subscribeToConversation(conversationId: string): boolean {
+    return this.subscriptionManager.subscribeToConversation(conversationId);
+  }
+
+  public subscribeToCompany(companyId: string): boolean {
+    return this.subscriptionManager.subscribeToCompany(companyId);
+  }
+
+  public subscribeToUser(userId: string): boolean {
+    return this.subscriptionManager.subscribeToUser(userId);
+  }
+
+  public subscribeToContact(contactId: string): boolean {
+    return this.subscriptionManager.subscribeToContact(contactId);
+  }
+
+  public unsubscribeFromConversation(conversationId: string): boolean {
+    return this.subscriptionManager.unsubscribeFromConversation(conversationId);
+  }
+
+  public getSubscriptions(): Set<string> {
+    return this.subscriptionManager.getSubscriptions();
+  }
+
+  // Conversation action methods
+  public sendMessage(
+    conversationId: string,
+    content: string,
+    isPrivate: boolean = false
+  ) {
+    const payload = MessageFactory.preparePayload({
+      conversation_id: conversationId,
+      content,
+      type: "text",
+      private: isPrivate,
+    });
+
+    const message = MessageFactory.createMessage(
+      "conversation_send_message",
+      payload
+    );
+    this.connectionManager.send(message);
+  }
+
+  public startConversation(inboxId: string) {
+    const payload = MessageFactory.preparePayload({
+      inbox_id: inboxId,
+    });
+
+    const message = MessageFactory.createMessage("conversation_start", payload);
+    this.connectionManager.send(message);
+  }
+
+  public getConversationById(conversationId: string) {
+    const payload = MessageFactory.preparePayload({
+      conversation_id: conversationId,
+    });
+
+    const message = MessageFactory.createMessage(
+      "conversation_get_by_id",
+      payload
+    );
+    this.connectionManager.send(message);
+  }
+
+  public closeConversation(conversationId: string) {
+    const payload = MessageFactory.preparePayload({
+      conversation_id: conversationId,
+    });
+
+    const message = MessageFactory.createMessage("conversation_close", payload);
+    this.connectionManager.send(message);
+  }
+
+  public sendTypingIndicator(conversationId: string) {
+    const payload = MessageFactory.preparePayload({
+      conversation_id: conversationId,
+    });
+
+    const message = MessageFactory.createMessage(
+      "conversation_typing",
+      payload
+    );
+    this.connectionManager.send(message);
+  }
+
+  public sendTypingStopIndicator(conversationId: string) {
+    const payload = MessageFactory.preparePayload({
+      conversation_id: conversationId,
+    });
+
+    const message = MessageFactory.createMessage(
+      "conversation_typing_stop",
+      payload
+    );
+    this.connectionManager.send(message);
+  }
+
+  // Utility methods
+  public getWebSocket(): WebSocket | null {
+    return this.connectionManager.getWebSocket();
   }
 }

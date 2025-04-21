@@ -1,17 +1,15 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"live-chat-server/interfaces"
+	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"live-chat-server/utils"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 )
 
 type ConversationHandler struct {
@@ -24,13 +22,14 @@ type ConversationHandler struct {
 	userRepo        repositories.UserRepository
 	langContext     interfaces.LanguageContext
 	uploadService   interfaces.UploadService
+	pubSub          interfaces.PubSub
 }
 
 func NewConversationHandler(repo repositories.ConversationRepository, contactRepo repositories.ContactRepository,
 	securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher,
 	inboxRepo repositories.InboxRepository, logger interfaces.Logger,
 	userRepo repositories.UserRepository, langContext interfaces.LanguageContext,
-	uploadService interfaces.UploadService) *ConversationHandler {
+	uploadService interfaces.UploadService, pubSub interfaces.PubSub) *ConversationHandler {
 	handlerLogger := logger.Named("conversation_handler")
 	return &ConversationHandler{
 		repo:            repo,
@@ -42,6 +41,7 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 		userRepo:        userRepo,
 		langContext:     langContext,
 		uploadService:   uploadService,
+		pubSub:          pubSub,
 	}
 }
 
@@ -79,69 +79,29 @@ func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
 
 // SendMessage is a centralized method for sending messages in a conversation
 func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}, private bool) error {
-	// Convert metadata to JSON string if it's not nil
-	var metadataStr *string
-	if metadata != nil {
-		metadataBytes, err := json.Marshal(metadata)
-		if err != nil {
-			h.logger.Error("Error marshaling metadata", fiber.Map{
-				"error": err,
-			})
-		} else {
-			str := string(metadataBytes)
-			metadataStr = &str
-		}
-	}
-
-	// Create the new message
-	newMessage := models.Message{
-		Content:        content,
-		Type:           messageType,
-		SenderType:     senderType,
+	// Create internal message payload
+	internalMessage := &listeners.InternalMessagePayload{
 		ConversationID: conversation.ID,
-		Metadata:       metadataStr,
+		Content:        content,
+		Type:           string(messageType),
+		Metadata:       metadata,
 		Private:        private,
 	}
 
-	// System does not have a sender id
+	// Set sender information
+	internalMessage.Sender.Type = types.SenderType(string(senderType))
 	if senderID != nil {
-		newMessage.SenderID = senderID
+		internalMessage.Sender.ID = *senderID
 	}
 
-	// Save the new message
-	createdMessage, err := h.repo.CreateMessage(&newMessage)
-	if err != nil {
-		h.logger.Error("Error creating message", fiber.Map{
-			"error": err,
-		})
-		return err
+	// Create message payload
+	messagePayload := map[string]interface{}{
+		"message":      internalMessage,
+		"conversation": conversation,
 	}
 
-	// Update the conversation's last message and timestamp
-	conversation.LastMessage = content
-	now := time.Now()
-	conversation.LastMessageAt = &now
-
-	if err := h.repo.UpdateConversation(conversation); err != nil {
-		h.logger.Error("Error updating conversation", fiber.Map{
-			"error": err,
-		})
-		return err
-	}
-
-	createdMessage, err = h.repo.PopulateSender(createdMessage)
-	if err != nil {
-		h.logger.Error("Error populating sender", fiber.Map{
-			"error": err,
-		})
-		return err
-	}
-
-	// Add the message to the conversation's messages
-	conversation.Messages = append(conversation.Messages, *createdMessage)
-
-	// Dispatch the message event
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationSendMessage, conversation)
+	// Dispatch the event for the listener to handle
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationSendMessage, messagePayload)
 
 	return nil
 }
@@ -152,141 +112,6 @@ func (h *ConversationHandler) SendSystemMessage(conversation *models.Conversatio
 
 func (h *ConversationHandler) SendMessageAttachment(conversation *models.Conversation, senderID *string, senderType models.SenderType, uploadResult *types.UploadResult) error {
 	return h.SendMessage(conversation, senderID, senderType, uploadResult.Path, models.MessageTypeFile, uploadResult, false)
-}
-
-func (h *ConversationHandler) WSHandleConversationStart(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingStartConversationPayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	conversation := models.Conversation{
-		InboxID:   payload.InboxID,
-		ContactID: client.GetID(),
-		CompanyID: client.GetCompanyID(),
-		Status:    models.ConversationStatusPending,
-	}
-
-	if err := h.repo.CreateConversation(&conversation); err != nil {
-		return
-	}
-
-	conversationPtr, err := h.repo.GetConversationByID(conversation.ID, "Messages", "Inbox", "Contact", "AssignedTo")
-	if err != nil {
-		return
-	}
-
-	inbox, err := h.inboxRepo.GetInboxByID(conversationPtr.InboxID)
-	if err != nil {
-		return
-	}
-
-	client.SetConversationID(conversationPtr.ID)
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
-
-	if inbox.WelcomeMessage != "" {
-		clientID := client.GetID()
-		err := h.SendMessage(
-			conversationPtr,
-			&clientID,
-			models.SenderTypeBot,
-			inbox.WelcomeMessage,
-			models.MessageTypeText,
-			nil,
-			false,
-		)
-		if err != nil {
-			h.logger.Error("Error sending welcome message", fiber.Map{
-				"error": err,
-			})
-		}
-	}
-}
-
-func (h *ConversationHandler) WSHandleGetConversationByID(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingGetConversationByIDPayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Messages", "Inbox", "Contact", "AssignedTo")
-	if err != nil {
-		return
-	}
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationGetByID, map[string]interface{}{
-		"conversation": conversation,
-		"client":       client,
-	})
-}
-
-func (h *ConversationHandler) WSHandleMessage(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingSendMessagePayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID, "Messages", "Inbox", "Contact", "AssignedTo")
-	if err != nil {
-		return
-	}
-
-	// Conversation is closed
-	// Don't send message
-	if conversation.IsClosed() {
-		return
-	}
-
-	var private bool = false
-
-	if payload.Private && client.IsAgent() {
-		private = true
-	}
-
-	clientID := client.GetID()
-	err = h.SendMessage(
-		conversation,
-		&clientID,
-		models.SenderType(client.GetType()),
-		payload.Content,
-		models.MessageTypeText,
-		payload.Metadata,
-		private,
-	)
-	if err != nil {
-		h.logger.Error("Error sending message", fiber.Map{
-			"error": err,
-		})
-	}
-}
-
-func (h *ConversationHandler) WSHandleConversationTyping(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingConversationTypingPayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID)
-	if err != nil {
-		return
-	}
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationTyping, conversation)
-}
-
-func (h *ConversationHandler) WSHandleConversationTypingStop(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingConversationTypingStopPayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	conversation, err := h.repo.GetConversationByID(payload.ConversationID)
-	if err != nil {
-		return
-	}
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationTypingStop, conversation)
 }
 
 func (h *ConversationHandler) HandleGetConversationMessages(c *fiber.Ctx) error {
@@ -402,15 +227,6 @@ func (h *ConversationHandler) HandleCloseConversation(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_closed"), conversation.ToPayload())
-}
-
-func (h *ConversationHandler) WSHandleCloseConversation(client *types.WebSocketClient, msg *types.WebSocketMessage) {
-	var payload types.IncomingCloseConversationPayload
-	if err := mapstructure.Decode(msg.Payload, &payload); err != nil {
-		return
-	}
-
-	h.handleCloseConversation(payload.ConversationID)
 }
 
 func (h *ConversationHandler) HandleSendMessageAttachment(c *fiber.Ctx) error {

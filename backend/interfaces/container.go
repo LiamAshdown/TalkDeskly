@@ -6,18 +6,12 @@ import (
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 
-	"github.com/gofiber/fiber/v2"
 	"go.uber.org/dig"
 )
 
 // JobClient defines the interface for the job client
 type JobClient interface {
 	Enqueue(jobName string, payload interface{}) error
-}
-
-// WebSocketHandlerInterface defines the interface for websocket handler
-type WebSocketHandlerInterface interface {
-	HandleWebSocket(ctx *fiber.Ctx) error
 }
 
 // Container defines the methods available in our DI container
@@ -28,8 +22,6 @@ type Container interface {
 	GetCompanyRepo() repositories.CompanyRepository
 	GetConversationRepo() repositories.ConversationRepository
 	GetDispatcher() Dispatcher
-	GetWebSocketService() WebSocketService
-	GetWebSocketHandler() WebSocketHandlerInterface
 	GetDiskManager() storage.Manager
 	GetJobClient() JobClient
 	GetEmailProvider() email.EmailProvider

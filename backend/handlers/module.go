@@ -36,4 +36,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewLanguageHandler); err != nil {
 		log.Fatalf("Failed to provide language handler: %v", err)
 	}
+
+	if err := container.Provide(NewWebSocketHandler); err != nil {
+		panic(err)
+	}
 }

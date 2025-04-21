@@ -66,6 +66,7 @@ const (
 	SenderTypeContact SenderType = "contact"
 	SenderTypeAgent   SenderType = "agent"
 	SenderTypeSystem  SenderType = "system"
+	SenderTypeBot     SenderType = "bot"
 )
 
 type Sender struct {
@@ -131,6 +132,14 @@ type ContactNotePayload struct {
 	} `json:"user"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+}
+
+type IncomingSubscribePayload struct {
+	Topic string `json:"topic"`
+}
+
+type IncomingUnsubscribePayload struct {
+	Topic string `json:"topic"`
 }
 
 // Scan implements the sql.Scanner interface for WorkingHoursMap

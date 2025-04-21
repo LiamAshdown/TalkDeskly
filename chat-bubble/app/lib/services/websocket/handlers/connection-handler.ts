@@ -12,7 +12,10 @@ export class ConnectionHandler implements IWebSocketHandler {
   }
 
   private handleConnectionEstablished(message: WebSocketMessage): void {
-    useContactStore.getState().setContactId(message.payload.userId);
+    if (message.payload?.userId) {
+      useContactStore.getState().setContactId(message.payload.userId);
+    }
+
     console.log("Connection established:", message);
   }
 }

@@ -1,23 +1,40 @@
 package listeners
 
 import (
+	"encoding/json"
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
+	"live-chat-server/repositories"
 	"live-chat-server/types"
-	"live-chat-server/websocket"
-
-	"github.com/gofiber/fiber/v2"
+	"time"
 )
 
-type ConversationListener struct {
-	dispatcher interfaces.Dispatcher
-	wsHandler  *websocket.WebSocketHandler
+// InternalMessagePayload is used for standardized message handling within the system
+type InternalMessagePayload struct {
+	ConversationID string
+	Content        string
+	Type           string
+	Metadata       interface{}
+	Private        bool
+	Sender         struct {
+		ID   string
+		Type types.SenderType
+	}
 }
 
-func NewConversationListener(dispatcher interfaces.Dispatcher, wsHandler *websocket.WebSocketHandler) *ConversationListener {
+type ConversationListener struct {
+	dispatcher       interfaces.Dispatcher
+	pubSub           interfaces.PubSub
+	conversationRepo repositories.ConversationRepository
+	logger           interfaces.Logger
+}
+
+func NewConversationListener(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub, conversationRepo repositories.ConversationRepository, logger interfaces.Logger) *ConversationListener {
 	listener := &ConversationListener{
-		dispatcher: dispatcher,
-		wsHandler:  wsHandler,
+		dispatcher:       dispatcher,
+		pubSub:           pubSub,
+		conversationRepo: conversationRepo,
+		logger:           logger,
 	}
 	listener.subscribe()
 	return listener
@@ -34,18 +51,89 @@ func (l *ConversationListener) subscribe() {
 }
 
 func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
-	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastConversationStart(conversation)
-	}
+
 }
 
 func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Event) {
-	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastConversationSendMessage(conversation)
+	if payload, ok := event.Payload.(map[string]interface{}); ok {
+		internalMessage, ok := payload["message"].(*InternalMessagePayload)
+		if !ok {
+			l.logger.Error("Invalid message format in payload")
+			return
+		}
 
-		// We need to also send the conversation update
-		// So clients recieves last message and last update
-		l.wsHandler.BroadcastConversationUpdate(conversation)
+		conversation, ok := payload["conversation"].(*models.Conversation)
+		if !ok {
+			var err error
+			conversation, err = l.conversationRepo.GetConversationByID(internalMessage.ConversationID)
+			if err != nil {
+				l.logger.Error("Error getting conversation:", err)
+				return
+			}
+		}
+
+		// Convert message type if provided
+		messageType := models.MessageTypeText
+		if internalMessage.Type != "" {
+			messageType = models.MessageType(internalMessage.Type)
+		}
+
+		// Handle metadata conversion for storage
+		var metadataStr *string
+		if internalMessage.Metadata != nil {
+			// Convert metadata to string
+			if metadataJSON, err := json.Marshal(internalMessage.Metadata); err == nil {
+				metadataString := string(metadataJSON)
+				metadataStr = &metadataString
+			} else {
+				l.logger.Error("Error marshaling metadata:", err)
+			}
+		}
+
+		// Create the message model for storage
+		messageModel := models.Message{
+			ConversationID: internalMessage.ConversationID,
+			Content:        internalMessage.Content,
+			Type:           messageType,
+			SenderType:     models.SenderType(internalMessage.Sender.Type),
+			Metadata:       metadataStr,
+			Private:        internalMessage.Private,
+		}
+
+		// Add sender ID for non-system messages
+		if internalMessage.Sender.ID != "" && internalMessage.Sender.Type != types.SenderTypeSystem {
+			messageModel.SenderID = &internalMessage.Sender.ID
+		}
+
+		// Store the message
+		createdMessage, err := l.conversationRepo.CreateMessage(&messageModel)
+		if err != nil {
+			l.logger.Error("Error creating message:", err)
+			return
+		}
+
+		// Update conversation's last message and timestamp
+		conversation.LastMessage = internalMessage.Content
+		now := time.Now()
+		conversation.LastMessageAt = &now
+
+		if err := l.conversationRepo.UpdateConversation(conversation); err != nil {
+			l.logger.Error("Error updating conversation:", err)
+		}
+
+		// Populate sender information if available
+		populatedMessage, err := l.conversationRepo.PopulateSender(createdMessage)
+		if err != nil {
+			l.logger.Error("Error populating sender:", err)
+			// Continue with unpopulated message if there's an error
+			populatedMessage = createdMessage
+		}
+
+		// Broadcast the message to the conversation channel
+		l.pubSub.Publish("conversation:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
+
+		// Broadcast conversation update to company channel
+		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
 	}
 }
 
@@ -53,8 +141,13 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 	if payload, ok := event.Payload.(map[string]interface{}); ok {
 		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
 			if client, ok := payload["client"].(*types.WebSocketClient); ok {
-				l.wsHandler.BroadcastConversationGetByID(conversation, client)
-
+				if client.IsAgent() {
+					// Send the conversation directly to the requesting client
+					client.SendMessage(types.EventTypeConversationGetByID, conversation.ToPayloadWithMessages())
+				} else {
+					// Send the conversation to the company channel
+					client.SendMessage(types.EventTypeConversationGetByID, conversation.ToPayloadWithoutPrivateMessages())
+				}
 			}
 		}
 	}
@@ -62,33 +155,36 @@ func (l *ConversationListener) HandleConversationGetByID(event interfaces.Event)
 
 func (l *ConversationListener) HandleConversationTyping(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTyping, map[string]interface{}{
-			"conversation_id": conversation.ID,
-		})
+		l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationTyping, conversation.ID)
 	}
 }
 
 func (l *ConversationListener) HandleConversationTypingStop(event interfaces.Event) {
 	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationTypingStop, map[string]interface{}{
-			"conversation_id": conversation.ID,
-		})
+		l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationTypingStop, conversation.ID)
 	}
 }
 
 func (l *ConversationListener) HandleConversationAssign(event interfaces.Event) {
-	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToInboxAgents(conversation.InboxID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
+	if payload, ok := event.Payload.(map[string]interface{}); ok {
+		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
+			// Broadcast assignment to company channel
+			l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
+
+			// Also broadcast to the conversation channel
+			l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
+		}
 	}
 }
 
 func (l *ConversationListener) HandleConversationClose(event interfaces.Event) {
-	if conversation, ok := event.Payload.(*models.Conversation); ok {
-		l.wsHandler.BroadcastToCompanyAgents(conversation.InboxID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
+	if payload, ok := event.Payload.(map[string]interface{}); ok {
+		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
+			// Broadcast closure to company channel
+			l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
 
-		l.wsHandler.BroadcastToContact(conversation.ContactID, types.EventTypeConversationClose, fiber.Map{
-			"conversation_id": conversation.ID,
-			"status":          string(conversation.Status),
-		})
+			// Also broadcast to the conversation channel
+			l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
+		}
 	}
 }
