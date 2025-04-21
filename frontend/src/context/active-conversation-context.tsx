@@ -1,4 +1,10 @@
-import { ReactNode, createContext, useContext, useState } from "react";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { Conversation, Message } from "@/lib/interfaces";
 import { conversationService } from "@/lib/api/services/conversations";
 import { useWebSocket } from "./websocket-context";
@@ -30,12 +36,18 @@ export function ActiveConversationProvider({
   const [isContactInfoOpen, setIsContactInfoOpen] = useState(true);
   const { wsService } = useWebSocket();
   const { conversations, setConversationMessages } = useConversationsStore();
+  const [activeConversation, setActiveConversation] =
+    useState<Conversation | null>(null);
 
-  // Find active conversation
-  const activeConversation =
-    conversations.find(
-      (conv) => conv.conversationId === activeConversationId
-    ) || null;
+  useEffect(() => {
+    if (activeConversationId) {
+      setActiveConversation(
+        conversations.find(
+          (conv) => conv.conversationId === activeConversationId
+        ) || null
+      );
+    }
+  }, [activeConversationId, conversations]);
 
   const handleSetActiveConversationId = async (
     conversationId: string | null

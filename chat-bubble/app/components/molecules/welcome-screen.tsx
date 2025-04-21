@@ -1,17 +1,21 @@
 import { Button } from "~/components/ui/button";
 import { X, MessageSquare, ArrowRight, Loader2 } from "lucide-react";
+import { useWebSocket } from "~/contexts/websocket-context";
+import { useChatStateContext } from "~/contexts/chat-state-context";
 
-export interface WelcomeScreenProps {
-  onClose: () => void;
-  onStartConversation: () => void;
-  isConnected?: boolean;
-}
+export function WelcomeScreen({ isConnected = false }) {
+  const { dispatch } = useChatStateContext();
+  const { wsService } = useWebSocket();
 
-export function WelcomeScreen({
-  onClose,
-  onStartConversation,
-  isConnected = false,
-}: WelcomeScreenProps) {
+  const resetChat = () => {
+    dispatch({ type: "RESET_CHAT" });
+  };
+
+  const startConversation = () => {
+    dispatch({ type: "START_CONVERSATION" });
+    wsService.sendCreateConversation();
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header with close button */}
@@ -20,7 +24,7 @@ export function WelcomeScreen({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={onClose}
+          onClick={resetChat}
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
@@ -49,7 +53,7 @@ export function WelcomeScreen({
 
         {/* Start conversation button */}
         <Button
-          onClick={onStartConversation}
+          onClick={startConversation}
           className="w-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-between"
           disabled={!isConnected}
         >

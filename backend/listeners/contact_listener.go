@@ -4,8 +4,6 @@ import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/types"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 type ContactListener struct {
@@ -56,12 +54,8 @@ func (l *ContactListener) handleContactDeleted(event interfaces.Event) {
 func (l *ContactListener) handleContactNoteCreated(event interfaces.Event) {
 	if payload, ok := event.Payload.(map[string]interface{}); ok {
 		if contact, ok := payload["contact"].(*models.Contact); ok {
-			note := payload["note"]
-
-			// Broadcast to company channel
-			l.pubSub.Publish("company:"+contact.CompanyID, types.EventTypeContactNoteCreated, fiber.Map{
-				"note": note,
-			})
+			note := payload["note"].(models.ContactNote)
+			l.pubSub.Publish("contact:"+contact.ID, types.EventTypeContactNoteCreated, note.ToPayload())
 		}
 	}
 }

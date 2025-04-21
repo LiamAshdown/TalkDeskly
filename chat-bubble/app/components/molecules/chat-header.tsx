@@ -1,46 +1,49 @@
 import { Button } from "~/components/ui/button";
 import { X, Minimize2, Maximize2, RefreshCw } from "lucide-react";
 import { ChatAvatar } from "~/components/atoms/chat-avatar";
+import { useChatStateContext } from "~/contexts/chat-state-context";
 
-interface ChatHeaderProps {
-  isConversationEnded: boolean;
-  isFullScreen: boolean;
-  onToggleFullScreen: () => void;
-  onEndConversation: () => void;
-  onStartNewConversation: () => void;
-  onClose: () => void;
-}
+export function ChatHeader() {
+  const { chatState, dispatch } = useChatStateContext();
 
-export function ChatHeader({
-  isConversationEnded,
-  isFullScreen,
-  onToggleFullScreen,
-  onEndConversation,
-  onStartNewConversation,
-  onClose,
-}: ChatHeaderProps) {
+  const toggleFullScreen = () => {
+    dispatch({ type: "TOGGLE_FULLSCREEN" });
+  };
+
+  const handleEndConversation = () => {
+    dispatch({ type: "OPEN_END_DIALOG" });
+  };
+
+  const startNewConversation = () => {
+    // Implementation for starting a new conversation
+  };
+
+  const resetChat = () => {
+    dispatch({ type: "RESET_CHAT" });
+  };
+
   return (
     <div className="flex items-center justify-between border-b p-3">
       <div className="flex items-center gap-2">
         <ChatAvatar
           src="/placeholder.svg?height=32&width=32"
           fallback="SA"
-          isConversationEnded={isConversationEnded}
+          isConversationEnded={chatState.isConversationEnded}
         />
         <div>
           <h3 className="text-sm font-medium">Customer Support</h3>
           <p className="text-xs text-muted-foreground">
-            {isConversationEnded ? "Conversation ended" : "Online"}
+            {chatState.isConversationEnded ? "Conversation ended" : "Online"}
           </p>
         </div>
       </div>
       <div className="flex gap-1">
-        {isConversationEnded ? (
+        {chatState.isConversationEnded ? (
           <Button
             variant="outline"
             size="sm"
             className="h-8 text-xs gap-1"
-            onClick={onStartNewConversation}
+            onClick={startNewConversation}
           >
             <RefreshCw className="h-3 w-3" />
             New Chat
@@ -50,7 +53,7 @@ export function ChatHeader({
             variant="ghost"
             size="sm"
             className="h-8 text-xs"
-            onClick={onEndConversation}
+            onClick={handleEndConversation}
           >
             End Chat
           </Button>
@@ -59,23 +62,23 @@ export function ChatHeader({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={onToggleFullScreen}
-          title={isFullScreen ? "Exit full screen" : "Full screen"}
+          onClick={toggleFullScreen}
+          title={chatState.isFullScreen ? "Exit full screen" : "Full screen"}
         >
-          {isFullScreen ? (
+          {chatState.isFullScreen ? (
             <Minimize2 className="h-4 w-4" />
           ) : (
             <Maximize2 className="h-4 w-4" />
           )}
           <span className="sr-only">
-            {isFullScreen ? "Exit full screen" : "Full screen"}
+            {chatState.isFullScreen ? "Exit full screen" : "Full screen"}
           </span>
         </Button>
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={onClose}
+          onClick={resetChat}
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>

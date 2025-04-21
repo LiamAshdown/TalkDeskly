@@ -170,9 +170,14 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_contact_note"), err)
 	}
 
+	contact, err := h.repo.GetContactByIDAndCompanyID(contactID, *user.User.CompanyID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "contact_not_found"), err)
+	}
+
 	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, map[string]interface{}{
-		"note":      contactNote.ToResponse(),
-		"companyID": *user.User.CompanyID,
+		"note":    contactNote,
+		"contact": contact,
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_note_created"), contactNote.ToResponse())

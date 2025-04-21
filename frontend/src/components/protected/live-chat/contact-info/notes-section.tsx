@@ -34,6 +34,12 @@ export function NotesSection({ contact }: NotesSectionProps) {
       }
     };
     fetchNotes();
+
+    wsService.subscribe("contact:" + contact.id);
+
+    return () => {
+      wsService.unsubscribe("contact:" + contact.id);
+    };
   }, [contact.id]);
 
   useEffect(() => {
@@ -41,6 +47,7 @@ export function NotesSection({ contact }: NotesSectionProps) {
       event: string;
       payload: ContactNote;
     }) => {
+      console.log("message", message);
       const newNote = message.payload;
       // Only add the note if it belongs to the current contact
       if (newNote.contactId === contact.id) {

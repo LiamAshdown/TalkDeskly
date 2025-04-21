@@ -19,16 +19,21 @@ import {
 import { useConversationStore } from "~/stores/conversation";
 import { useChatState } from "~/stores/chat-state";
 import { useContactStore } from "~/stores/contact-store";
+import { TypingProvider } from "~/contexts/typing-context";
+import {
+  ChatStateProvider,
+  useChatStateContext,
+} from "~/contexts/chat-state-context";
 import type { WebSocketMessage } from "~/lib/services/websocket/types";
 
-export function LiveChatWidget() {
+function LiveChatWidgetContent() {
   const { conversation, endConversation } = useConversationStore();
-  const [chatState, dispatch] = useChatState();
-  const [newMessage, setNewMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const { chatState, dispatch } = useChatStateContext();
   const { wsService } = useWebSocket();
   const contactId = useContactStore((state) => state.contactId);
   const [isConnected, setIsConnected] = useState(false);
+
+  console.log("showEndDialog", chatState);
 
   const wsServiceConnected = useRef(false);
   useEffect(() => {
@@ -40,10 +45,14 @@ export function LiveChatWidget() {
       }
     );
 
-    if (wsServiceConnected.current) return;
-    console.log("wsService", wsService);
+    if (wsServiceConnected.current) {
+      return;
+    }
+
     wsService.initializeHandlers();
-    const inboxId = "bac9f89b-802f-4207-94fc-a8c1adca387f"; // Your inbox ID
+
+    const inboxId = "df91a306-f1d2-49ea-a5cc-614858bdf417"; // Your inbox ID
+
     wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;
 
@@ -65,54 +74,10 @@ export function LiveChatWidget() {
     }
   }, [chatState.isOpen]);
 
-  const startConversation = () => {
-    dispatch({ type: "START_CONVERSATION" });
-    wsService.sendCreateConversation();
-  };
-
-  const handleSetMessage = (message: string) => {
-    setNewMessage(message);
-
-    if (conversation) {
-      if (message.length > 0 && !isTyping) {
-        setIsTyping(true);
-        wsService.startTyping(conversation.conversationId);
-      } else if (message.length === 0 && isTyping) {
-        setIsTyping(false);
-        wsService.stopTyping(conversation.conversationId);
-      }
-    }
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!newMessage.trim() || chatState.isConversationEnded || !conversation)
-      return;
-
-    wsService.sendMessage(conversation.conversationId, newMessage);
-    wsService.stopTyping(conversation.conversationId);
-    setNewMessage("");
-  };
-
-  const toggleFullScreen = () => {
-    dispatch({ type: "TOGGLE_FULLSCREEN" });
-  };
-
-  const handleEndConversation = () => {
-    dispatch({ type: "OPEN_END_DIALOG" });
-  };
-
   const confirmEndConversation = () => {
     wsService.closeConversation(conversation?.conversationId || "");
     endConversation();
     dispatch({ type: "END_CONVERSATION" });
-  };
-
-  const startNewConversation = () => {};
-
-  const resetChat = () => {
-    dispatch({ type: "RESET_CHAT" });
   };
 
   return (
@@ -192,25 +157,9 @@ export function LiveChatWidget() {
             }}
           >
             {!chatState.conversationStarted ? (
-              <WelcomeScreen
-                onClose={resetChat}
-                onStartConversation={startConversation}
-                isConnected={isConnected}
-              />
+              <WelcomeScreen isConnected={isConnected} />
             ) : (
-              <ChatWindow
-                isFullScreen={chatState.isFullScreen}
-                isConversationEnded={chatState.isConversationEnded}
-                messages={conversation?.messages || []}
-                newMessage={newMessage}
-                status={conversation?.status || ""}
-                onToggleFullScreen={toggleFullScreen}
-                onEndConversation={handleEndConversation}
-                onStartNewConversation={startNewConversation}
-                onClose={resetChat}
-                onNewMessageChange={handleSetMessage}
-                onSendMessage={handleSendMessage}
-              />
+              <ChatWindow />
             )}
           </motion.div>
         )}
@@ -240,5 +189,15 @@ export function LiveChatWidget() {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export function LiveChatWidget() {
+  return (
+    <ChatStateProvider>
+      <TypingProvider>
+        <LiveChatWidgetContent />
+      </TypingProvider>
+    </ChatStateProvider>
   );
 }

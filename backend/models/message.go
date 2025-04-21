@@ -86,7 +86,7 @@ func (m *Message) LoadSender(db *gorm.DB) error {
 
 // BeforeCreate GORM hook to ensure either AgentSender or ContactSender is set based on SenderType
 func (m *Message) BeforeCreate(tx *gorm.DB) error {
-	if m.SenderType == SenderTypeSystem {
+	if m.SenderType == SenderTypeSystem || m.SenderType == SenderTypeBot {
 		// System messages don't require a sender
 		return nil
 	}
@@ -190,6 +190,12 @@ func (m *Message) ToPayload() types.MessagePayload {
 		payload.Sender = types.Sender{
 			Type: types.SenderType(m.SenderType),
 			Name: "System",
+		}
+	} else if m.SenderType == SenderTypeBot {
+		payload.Name = "Bot"
+		payload.Sender = types.Sender{
+			Type: types.SenderType(m.SenderType),
+			Name: "Bot",
 		}
 	} else if m.SenderID != nil {
 		payload.Name = m.GetSenderName()

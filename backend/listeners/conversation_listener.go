@@ -178,13 +178,8 @@ func (l *ConversationListener) HandleConversationAssign(event interfaces.Event) 
 }
 
 func (l *ConversationListener) HandleConversationClose(event interfaces.Event) {
-	if payload, ok := event.Payload.(map[string]interface{}); ok {
-		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
-			// Broadcast closure to company channel
-			l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
-
-			// Also broadcast to the conversation channel
-			l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
-		}
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
+		l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationClose, conversation.ToPayloadWithoutMessages())
 	}
 }

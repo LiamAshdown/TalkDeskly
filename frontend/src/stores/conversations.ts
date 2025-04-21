@@ -145,16 +145,32 @@ export const useConversationsStore = create<ConversationsState>()(
         });
       },
 
+      updateConversation: (conversation: Conversation) => {
+        set((state) => {
+          const index = state.conversations.findIndex(
+            (c) => c.conversationId === conversation.conversationId
+          );
+          if (index !== -1) {
+            state.conversations[index] = conversation;
+            state.conversations = sortConversationsByLastMessage(
+              state.conversations
+            );
+          }
+        });
+      },
+
       handleConversationUpdate: (payload: ConversationPayload) => {
         set((state) => {
-          let conversation = state.conversations.find(
+          const conversationIndex = state.conversations.findIndex(
             (c) => c.conversationId === payload.conversationId
           );
-          if (conversation) {
-            conversation = {
-              ...conversation,
+          if (conversationIndex !== -1) {
+            state.conversations[conversationIndex] = {
+              ...state.conversations[conversationIndex],
               ...payload,
-              messages: payload.messages || conversation.messages,
+              messages:
+                payload.messages ||
+                state.conversations[conversationIndex].messages,
             };
 
             state.conversations = sortConversationsByLastMessage(
