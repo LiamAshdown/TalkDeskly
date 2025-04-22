@@ -79,6 +79,31 @@
       "address": "Address"
     }
   },
+  "team": {
+    "member": {
+      "added": "Member added",
+      "added.description": "Team member has been successfully added",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "role": "Role",
+      "adding": "Adding...",
+      "add": "Add Member",
+      "firstNamePlaceholder": "John",
+      "lastNamePlaceholder": "Doe",
+      "emailPlaceholder": "john@example.com",
+      "selectRole": "Select a role",
+      "roleDescription": "Admins can manage all settings and Agents can respond to conversations"
+    },
+    "addMember": {
+      "title": "Add Team Member",
+      "description": "Add a new team member to your workspace. They will have access based on their role."
+    },
+    "roles": {
+      "admin": "Admin",
+      "agent": "Agent"
+    }
+  },
   "invite": {
     "title": "Invite Team Members",
     "description": "Invite team members by email. They will receive an invitation to join your workspace.",

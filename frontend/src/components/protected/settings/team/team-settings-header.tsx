@@ -5,16 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InviteMembersDialog } from "./invite-members-dialog";
 import { AddMemberDialog } from "./add-member-dialog";
+import { TeamMember } from "@/lib/interfaces";
 
 interface TeamSettingsHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onInvite: (emails: string[]) => void;
-  onAdd: (member: {
-    name: string;
-    email: string;
-    role: "Admin" | "Agent" | "Viewer";
-  }) => void;
+  onAdd: (member: TeamMember) => Promise<void>;
+  selectedTab: string;
+  onTabChange: (tab: string) => void;
 }
 
 export function TeamSettingsHeader({
@@ -22,6 +21,8 @@ export function TeamSettingsHeader({
   onSearchChange,
   onInvite,
   onAdd,
+  selectedTab = "all",
+  onTabChange,
 }: TeamSettingsHeaderProps) {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -50,7 +51,7 @@ export function TeamSettingsHeader({
         </Button>
       </div>
 
-      <Tabs defaultValue="all">
+      <Tabs value={selectedTab} onValueChange={onTabChange}>
         <div className="flex md:items-center md:justify-between justify-start mb-4 sm:flex-row flex-col items-start gap-2">
           <TabsList className="w-full sm:w-auto inline-flex">
             <TabsTrigger value="all">All Members</TabsTrigger>

@@ -45,4 +45,7 @@ func registerJobHandlers(jobServer *Server, emailProvider email.EmailProvider, l
 
 	sendWelcomeJob := NewSendWelcomeJob(emailProvider)
 	jobServer.RegisterHandler("send_welcome", sendWelcomeJob)
+
+	sendUserCredentialsJob := NewSendUserCredentialsJob(emailProvider, logger)
+	jobServer.RegisterHandler("send_user_credentials", sendUserCredentialsJob)
 }

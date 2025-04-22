@@ -37,7 +37,6 @@ import { TeamMember } from "@/lib/interfaces";
 interface TeamMemberActionsProps {
   member: TeamMember;
   onDelete: (id: string) => void;
-  onEdit: (member: TeamMember) => void;
   onResendInvite: (id: string) => void;
   onUpdateRole: (id: string, role: "admin" | "agent") => void;
 }
@@ -45,7 +44,6 @@ interface TeamMemberActionsProps {
 export function TeamMemberActions({
   member,
   onDelete,
-  onEdit,
   onResendInvite,
   onUpdateRole,
 }: TeamMemberActionsProps) {
@@ -60,13 +58,11 @@ export function TeamMemberActions({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {member.status !== "Invited" && (
-          <DropdownMenuItem onClick={() => onEdit(member)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </DropdownMenuItem>
-        )}
         <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Shield className="h-4 w-4 mr-2" />
+            Change Role
+          </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
               <DropdownMenuItem

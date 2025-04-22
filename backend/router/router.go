@@ -109,6 +109,7 @@ func SetupRoutesWithDI(params DIParams) {
 	authCompanyGroup.Post("/invite", params.CompanyHandler.SendInvite)
 	authCompanyGroup.Get("/invites", params.CompanyHandler.GetInvites)
 	authCompanyGroup.Get("/team-members", params.CompanyHandler.GetTeamMembers)
+	authCompanyGroup.Post("/team-members", params.CompanyHandler.CreateTeamMember)
 	authCompanyGroup.Post("/invites/:id/resend", params.CompanyHandler.ResendInvite)
 
 	profileGroup := apiGroup.Group("/profile", middleware.Auth(), middleware.RequireCompany())

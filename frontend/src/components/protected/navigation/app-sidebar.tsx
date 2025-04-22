@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
   MessageSquare,
@@ -16,46 +16,30 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import NavItem from "@/components/protected/navigation/nav-item";
+import { useMiscStore } from "@/stores/misc";
 
 export function AppSidebar() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [collapsed, setCollapsed] = useState(
-    localStorage.getItem("sidebarCollapsed") === "true"
-  );
+  const { theme, sidebarCollapsed, toggleTheme, toggleSidebar } =
+    useMiscStore();
   const location = useLocation();
 
-  // Store sidebar state in localStorage to prevent reset during navigation
+  // Add class to document on initial load
   useEffect(() => {
-    const storedState = localStorage.getItem("sidebarCollapsed");
-    if (storedState !== null) {
-      setCollapsed(storedState === "true");
-    }
+    document.documentElement.classList.toggle("dark", theme === "dark");
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
-
-  const toggleSidebar = () => {
-    const newState = !collapsed;
-    setCollapsed(newState);
-    localStorage.setItem("sidebarCollapsed", String(newState));
-  };
 
   return (
     <div className="relative">
       <div
         className={cn(
           "h-screen border-r bg-background flex flex-col transition-all duration-300",
-          collapsed ? "w-16" : "w-64"
+          sidebarCollapsed ? "w-16" : "w-64"
         )}
       >
         {/* Header Section */}
         <div className="h-14 flex items-center px-4">
-          {!collapsed && <h1 className="font-semibold">TalkDeskly</h1>}
-          {collapsed && <MessageSquare className="h-5 w-5 mx-auto" />}
+          {!sidebarCollapsed && <h1 className="font-semibold">TalkDeskly</h1>}
+          {sidebarCollapsed && <MessageSquare className="h-5 w-5 mx-auto" />}
         </div>
         <Separator />
 
@@ -66,14 +50,14 @@ export function AppSidebar() {
               icon={<MessageSquare />}
               label="Conversations"
               active={location.pathname === "/"}
-              collapsed={collapsed}
+              collapsed={sidebarCollapsed}
               href="/portal"
             />
             <NavItem
               icon={<Users />}
               label="Contacts"
               active={location.pathname === "/contacts"}
-              collapsed={collapsed}
+              collapsed={sidebarCollapsed}
               href="contacts"
             />
           </nav>
@@ -86,21 +70,21 @@ export function AppSidebar() {
               icon={<Bell />}
               label="Notifications"
               active={location.pathname === "/notifications"}
-              collapsed={collapsed}
+              collapsed={sidebarCollapsed}
               href="notifications"
             />
             <NavItem
               icon={<Settings />}
               label="Settings"
               active={location.pathname.startsWith("/settings")}
-              collapsed={collapsed}
+              collapsed={sidebarCollapsed}
               href="settings/inboxes"
             />
             <NavItem
               icon={theme === "dark" ? <Sun /> : <Moon />}
               label={theme === "dark" ? "Light Mode" : "Dark Mode"}
               onClick={toggleTheme}
-              collapsed={collapsed}
+              collapsed={sidebarCollapsed}
             />
           </nav>
         </div>
@@ -113,7 +97,7 @@ export function AppSidebar() {
             variant="ghost"
             className={cn(
               "w-full flex items-center gap-2 justify-start -ml-2",
-              collapsed && "justify-center p-2 ml-0"
+              sidebarCollapsed && "justify-center p-2 ml-0"
             )}
           >
             <Avatar className="h-8 w-8">
@@ -123,7 +107,7 @@ export function AppSidebar() {
               />
               <AvatarFallback>AG</AvatarFallback>
             </Avatar>
-            {!collapsed && (
+            {!sidebarCollapsed && (
               <div className="flex flex-col items-start text-left">
                 <span className="text-sm font-medium">Agent Name</span>
                 <span className="text-xs text-muted-foreground">Online</span>
@@ -140,9 +124,9 @@ export function AppSidebar() {
         onClick={toggleSidebar}
         className={cn(
           "absolute top-4 -right-3 h-6 w-6 rounded-full border bg-background shadow-sm",
-          collapsed ? "rotate-180" : ""
+          sidebarCollapsed ? "rotate-180" : ""
         )}
-        aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         <ChevronLeft className="h-3 w-3" />
       </Button>

@@ -23,6 +23,7 @@ type EmailProvider interface {
 	SendTemplatedEmail(to string, templatePath string, data interface{}) error
 	SendInviteEmail(to, inviterName, acceptURL string) error
 	SendWelcomeEmail(to, name, companyName, actionURL string) error
+	SendUserCredentialsEmail(to, senderName, acceptURL, password string) error
 }
 
 // BaseEmailProvider implements common email functionality
@@ -81,6 +82,12 @@ func (b *BaseEmailProvider) SendWelcomeEmail(to, name, companyName, actionURL st
 	return b.SendTemplatedEmail(to, templatePath, data)
 }
 
+func (b *BaseEmailProvider) SendUserCredentialsEmail(to, senderName, acceptURL, password string) error {
+	templatePath := filepath.Join("templates", "email", "user_create_credentials.html")
+	data := NewUserCredentialsTemplateData(to, senderName, acceptURL, password)
+	return b.SendTemplatedEmail(to, templatePath, data)
+}
+
 // DefaultTemplateData returns a TemplateData struct with default values
 func DefaultTemplateData() TemplateData {
 	return TemplateData{
@@ -107,5 +114,16 @@ func NewWelcomeTemplateData(name string, companyName string, actionURL string) T
 	data.Data["Name"] = name
 	data.Data["CompanyName"] = companyName
 	data.Data["ActionURL"] = actionURL
+	return data
+}
+
+// NewUserCredentialsTemplateData creates template data for user credentials emails
+func NewUserCredentialsTemplateData(email string, inviterName string, acceptURL string, password string) TemplateData {
+	data := DefaultTemplateData()
+	data.Subject = "TalkDeskly User Credentials"
+	data.Data["Email"] = email
+	data.Data["InviterName"] = inviterName
+	data.Data["AcceptURL"] = acceptURL
+	data.Data["Password"] = password
 	return data
 }

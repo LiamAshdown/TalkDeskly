@@ -59,7 +59,7 @@ export default function InboxSidebar({
       <div className="p-4 space-y-4">
         <h3 className="font-semibold flex items-center justify-between">
           Inbox
-          <Link to="/settings/inboxes/new">
+          <Link to="/portal/settings/inboxes/new">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Plus className="h-4 w-4" />
             </Button>

@@ -9,13 +9,11 @@ import {
 } from "@/components/ui/table";
 import { TeamMember } from "@/lib/interfaces";
 import { TeamMemberRow } from "./team-member-row";
-import { EditMemberDialog } from "./edit-member-dialog";
 
 interface TeamMembersTableProps {
   members: TeamMember[];
   onDelete: (id: string) => void;
-  onUpdateRole: (id: string, role: "Admin" | "Agent" | "Viewer") => void;
-  onUpdateStatus: (id: string, status: "Active" | "Inactive") => void;
+  onUpdateRole: (id: string, role: "admin" | "agent") => void;
   onResendInvite: (email: string) => void;
 }
 
@@ -23,12 +21,9 @@ export function TeamMembersTable({
   members,
   onDelete,
   onUpdateRole,
-  onUpdateStatus,
   onResendInvite,
 }: TeamMembersTableProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const [editMember, setEditMember] = useState<TeamMember | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkIsMobile = () => setIsMobile(window.innerWidth < 768);
@@ -36,36 +31,6 @@ export function TeamMembersTable({
     window.addEventListener("resize", checkIsMobile);
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
-
-  const handleEditMember = (member: TeamMember) => {
-    setEditMember(member);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (editMember) {
-      // Update the member's role if it changed
-      if (
-        editMember.role !== members.find((m) => m.id === editMember.id)?.role
-      ) {
-        onUpdateRole(editMember.id, editMember.role);
-      }
-
-      // Update the member's status if it changed
-      if (
-        editMember.status !==
-        members.find((m) => m.id === editMember.id)?.status
-      ) {
-        onUpdateStatus(
-          editMember.id,
-          editMember.status === "Active" ? "Active" : "Inactive"
-        );
-      }
-
-      setIsEditDialogOpen(false);
-      setEditMember(null);
-    }
-  };
 
   return (
     <>
@@ -100,8 +65,6 @@ export function TeamMembersTable({
                   member={member}
                   onDelete={onDelete}
                   onUpdateRole={onUpdateRole}
-                  onUpdateStatus={onUpdateStatus}
-                  onEdit={handleEditMember}
                   onResendInvite={onResendInvite}
                   isMobile={isMobile}
                 />
@@ -110,13 +73,6 @@ export function TeamMembersTable({
           </TableBody>
         </Table>
       </div>
-
-      <EditMemberDialog
-        member={editMember}
-        isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
-        onSave={handleSaveEdit}
-      />
     </>
   );
 }

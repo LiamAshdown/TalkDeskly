@@ -18,13 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TeamMember } from "@/lib/interfaces";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form } from "@/components/ui/form";
+import { InputField } from "@/components/ui/form-field";
+import { useTranslation } from "react-i18next";
+import {
+  createTeamMemberSchema,
+  CreateTeamMember,
+} from "@/lib/schemas/team-schema";
+import { handleServerValidation } from "@/lib/utils/form-validation";
+import { companyService } from "@/lib/api/services/company";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface AddMemberDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (
-    member: Omit<TeamMember, "id" | "status" | "avatar" | "inboxes">
-  ) => void;
+  onAdd: (member: TeamMember) => Promise<void>;
 }
 
 export function AddMemberDialog({
@@ -32,88 +42,115 @@ export function AddMemberDialog({
   onClose,
   onAdd,
 }: AddMemberDialogProps) {
-  const [newMember, setNewMember] = useState<{
-    name: string;
-    email: string;
-    role: "Admin" | "Agent" | "Viewer";
-  }>({
-    name: "",
-    email: "",
-    role: "Agent",
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<CreateTeamMember>({
+    resolver: zodResolver(createTeamMemberSchema(t)),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "agent",
+    },
+    mode: "onBlur",
   });
 
-  const handleAdd = () => {
-    onAdd(newMember);
-    setNewMember({ name: "", email: "", role: "Agent" });
-    onClose();
+  const handleAdd = async (data: CreateTeamMember) => {
+    try {
+      setLoading(true);
+
+      const response = await companyService.createTeamMember(data);
+      await onAdd(response.data);
+
+      toast({
+        title: t("team.member.added"),
+        description: t("team.member.added.description"),
+      });
+
+      form.reset({ firstName: "", lastName: "", email: "", role: "agent" });
+      onClose();
+    } catch (error) {
+      handleServerValidation(form, error, t);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Team Member</DialogTitle>
+          <DialogTitle>{t("team.addMember.title")}</DialogTitle>
           <DialogDescription>
-            Add a new team member to your workspace. They will have access based
-            on their role.
+            {t("team.addMember.description")}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              value={newMember.name}
-              onChange={(e) =>
-                setNewMember({ ...newMember, name: e.target.value })
-              }
-              placeholder="John Doe"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <InputField
+                name="firstName"
+                label={t("team.member.firstName")}
+                control={form.control}
+                placeholder={t("team.member.firstNamePlaceholder")}
+                disabled={loading}
+              />
+              <InputField
+                name="lastName"
+                label={t("team.member.lastName")}
+                control={form.control}
+                placeholder={t("team.member.lastNamePlaceholder")}
+                disabled={loading}
+              />
+            </div>
+
+            <InputField
+              name="email"
+              label={t("team.member.email")}
+              control={form.control}
               type="email"
-              value={newMember.email}
-              onChange={(e) =>
-                setNewMember({ ...newMember, email: e.target.value })
-              }
-              placeholder="john@example.com"
+              placeholder={t("team.member.emailPlaceholder")}
+              disabled={loading}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={newMember.role}
-              onValueChange={(value) =>
-                setNewMember({
-                  ...newMember,
-                  role: value as "Admin" | "Agent" | "Viewer",
-                })
-              }
-            >
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Admin">Admin</SelectItem>
-                <SelectItem value="Agent">Agent</SelectItem>
-                <SelectItem value="Viewer">Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Admins can manage all settings, Agents can respond to
-              conversations, Viewers can only view.
-            </p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleAdd}>Add Member</Button>
-        </DialogFooter>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">{t("team.member.role")}</Label>
+              <Select
+                value={form.watch("role")}
+                onValueChange={(value) =>
+                  form.setValue("role", value as "admin" | "agent")
+                }
+              >
+                <SelectTrigger id="role">
+                  <SelectValue placeholder={t("team.member.selectRole")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">{t("team.roles.admin")}</SelectItem>
+                  <SelectItem value="agent">{t("team.roles.agent")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t("team.member.roleDescription")}
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                type="button"
+                disabled={loading}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? t("team.member.adding") : t("team.member.add")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

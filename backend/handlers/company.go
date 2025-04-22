@@ -314,3 +314,66 @@ func (h *CompanyHandler) ResendInvite(c *fiber.Ctx) error {
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "invite_resent"), nil)
 }
+
+func (h *CompanyHandler) CreateTeamMember(c *fiber.Ctx) error {
+	user := h.securityContext.GetAuthenticatedUser(c)
+
+	var input struct {
+		FirstName string `json:"first_name" validate:"required,min=2,max=255"`
+		LastName  string `json:"last_name" validate:"required,min=2,max=255"`
+		Email     string `json:"email" validate:"required,email"`
+		Role      string `json:"role" validate:"required,oneof=admin agent"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "bad_request"), err)
+	}
+
+	if err := utils.ValidateStruct(input); err != nil {
+		return utils.ValidationErrorResponse(c, err)
+	}
+
+	_, err := h.userRepo.GetUserByEmail(input.Email)
+	if err == nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "user_already_exists"), nil)
+	}
+
+	password := utils.GenerateRandomString(16)
+
+	newUser := models.User{
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Email:     input.Email,
+		Role:      input.Role,
+		CompanyID: user.User.CompanyID,
+		Password:  password,
+	}
+
+	if _, err := h.userRepo.CreateUser(&newUser); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_user"), err)
+	}
+
+	// Generate accept URL for the new user
+	acceptURL := fmt.Sprintf("%s/auth/login", config.App.FrontendURL)
+
+	payload := fiber.Map{
+		"email":        newUser.Email,
+		"inviter_name": fmt.Sprintf("%s %s", user.User.FirstName, user.User.LastName),
+		"accept_url":   acceptURL,
+		"password":     password,
+	}
+
+	if err := h.jobClient.Enqueue("send_user_credentials", payload); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_enqueue_user_credentials"), err)
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "user_created"), fiber.Map{
+		"id":         newUser.ID,
+		"name":       newUser.GetFullName(),
+		"email":      newUser.Email,
+		"role":       newUser.Role,
+		"status":     "Active",
+		"created_at": newUser.CreatedAt,
+		"updated_at": newUser.UpdatedAt,
+	})
+}

@@ -1,6 +1,7 @@
 import apiClient from "@/lib/api/client";
 import { APIResponse } from "@/lib/api/types";
 import { Company, CompanyInvite, TeamMember } from "@/lib/interfaces";
+import { CreateTeamMember } from "@/lib/schemas/team-schema";
 
 export const companyService = {
   async getCompany(): Promise<APIResponse<Company>> {
@@ -55,6 +56,15 @@ export const companyService = {
   async resendCompanyInvite(id: string): Promise<APIResponse<void>> {
     const response = await apiClient.post<APIResponse<void>>(
       `/companies/invites/${id}/resend`
+    );
+    return response.data;
+  },
+  async createTeamMember(
+    member: CreateTeamMember
+  ): Promise<APIResponse<TeamMember>> {
+    const response = await apiClient.post<APIResponse<TeamMember>>(
+      "/companies/team-members",
+      member
     );
     return response.data;
   },

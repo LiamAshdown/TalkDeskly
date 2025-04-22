@@ -12,8 +12,8 @@ import { companyService } from "@/lib/api/services/company";
 export default function TeamSettings() {
   const { t } = useTranslation();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTab, setSelectedTab] = useState("all");
 
   const filteredMembers = teamMembers.filter(
     (member) =>
@@ -21,6 +21,12 @@ export default function TeamSettings() {
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.role.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Filter members based on selected tab
+  const displayedMembers =
+    selectedTab === "all"
+      ? filteredMembers
+      : filteredMembers.filter((m) => m.status === "Invited");
 
   const fetchTeamMembers = useCallback(async () => {
     const response = await companyService.getTeamMembers();
@@ -31,23 +37,8 @@ export default function TeamSettings() {
     fetchTeamMembers();
   }, []);
 
-  const handleAddMember = (
-    newMember: Omit<TeamMember, "id" | "status" | "avatar" | "inboxes">
-  ) => {
-    if (!newMember.name || !newMember.email) {
-      toast({
-        title: "Missing information",
-        description:
-          "Please provide both name and email for the new team member.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Member added",
-      description: `${newMember.name} has been added to your team.`,
-    });
+  const handleAddMember = async (newMember: TeamMember) => {
+    setTeamMembers([...teamMembers, newMember]);
   };
 
   const handleInviteMembers = async (emails: string[]) => {
@@ -113,18 +104,10 @@ export default function TeamSettings() {
     });
   };
 
-  const handleUpdateRole = (id: string, role: "Admin" | "Agent" | "Viewer") => {
+  const handleUpdateRole = (id: string, role: "admin" | "agent") => {
     setTeamMembers(
       teamMembers.map((member) =>
         member.id === id ? { ...member, role } : member
-      )
-    );
-  };
-
-  const handleUpdateStatus = (id: string, status: "Active" | "Inactive") => {
-    setTeamMembers(
-      teamMembers.map((member) =>
-        member.id === id ? { ...member, status } : member
       )
     );
   };
@@ -149,29 +132,16 @@ export default function TeamSettings() {
         onSearchChange={setSearchQuery}
         onInvite={handleInviteMembers}
         onAdd={handleAddMember}
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
       />
 
-      <Tabs defaultValue="all">
-        <TabsContent value="all" className="mt-0">
-          <TeamMembersTable
-            members={filteredMembers}
-            onDelete={handleDeleteMember}
-            onUpdateRole={handleUpdateRole}
-            onUpdateStatus={handleUpdateStatus}
-            onResendInvite={handleResendInvite}
-          />
-        </TabsContent>
-
-        <TabsContent value="invited" className="mt-0">
-          <TeamMembersTable
-            members={filteredMembers.filter((m) => m.status === "Invited")}
-            onDelete={handleDeleteMember}
-            onUpdateRole={handleUpdateRole}
-            onUpdateStatus={handleUpdateStatus}
-            onResendInvite={handleResendInvite}
-          />
-        </TabsContent>
-      </Tabs>
+      <TeamMembersTable
+        members={displayedMembers}
+        onDelete={handleDeleteMember}
+        onUpdateRole={handleUpdateRole}
+        onResendInvite={handleResendInvite}
+      />
 
       <Toaster />
     </SettingsContent>
