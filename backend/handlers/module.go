@@ -40,4 +40,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewWebSocketHandler); err != nil {
 		panic(err)
 	}
+
+	if err := container.Provide(NewPublicHandler); err != nil {
+		log.Fatalf("Failed to provide public handler: %v", err)
+	}
 }

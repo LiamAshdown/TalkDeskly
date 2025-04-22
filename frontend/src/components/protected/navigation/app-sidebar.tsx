@@ -54,7 +54,7 @@ export function AppSidebar() {
       >
         {/* Header Section */}
         <div className="h-14 flex items-center px-4">
-          {!collapsed && <h1 className="font-semibold">Agent Portal</h1>}
+          {!collapsed && <h1 className="font-semibold">TalkDeskly</h1>}
           {collapsed && <MessageSquare className="h-5 w-5 mx-auto" />}
         </div>
         <Separator />

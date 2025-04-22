@@ -25,23 +25,33 @@ import {
   useChatStateContext,
 } from "~/contexts/chat-state-context";
 import type { WebSocketMessage } from "~/lib/services/websocket/types";
+import { inboxService } from "~/lib/api/services/inbox";
+import type { APIResponse } from "~/lib/api/types";
+import type { Inbox } from "~/types/inbox";
 
 function LiveChatWidgetContent() {
   const { conversation, endConversation } = useConversationStore();
   const { chatState, dispatch } = useChatStateContext();
   const { wsService } = useWebSocket();
   const contactId = useContactStore((state) => state.contactId);
-  const [isConnected, setIsConnected] = useState(false);
-
-  console.log("showEndDialog", chatState);
 
   const wsServiceConnected = useRef(false);
   useEffect(() => {
     wsService.registerHandler(
       "connection_established",
-      (message: WebSocketMessage) => {
-        setIsConnected(true);
+      async (message: WebSocketMessage) => {
         wsService.setUserId(message.payload.userId);
+
+        dispatch({ type: "SET_INBOX_LOADING", isLoading: true });
+        try {
+          const response = await inboxService.getInbox(wsService.getInboxId()!);
+          dispatch({ type: "SET_INBOX_DATA", data: response.data });
+          dispatch({ type: "SET_CONNECTED", isConnected: true });
+        } catch (error) {
+          console.error("Failed to load inbox data:", error);
+        } finally {
+          dispatch({ type: "SET_INBOX_LOADING", isLoading: false });
+        }
       }
     );
 
@@ -157,7 +167,11 @@ function LiveChatWidgetContent() {
             }}
           >
             {!chatState.conversationStarted ? (
-              <WelcomeScreen isConnected={isConnected} />
+              <WelcomeScreen
+                isConnected={chatState.isConnected}
+                isLoading={chatState.isInboxLoading}
+                inboxData={chatState.inboxData}
+              />
             ) : (
               <ChatWindow />
             )}

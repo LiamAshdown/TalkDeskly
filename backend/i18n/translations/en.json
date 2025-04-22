@@ -33,6 +33,7 @@
   "failed_to_update_inbox_users": "Failed to update inbox users",
   "failed_to_reload_inbox": "Failed to reload inbox",
   "inbox_users_updated": "Inbox users updated successfully",
+  "inbox_details_retrieved": "Inbox details retrieved successfully",
 
   "failed_to_list_conversations": "Failed to list conversations",
   "conversations_listed": "Conversations listed successfully",

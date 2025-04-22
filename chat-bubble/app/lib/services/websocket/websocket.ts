@@ -158,6 +158,15 @@ export class WebSocketService {
     this.connectionManager.send(message);
   }
 
+  public getInboxDetails() {
+    const payload = MessageFactory.preparePayload({
+      inbox_id: this.connectionManager.getInboxId(),
+    });
+
+    const message = MessageFactory.createMessage("inbox_get_details", payload);
+    this.connectionManager.send(message);
+  }
+
   public startTyping(conversationId: string) {
     const payload = MessageFactory.preparePayload({
       conversation_id: conversationId,
@@ -189,5 +198,9 @@ export class WebSocketService {
 
   public setUserId(userId: string) {
     this.connectionManager.setUserId(userId);
+  }
+
+  public getInboxId(): string | undefined {
+    return this.connectionManager.getInboxId();
   }
 }

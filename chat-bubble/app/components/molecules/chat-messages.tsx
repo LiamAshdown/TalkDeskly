@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ChatBubble } from "~/components/chat-bubble";
+import { ChatBubble } from "~/components/chat-bubble/chat-bubble";
 import type { Message } from "~/types/conversation";
 interface ChatMessagesProps {
   messages: Message[];
@@ -28,9 +28,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
           }}
         >
           <ChatBubble
-            message={message.content}
-            timestamp={message.timestamp}
-            sender={message.sender}
+            message={message}
             isRead={false}
             className={message.sender.type === "contact" ? "opacity-70" : ""}
           />

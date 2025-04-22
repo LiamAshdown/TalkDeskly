@@ -23,6 +23,7 @@ type DIParams struct {
 	ConversationHandler *handler.ConversationHandler
 	LanguageHandler     *handler.LanguageHandler
 	WebSocketHandler    *handler.WebSocketHandler
+	PublicHandler       *handler.PublicHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -71,6 +72,10 @@ func SetupRoutesWithDI(params DIParams) {
 	languageGroup := apiGroup.Group("/language")
 	languageGroup.Get("/", params.LanguageHandler.GetSupportedLanguages)
 	languageGroup.Post("/", params.LanguageHandler.SetLanguage)
+
+	// Public routes (Used by the chat bubble)
+	publicGroup := apiGroup.Group("/public")
+	publicGroup.Get("/inbox/:id", params.PublicHandler.HandleGetInboxDetails)
 
 	onboardingGroup := apiGroup.Group("/onboarding")
 	onboardingGroup.Post("/user", params.OnboardingHandler.HandleCreateUser)

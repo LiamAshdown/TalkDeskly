@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useWebSocket } from "@/context/websocket-context";
-import MessageSkeleton from "./message-skeleton";
+import MessageSkeleton from "./list/message-skeleton";
 import {
   MessageListProps,
   FileMessage,

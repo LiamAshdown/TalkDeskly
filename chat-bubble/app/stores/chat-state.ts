@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import type { Inbox } from "~/types/inbox";
 
 // Chat state reducer types
 export type ChatState = {
@@ -9,6 +10,9 @@ export type ChatState = {
   conversationStarted: boolean;
   unreadCount: number;
   hasNewMessage: boolean;
+  inboxData: Inbox | null;
+  isInboxLoading: boolean;
+  isConnected: boolean;
 };
 
 export type ChatAction =
@@ -20,7 +24,10 @@ export type ChatAction =
   | { type: "START_CONVERSATION" }
   | { type: "END_CONVERSATION" }
   | { type: "UPDATE_UNREAD"; count: number }
-  | { type: "NEW_MESSAGE"; hasNew: boolean };
+  | { type: "NEW_MESSAGE"; hasNew: boolean }
+  | { type: "SET_INBOX_DATA"; data: Inbox }
+  | { type: "SET_INBOX_LOADING"; isLoading: boolean }
+  | { type: "SET_CONNECTED"; isConnected: boolean };
 
 export const initialChatState: ChatState = {
   isOpen: false,
@@ -30,6 +37,9 @@ export const initialChatState: ChatState = {
   conversationStarted: false,
   unreadCount: 1,
   hasNewMessage: true,
+  inboxData: null,
+  isInboxLoading: true,
+  isConnected: false,
 };
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
@@ -68,6 +78,12 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, unreadCount: action.count };
     case "NEW_MESSAGE":
       return { ...state, hasNewMessage: action.hasNew };
+    case "SET_INBOX_DATA":
+      return { ...state, inboxData: action.data };
+    case "SET_INBOX_LOADING":
+      return { ...state, isInboxLoading: action.isLoading };
+    case "SET_CONNECTED":
+      return { ...state, isConnected: action.isConnected };
     default:
       return state;
   }

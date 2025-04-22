@@ -82,3 +82,21 @@ func (inbox *Inbox) ToResponse() types.InboxPayload {
 func (inbox *Inbox) ToPayload() types.InboxPayload {
 	return inbox.ToResponse()
 }
+
+func (inbox *Inbox) ToPublicPayload() types.InboxPayload {
+	return types.InboxPayload{
+		ID:                    inbox.ID,
+		Name:                  inbox.Name,
+		WelcomeMessage:        inbox.WelcomeMessage,
+		Description:           inbox.Description,
+		CompanyID:             inbox.CompanyID,
+		Enabled:               inbox.Enabled,
+		AutoAssignmentEnabled: inbox.AutoAssignmentEnabled,
+		MaxAutoAssignments:    inbox.MaxAutoAssignments,
+		AutoResponderEnabled:  inbox.AutoResponderEnabled,
+		AutoResponderMessage:  inbox.AutoResponderMessage,
+		WorkingHours:          inbox.WorkingHours,
+		OutsideHoursMessage:   inbox.OutsideHoursMessage,
+		WidgetCustomization:   inbox.WidgetCustomization,
+	}
+}

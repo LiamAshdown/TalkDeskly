@@ -1,4 +1,4 @@
-export type SenderType = "contact" | "agent";
+export type SenderType = "contact" | "agent" | "system" | "bot";
 
 export interface Sender {
   id: string;

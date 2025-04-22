@@ -36,7 +36,7 @@ export default function ResponsiveLayout({
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="font-semibold">Agent Portal</div>
+        <div className="font-semibold">TalkDeskly</div>
         {/* To center the Agent Portal text */}
         <div></div>
       </div>

@@ -31,7 +31,7 @@ export default function ResponsiveLayout({
     <div className="h-full flex flex-col">
       {/* Mobile header with menu */}
       <div className="md:hidden border-b flex items-center justify-between p-2 pl-4">
-        <div className="font-semibold">Agent Portal</div>
+        <div className="font-semibold">TalkDeskly</div>
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
