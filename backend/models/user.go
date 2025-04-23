@@ -31,6 +31,7 @@ type User struct {
 	Company              *Company              `gorm:"foreignKey:CompanyID"`
 	NotificationSettings *NotificationSettings `gorm:"foreignKey:UserID"`
 	DeletedAt            gorm.DeletedAt        `gorm:"index" json:"-"`
+	Inboxes              []*Inbox              `gorm:"many2many:inbox_users;"`
 }
 
 func (u *User) GetFullName() string {

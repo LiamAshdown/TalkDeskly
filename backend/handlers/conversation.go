@@ -48,7 +48,7 @@ func NewConversationHandler(repo repositories.ConversationRepository, contactRep
 func (h *ConversationHandler) HandleListConversations(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
-	conversations, err := h.repo.GetConversationsByCompanyID(*user.User.CompanyID, "Contact", "Inbox", "AssignedTo")
+	conversations, err := h.repo.GetConversationsForUser(user.User.ID, "Contact", "Inbox", "AssignedTo")
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_list_conversations"), err)
 	}
@@ -133,7 +133,12 @@ func (h *ConversationHandler) HandleGetConversationMessages(c *fiber.Ctx) error 
 // AssignConversation assigns a conversation to a specified agent
 // Can be used for both manual and automatic assignment
 func (h *ConversationHandler) AssignConversation(conversation *models.Conversation, agentID string, agentName string) error {
-	conversation.Status = models.ConversationStatusActive
+
+	// Don't assign if the conversation is closed
+	if conversation.Status != models.ConversationStatusClosed {
+		conversation.Status = models.ConversationStatusActive
+	}
+
 	conversation.AssignedToID = &agentID
 
 	// Get the agent
@@ -197,18 +202,28 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 }
 
 func (h *ConversationHandler) HandleGetAssignableAgents(c *fiber.Ctx) error {
-	user := h.securityContext.GetAuthenticatedUser(c)
+	id := c.Params("id")
 
-	agents, err := h.userRepo.GetUsersByCompanyID(*user.User.CompanyID)
+	if id == "" {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_id_is_required"), nil)
+	}
+
+	conversation, err := h.repo.GetConversationByID(id, "Inbox")
 	if err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_agents"), err)
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_conversation"), err)
+	}
+
+	users, err := h.inboxRepo.GetUsersForInbox(conversation.InboxID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_users"), err)
 	}
 
 	payload := make([]types.AgentPayload, 0)
-	for _, agent := range agents {
+	for _, user := range users {
 		payload = append(payload, types.AgentPayload{
-			ID:   agent.ID,
-			Name: agent.GetFullName(),
+			ID:     user.ID,
+			Name:   user.GetFullName(),
+			Avatar: user.GetAvatar(),
 		})
 	}
 

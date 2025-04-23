@@ -56,6 +56,12 @@ apiClient.interceptors.response.use(
       // Handle unauthorized access
       useAuthStore.getState().logout();
       window.location.href = "/login";
+    } else if (error.response?.status === 413) {
+      // Handle file too large error
+      toast({
+        title: i18n.t("errors.413.title"),
+        description: i18n.t("errors.413.description"),
+      });
     } else if (isValidationError(error)) {
       // Convert validation error data to camelCase before passing it through
       if (error.response?.data) {

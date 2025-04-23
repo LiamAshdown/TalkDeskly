@@ -16,27 +16,12 @@ export default function ContactInfo() {
   const { activeConversation, setIsContactInfoOpen } = useActiveConversation();
   const { setMobileView } = useMobileView();
 
-  // Create a contact object that matches the Contact interface
-  // Use type assertion and add missing properties
-  const contact: Contact | null = activeConversation?.contact
-    ? {
-        id: activeConversation.contact.id,
-        name: activeConversation.contact.name,
-        email: activeConversation.contact.email,
-        phone: activeConversation.contact.phone,
-        company: "",
-        companyId: "",
-        createdAt: "",
-        updatedAt: "",
-      }
-    : null;
-
   const handleClose = () => {
     setIsContactInfoOpen(false);
     setMobileView("chat");
   };
 
-  if (!contact) {
+  if (!activeConversation) {
     return null;
   }
 
@@ -64,21 +49,21 @@ export default function ContactInfo() {
         </Button>
       </div>
       <div className="p-4 overflow-auto h-[calc(100vh-4rem)]">
-        <ContactHeader contact={contact} />
+        <ContactHeader contact={activeConversation.contact} />
 
-        <ContactDetails contact={contact} />
-
-        <Separator className="my-4" />
-
-        <CustomerDetails contact={contact} />
+        <ContactDetails contact={activeConversation.contact} />
 
         <Separator className="my-4" />
 
-        <NotesSection contact={contact} />
+        <CustomerDetails contact={activeConversation.contact} />
 
         <Separator className="my-4" />
 
-        <PreviousConversations contact={contact} />
+        <NotesSection contact={activeConversation.contact} />
+
+        <Separator className="my-4" />
+
+        <PreviousConversations contact={activeConversation.contact} />
 
         <div className="mt-6">
           <Button variant="outline" className="w-full">

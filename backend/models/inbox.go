@@ -100,3 +100,29 @@ func (inbox *Inbox) ToPublicPayload() types.InboxPayload {
 		WidgetCustomization:   inbox.WidgetCustomization,
 	}
 }
+
+// GetInboxesByUserID retrieves all inboxes associated with a user
+func GetInboxesByUserID(db *gorm.DB, userID string) ([]Inbox, error) {
+	var inboxes []Inbox
+
+	// Query inboxes that are associated with the user through the inbox_users join table
+	err := db.Joins("JOIN inbox_users ON inbox_users.inbox_id = inboxes.id").
+		Where("inbox_users.user_id = ?", userID).
+		Find(&inboxes).Error
+
+	return inboxes, err
+}
+
+// GetInboxesByUserIDWithPreload retrieves all inboxes associated with a user
+// and preloads the related users for each inbox
+func GetInboxesByUserIDWithPreload(db *gorm.DB, userID string) ([]Inbox, error) {
+	var inboxes []Inbox
+
+	// Query inboxes and preload the users
+	err := db.Joins("JOIN inbox_users ON inbox_users.inbox_id = inboxes.id").
+		Where("inbox_users.user_id = ?", userID).
+		Preload("Users").
+		Find(&inboxes).Error
+
+	return inboxes, err
+}

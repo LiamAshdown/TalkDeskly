@@ -217,7 +217,7 @@ func (h *WebSocketHandler) HandleConversationStart(client *types.WebSocketClient
 }
 
 func (h *WebSocketHandler) assignConversationToAgent(conversation *models.Conversation, maxAutoAssignments int) {
-	agents, err := h.userRepo.GetUsersByCompanyID(conversation.CompanyID)
+	agents, err := h.inboxRepo.GetUsersForInbox(conversation.InboxID)
 	if err != nil {
 		h.logger.Error("Failed to get agents", "error", err)
 		return

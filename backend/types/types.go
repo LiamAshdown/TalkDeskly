@@ -88,8 +88,9 @@ type MessagePayload struct {
 }
 
 type AgentPayload struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
 }
 
 type ConversationPayload struct {

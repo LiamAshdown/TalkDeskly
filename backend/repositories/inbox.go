@@ -6,12 +6,42 @@ import (
 	"gorm.io/gorm"
 )
 
+type InboxRepository interface {
+	GetInboxByID(id string) (*models.Inbox, error)
+	GetInboxByIDAndCompanyID(id string, companyID string) (*models.Inbox, error)
+	GetInboxesByCompanyID(companyID string) ([]models.Inbox, error)
+	CreateInbox(inbox *models.Inbox) error
+	UpdateInbox(inbox *models.Inbox) error
+	DeleteInbox(id string) error
+	DeleteInboxByIDAndCompanyID(id string, companyID string) error
+	GetUsersForInbox(inboxID string) ([]models.User, error)
+}
+
 type inboxRepository struct {
 	db *gorm.DB
 }
 
-func NewInboxRepository(db *gorm.DB) *inboxRepository {
+func NewInboxRepository(db *gorm.DB) InboxRepository {
 	return &inboxRepository{db: db}
+}
+
+func (r *inboxRepository) ApplyPreloads(query *gorm.DB, preloads ...string) *gorm.DB {
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+	return query
+}
+
+func (r *inboxRepository) GetUsersForInbox(inboxID string) ([]models.User, error) {
+	var inbox models.Inbox
+
+	// Get users by inbox id
+	err := r.db.Preload("Users").Where("id = ?", inboxID).First(&inbox).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return inbox.Users, nil
 }
 
 func (r *inboxRepository) GetInboxByID(id string) (*models.Inbox, error) {

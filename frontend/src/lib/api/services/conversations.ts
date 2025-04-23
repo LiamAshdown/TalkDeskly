@@ -27,9 +27,11 @@ export const conversationService = {
     );
     return response.data;
   },
-  async getAssignableAgents(): Promise<APIResponse<Agent[]>> {
+  async getAssignableAgents(
+    conversationId: string
+  ): Promise<APIResponse<Agent[]>> {
     const response = await apiClient.get<APIResponse<Agent[]>>(
-      "/conversations/assignable-agents"
+      `/conversations/${conversationId}/assignable-agents`
     );
     return response.data;
   },

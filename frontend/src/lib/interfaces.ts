@@ -153,6 +153,7 @@ export interface Message {
 export interface Agent {
   id: string;
   name: string;
+  avatar: string;
 }
 
 export interface Conversation {
@@ -164,12 +165,7 @@ export interface Conversation {
     id: string;
     name: string;
   };
-  contact: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
+  contact: Contact;
   agent: {
     id: string;
     name: string;

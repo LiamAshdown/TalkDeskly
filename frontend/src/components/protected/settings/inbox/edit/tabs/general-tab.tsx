@@ -15,7 +15,8 @@ import {
   updateInboxSchema,
   type UpdateInboxFormData,
 } from "@/lib/schemas/inbox-schema";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { debounce } from "@/lib/utils";
 
 export function GeneralTab() {
   const { inbox, updateInbox, setTabValidation } = useEditInbox();
@@ -34,18 +35,31 @@ export function GeneralTab() {
     mode: "onChange",
   });
 
-  useEffect(() => {
-    const subscription = form.watch((value) => {
-      // Validate all fields when any field changes
+  const debouncedValidateAndUpdate = useCallback(
+    debounce((formValues: UpdateInboxFormData) => {
       form.trigger().then((isValid) => {
         setTabValidation("general", isValid);
         if (isValid) {
-          updateInbox(value as UpdateInboxFormData);
+          updateInbox(formValues);
         }
       });
+    }, 300),
+    [form, setTabValidation, updateInbox]
+  );
+
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      // Only run debounced validation when the form has been interacted with
+      if (form.formState.isDirty) {
+        debouncedValidateAndUpdate(value as UpdateInboxFormData);
+      }
     });
-    return () => subscription.unsubscribe();
-  }, [form, setTabValidation, updateInbox]);
+
+    return () => {
+      subscription.unsubscribe();
+      debouncedValidateAndUpdate.cancel();
+    };
+  }, [form, debouncedValidateAndUpdate]);
 
   const onSubmit = (data: UpdateInboxFormData) => {
     form.trigger().then((isValid) => {

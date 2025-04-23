@@ -8,6 +8,7 @@ import (
 
 type ConversationRepository interface {
 	GetConversationsByCompanyID(companyID string, preloads ...string) ([]models.Conversation, error)
+	GetConversationsForUser(userID string, preloads ...string) ([]models.Conversation, error)
 	GetConversationByIdAndCompanyID(id string, companyID string, preloads ...string) (*models.Conversation, error)
 	GetConversationByID(id string, preloads ...string) (*models.Conversation, error)
 	CreateConversation(conversation *models.Conversation) error
@@ -63,6 +64,33 @@ func (r *conversationRepository) GetConversationsByCompanyID(companyID string, p
 		if err := r.populateMessageSenders(&conversations); err != nil {
 			return nil, err
 		}
+	}
+
+	return conversations, nil
+}
+
+func (r *conversationRepository) GetConversationsForUser(userID string, preloads ...string) ([]models.Conversation, error) {
+	var conversations []models.Conversation
+
+	var user models.User
+
+	err := r.db.Preload("Inboxes").First(&user, "id = ?", userID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var inboxIDs []string
+	for _, inbox := range user.Inboxes {
+		inboxIDs = append(inboxIDs, inbox.ID)
+	}
+
+	query := r.db.Where("inbox_id IN ?", inboxIDs).Where("company_id = ?", user.CompanyID)
+	query = r.ApplyPreloads(query, preloads...)
+	query = query.Order("last_message_at DESC")
+
+	err = query.Find(&conversations).Error
+	if err != nil {
+		return nil, err
 	}
 
 	return conversations, nil

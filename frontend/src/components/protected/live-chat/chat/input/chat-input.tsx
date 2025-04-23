@@ -9,7 +9,7 @@ import { Paperclip, Smile, Send } from "lucide-react";
 import type { FileWithPreview } from "@/components/protected/live-chat/chat/input/types";
 import FilePreview from "@/components/protected/live-chat/chat/input/file-preview";
 import MentionsDropdown from "@/components/protected/live-chat/chat/input/mentions-dropdown";
-import type { Agent } from "@/components/protected/live-chat/chat/input/types";
+import { Agent } from "@/lib/interfaces";
 import EmojiPicker from "@/components/protected/emoji-picker";
 import { cn } from "@/lib/utils";
 

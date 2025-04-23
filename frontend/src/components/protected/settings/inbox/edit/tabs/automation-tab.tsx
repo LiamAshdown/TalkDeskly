@@ -26,8 +26,8 @@ import {
   automationSchema,
   type AutomationFormData,
 } from "@/lib/schemas/automation-schema";
-import { useEffect, useCallback, useRef } from "react";
-import { useDebounce } from "@/lib/hooks/use-debounce";
+import { useEffect, useCallback } from "react";
+import { debounce } from "@/lib/utils";
 
 // Generate time options for the dropdown
 const generateTimeOptions = () => {
@@ -84,25 +84,30 @@ export function AutomationTab() {
     mode: "onChange",
   });
 
-  const validateAndUpdate = useCallback(
-    (value: AutomationFormData) => {
+  const debouncedValidateAndUpdate = useCallback(
+    debounce((formValues: AutomationFormData) => {
       form.trigger().then((isValid) => {
         setTabValidation("automation", isValid);
         if (isValid) {
-          updateInbox(value);
+          updateInbox(formValues);
         }
       });
-    },
+    }, 300),
     [form, setTabValidation, updateInbox]
   );
 
-  const debouncedValidateAndUpdate = useDebounce(validateAndUpdate, 500);
-
   useEffect(() => {
     const subscription = form.watch((value) => {
-      debouncedValidateAndUpdate(value as AutomationFormData);
+      // Only run debounced validation when the form has been interacted with
+      if (form.formState.isDirty) {
+        debouncedValidateAndUpdate(value as AutomationFormData);
+      }
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      debouncedValidateAndUpdate.cancel();
+    };
   }, [form, debouncedValidateAndUpdate]);
 
   const onSubmit = (data: AutomationFormData) => {

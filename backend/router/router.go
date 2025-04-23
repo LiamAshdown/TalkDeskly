@@ -136,7 +136,7 @@ func SetupRoutesWithDI(params DIParams) {
 
 	conversationGroup := apiGroup.Group("/conversations", middleware.Auth(), middleware.RequireCompany())
 	conversationGroup.Get("/", params.ConversationHandler.HandleListConversations)
-	conversationGroup.Get("/assignable-agents", params.ConversationHandler.HandleGetAssignableAgents)
+	conversationGroup.Get("/:id/assignable-agents", params.ConversationHandler.HandleGetAssignableAgents)
 	conversationGroup.Get("/:id", params.ConversationHandler.HandleGetConversation)
 	conversationGroup.Get("/:id/messages", params.ConversationHandler.HandleGetConversationMessages)
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)

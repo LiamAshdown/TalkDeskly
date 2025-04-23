@@ -35,7 +35,9 @@ function ConversationItem({
     if (assignableAgents.length === 0) {
       setIsLoadingAgents(true);
       try {
-        const response = await conversationService.getAssignableAgents();
+        const response = await conversationService.getAssignableAgents(
+          conversation?.conversationId
+        );
         setAssignableAgents(response.data);
       } catch (error) {
         console.error("Failed to fetch assignable agents:", error);

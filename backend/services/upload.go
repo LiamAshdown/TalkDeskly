@@ -27,6 +27,8 @@ func DefaultUploadConfig() UploadConfig {
 			".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
 			".mp4": true, ".mov": true, ".mp3": true, ".wav": true,
 			".pdf": true, ".doc": true, ".docx": true, ".txt": true,
+			".xls": true, ".xlsx": true, ".ppt": true, ".pptx": true,
+			".zip": true, ".rar": true, ".7z": true, ".tar": true,
 		},
 		DefaultStorage: nil,
 	}

@@ -1,44 +1,10 @@
-"use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChatInput from "@/components/protected/live-chat/chat/input/chat-input";
-import type { FileWithPreview } from "@/components/protected/live-chat/chat/input/types";
-import type { Agent } from "@/components/protected/live-chat/chat/input/types";
-import { useActiveConversation } from "@/context/active-conversation-context";
-import { Conversation } from "@/lib/interfaces";
+import { Conversation, Agent } from "@/lib/interfaces";
 import { useWebSocket } from "@/context/websocket-context";
 import { conversationService } from "@/lib/api/services/conversations";
 import { useAuthStore } from "@/stores/auth";
-
-// Sample agent data - in a real app, this would come from your API
-const agents: Agent[] = [
-  { id: 1, name: "Alex Johnson", avatar: "/abstract-aj.png", status: "online" },
-  {
-    id: 2,
-    name: "Sam Taylor",
-    avatar: "/stylized-letter-st.png",
-    status: "online",
-  },
-  {
-    id: 3,
-    name: "Jamie Smith",
-    avatar: "/javascript-code-abstract.png",
-    status: "away",
-  },
-  {
-    id: 4,
-    name: "Morgan Lee",
-    avatar: "/machine-learning-concept.png",
-    status: "offline",
-  },
-  {
-    id: 5,
-    name: "Casey Wilson",
-    avatar: "/abstract-colorful-swirls.png",
-    status: "online",
-  },
-];
 
 type ChatPortalProps = {
   disabled: boolean;
@@ -52,6 +18,18 @@ export default function ChatPortal({
   const [activeTab, setActiveTab] = useState("customer");
   const { wsService } = useWebSocket();
   const { user } = useAuthStore();
+  const [assignableAgents, setAssignableAgents] = useState<Agent[]>([]);
+
+  useEffect(() => {
+    const fetchAssignableAgents = async () => {
+      const response = await conversationService.getAssignableAgents(
+        conversation?.conversationId
+      );
+      setAssignableAgents(response.data);
+    };
+
+    fetchAssignableAgents();
+  }, []);
 
   const sendMessage = async (
     message: string,
@@ -132,7 +110,7 @@ export default function ChatPortal({
             buttonText="Send"
             buttonColor="bg-orange-600 hover:bg-orange-700"
             borderColor="border-orange-600"
-            agents={agents}
+            agents={assignableAgents}
           />
         </TabsContent>
       </Tabs>
