@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { useConversationStore } from "~/stores/conversation";
-import { useChatState } from "~/stores/chat-state";
 import { useContactStore } from "~/stores/contact-store";
 import { TypingProvider } from "~/contexts/typing-context";
 import {
@@ -26,8 +25,6 @@ import {
 } from "~/contexts/chat-state-context";
 import type { WebSocketMessage } from "~/lib/services/websocket/types";
 import { inboxService } from "~/lib/api/services/inbox";
-import type { APIResponse } from "~/lib/api/types";
-import type { Inbox } from "~/types/inbox";
 
 function LiveChatWidgetContent() {
   const { conversation, endConversation } = useConversationStore();
@@ -61,7 +58,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    const inboxId = "dbe6ec52-8bf5-4052-a3d9-b4c85cb09f17"; // Your inbox ID
+    const inboxId = "9be2946b-d930-4552-8a0a-69b51ec86e37"; // Your inbox ID
 
     wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;

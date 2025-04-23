@@ -29,20 +29,20 @@ func (l *InboxListener) subscribe() {
 func (l *InboxListener) HandleInboxCreated(event interfaces.Event) {
 	if inbox, ok := event.Payload.(*models.Inbox); ok {
 		// Broadcast to company channel
-		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxCreated, inbox)
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxCreated, inbox.ToPayload())
 	}
 }
 
 func (l *InboxListener) HandleInboxUpdated(event interfaces.Event) {
 	if inbox, ok := event.Payload.(*models.Inbox); ok {
 		// Broadcast to company channel
-		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxUpdated, inbox)
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxUpdated, inbox.ToPayload())
 	}
 }
 
 func (l *InboxListener) HandleInboxDeleted(event interfaces.Event) {
 	if inbox, ok := event.Payload.(*models.Inbox); ok {
 		// Broadcast to company channel
-		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxDeleted, inbox)
+		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxDeleted, inbox.ToPayload())
 	}
 }

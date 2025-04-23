@@ -15,6 +15,7 @@ interface ConversationFilterProps {
   conversations: Conversation[];
   filter: string;
   setFilter: (filter: string) => void;
+  onSelectConversation: (conversationId: string) => void;
 }
 
 // Updated ConversationFilter component
@@ -22,6 +23,7 @@ export default function ConversationFilter({
   conversations,
   filter,
   setFilter,
+  onSelectConversation,
 }: ConversationFilterProps) {
   const { activeConversationId, setActiveConversationId } =
     useActiveConversation();
@@ -45,8 +47,9 @@ export default function ConversationFilter({
 
   // Handle selecting a conversation on mobile
   const handleSelectConversation = (id: string) => {
-    setActiveConversationId(id);
-    setMobileView("chat"); // Switch to chat view on mobile when a conversation is selected
+    onSelectConversation(id);
+
+    setMobileView("chat");
   };
 
   // Apply filters

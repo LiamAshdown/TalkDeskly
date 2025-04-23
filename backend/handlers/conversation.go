@@ -130,6 +130,35 @@ func (h *ConversationHandler) HandleGetConversationMessages(c *fiber.Ctx) error 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_messages_retrieved"), conversation.GetMessages())
 }
 
+// AssignConversation assigns a conversation to a specified agent
+// Can be used for both manual and automatic assignment
+func (h *ConversationHandler) AssignConversation(conversation *models.Conversation, agentID string, agentName string) error {
+	conversation.Status = models.ConversationStatusActive
+	conversation.AssignedToID = &agentID
+
+	// Get the agent
+	agent, err := h.userRepo.GetUserByID(agentID)
+	if err != nil {
+		return err
+	}
+	conversation.AssignedTo = agent
+
+	if err := h.repo.UpdateConversation(conversation); err != nil {
+		return err
+	}
+
+	// Send system message
+	h.SendSystemMessage(
+		conversation,
+		fmt.Sprintf("Agent %s has been assigned to this conversation.", agentName),
+	)
+
+	// Dispatch event
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationAssign, conversation)
+
+	return nil
+}
+
 func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -159,20 +188,10 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "conversation_already_assigned"), nil)
 	}
 
-	conversation.Status = models.ConversationStatusActive
-	conversation.AssignedToID = &assignedToUser.ID
-	conversation.AssignedTo = assignedToUser
-
-	if err := h.repo.UpdateConversation(conversation); err != nil {
+	// Use the common method
+	if err := h.AssignConversation(conversation, assignedToUser.ID, h.securityContext.GetAuthenticatedUser(c).User.GetFullName()); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_conversation"), err)
 	}
-
-	h.SendSystemMessage(
-		conversation,
-		fmt.Sprintf("Agent %s has been assigned to this conversation.", h.securityContext.GetAuthenticatedUser(c).User.GetFullName()),
-	)
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationAssign, conversation)
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_assigned"), conversation.ToPayload())
 }

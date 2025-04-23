@@ -10,6 +10,7 @@ import {
   ActiveConversationProvider,
   useActiveConversation,
 } from "@/context/active-conversation-context";
+import { useParams, useNavigate } from "react-router-dom";
 
 export default function LiveChatPortal() {
   return (
@@ -22,9 +23,12 @@ export default function LiveChatPortal() {
 function LiveChatContent() {
   const { inboxes, fetchInboxes } = useInboxesStore();
   const { conversations, fetchConversations } = useConversationsStore();
-  const { isContactInfoOpen } = useActiveConversation();
+  const { isContactInfoOpen, setActiveConversationId } =
+    useActiveConversation();
   const [activeInboxId, setActiveInboxId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   // Filter conversations based on the selected inbox
   const filteredConversations = conversations.filter((conv) => {
@@ -38,6 +42,18 @@ function LiveChatContent() {
       return conv.inboxId === activeInboxId;
     }
   });
+
+  // Set conversation from URL param if present
+  useEffect(() => {
+    if (id) {
+      setActiveConversationId(id);
+    }
+  }, [id]);
+
+  // Custom handler for conversation selection to update URL
+  const handleSelectConversation = (conversationId: string) => {
+    navigate(`/portal/conversations/${conversationId}`);
+  };
 
   useEffect(() => {
     fetchInboxes();
@@ -58,6 +74,7 @@ function LiveChatContent() {
           conversations={filteredConversations}
           filter={filter}
           setFilter={setFilter}
+          onSelectConversation={handleSelectConversation}
         />
       }
       chatPanel={

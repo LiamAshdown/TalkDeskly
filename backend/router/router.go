@@ -25,6 +25,7 @@ type DIParams struct {
 	WebSocketHandler    *handler.WebSocketHandler
 	PublicHandler       *handler.PublicHandler
 	AuthHandler         *handler.AuthHandler
+	UserHandler         *handler.UserHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -124,10 +125,10 @@ func SetupRoutesWithDI(params DIParams) {
 
 	// Admin user management routes
 	adminUserGroup := apiGroup.Group("/users", middleware.Auth(), middleware.RequireCompany(), middleware.IsAdmin())
-	adminUserGroup.Get("/", handler.GetUsers)
-	adminUserGroup.Get("/:id", handler.GetUser)
-	adminUserGroup.Post("/", handler.CreateCompanyUser)
-	adminUserGroup.Put("/:id", handler.UpdateUser)
+	adminUserGroup.Get("/", params.UserHandler.GetUsers)
+	adminUserGroup.Get("/:id", params.UserHandler.GetUser)
+	adminUserGroup.Post("/", params.UserHandler.CreateCompanyUser)
+	adminUserGroup.Put("/:id", params.UserHandler.UpdateUser)
 
 	notificationSettingsGroup := apiGroup.Group("/notification-settings", middleware.Auth(), middleware.RequireCompany())
 	notificationSettingsGroup.Get("/", handler.GetNotificationSettings)

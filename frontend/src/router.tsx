@@ -68,6 +68,11 @@ export const router = createBrowserRouter([
             id: "dashboard",
           },
           {
+            path: "conversations/:id",
+            element: <LiveChatPage />,
+            id: "conversation-detail",
+          },
+          {
             path: "contacts",
             element: <ContactsPage />,
             id: "contacts",

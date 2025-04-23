@@ -131,7 +131,7 @@ function ConversationItem({
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="text-sm text-muted-foreground dark:text-white truncate">
                 {conversation.lastMessage}
               </p>
               {conversation.status && (

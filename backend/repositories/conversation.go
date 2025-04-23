@@ -14,6 +14,7 @@ type ConversationRepository interface {
 	UpdateConversation(conversation *models.Conversation) error
 	CreateMessage(message *models.Message) (*models.Message, error)
 	PopulateSender(message *models.Message) (*models.Message, error)
+	GetActiveAssignedConversationsForUser(userID string) ([]models.Conversation, error)
 }
 
 type conversationRepository struct {
@@ -162,6 +163,15 @@ func (r *conversationRepository) PopulateSender(message *models.Message) (*model
 		message.ContactSender = &contact
 	}
 	return message, nil
+}
+
+func (r *conversationRepository) GetActiveAssignedConversationsForUser(userID string) ([]models.Conversation, error) {
+	var conversations []models.Conversation
+	query := r.db.Where("assigned_to_id = ? AND status = ?", userID, models.ConversationStatusActive)
+	if err := query.Find(&conversations).Error; err != nil {
+		return nil, err
+	}
+	return conversations, nil
 }
 
 // populateMessageSenders populates the AgentSender and ContactSender fields for each message

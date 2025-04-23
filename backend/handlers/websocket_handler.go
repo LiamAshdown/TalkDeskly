@@ -7,6 +7,7 @@ import (
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"live-chat-server/utils"
+	"math/rand"
 
 	"github.com/gofiber/websocket/v2"
 	"github.com/mitchellh/mapstructure"
@@ -15,43 +16,46 @@ import (
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
-	websocketService interfaces.WebSocketService
-	pubSub           interfaces.PubSub
-	dispatcher       interfaces.Dispatcher
-	logger           interfaces.Logger
-	securityContext  interfaces.SecurityContext
-	conversationRepo repositories.ConversationRepository
-	inboxRepo        repositories.InboxRepository
-	contactRepo      repositories.ContactRepository
-	userRepo         repositories.UserRepository
+	websocketService    interfaces.WebSocketService
+	pubSub              interfaces.PubSub
+	dispatcher          interfaces.Dispatcher
+	logger              interfaces.Logger
+	securityContext     interfaces.SecurityContext
+	conversationRepo    repositories.ConversationRepository
+	inboxRepo           repositories.InboxRepository
+	contactRepo         repositories.ContactRepository
+	userRepo            repositories.UserRepository
+	conversationHandler *ConversationHandler
 }
 
 // WebSocketHandlerParams contains dependencies for WebSocketHandler
 type WebSocketHandlerParams struct {
 	dig.In
-	WebsocketService interfaces.WebSocketService
-	PubSub           interfaces.PubSub
-	Dispatcher       interfaces.Dispatcher
-	Logger           interfaces.Logger
-	SecurityContext  interfaces.SecurityContext
-	ConversationRepo repositories.ConversationRepository
-	InboxRepo        repositories.InboxRepository
-	ContactRepo      repositories.ContactRepository
-	UserRepo         repositories.UserRepository
+	WebsocketService    interfaces.WebSocketService
+	PubSub              interfaces.PubSub
+	Dispatcher          interfaces.Dispatcher
+	Logger              interfaces.Logger
+	SecurityContext     interfaces.SecurityContext
+	ConversationRepo    repositories.ConversationRepository
+	InboxRepo           repositories.InboxRepository
+	ContactRepo         repositories.ContactRepository
+	UserRepo            repositories.UserRepository
+	ConversationHandler *ConversationHandler
 }
 
 // NewWebSocketHandler creates a new WebSocketHandler
 func NewWebSocketHandler(params WebSocketHandlerParams) *WebSocketHandler {
 	return &WebSocketHandler{
-		websocketService: params.WebsocketService,
-		pubSub:           params.PubSub,
-		dispatcher:       params.Dispatcher,
-		logger:           params.Logger,
-		securityContext:  params.SecurityContext,
-		conversationRepo: params.ConversationRepo,
-		inboxRepo:        params.InboxRepo,
-		contactRepo:      params.ContactRepo,
-		userRepo:         params.UserRepo,
+		websocketService:    params.WebsocketService,
+		pubSub:              params.PubSub,
+		dispatcher:          params.Dispatcher,
+		logger:              params.Logger,
+		securityContext:     params.SecurityContext,
+		conversationRepo:    params.ConversationRepo,
+		inboxRepo:           params.InboxRepo,
+		contactRepo:         params.ContactRepo,
+		userRepo:            params.UserRepo,
+		conversationHandler: params.ConversationHandler,
 	}
 }
 
@@ -203,9 +207,46 @@ func (h *WebSocketHandler) HandleConversationStart(client *types.WebSocketClient
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
 
-	if inbox.WelcomeMessage != "" {
-		// Send welcome message if configured
-		h.SendBotMessage(conversationPtr, inbox.WelcomeMessage)
+	if inbox.AutoResponderMessage != "" && inbox.AutoResponderEnabled {
+		h.SendBotMessage(conversationPtr, inbox.AutoResponderMessage)
+	}
+
+	if inbox.AutoAssignmentEnabled {
+		h.assignConversationToAgent(conversationPtr, inbox.MaxAutoAssignments)
+	}
+}
+
+func (h *WebSocketHandler) assignConversationToAgent(conversation *models.Conversation, maxAutoAssignments int) {
+	agents, err := h.userRepo.GetUsersByCompanyID(conversation.CompanyID)
+	if err != nil {
+		h.logger.Error("Failed to get agents", "error", err)
+		return
+	}
+
+	availableAgents := []models.User{}
+
+	for _, agent := range agents {
+		conversations, err := h.conversationRepo.GetActiveAssignedConversationsForUser(agent.ID)
+		if err != nil {
+			h.logger.Error("Failed to get conversations", "error", err)
+			continue
+		}
+
+		if len(conversations) >= maxAutoAssignments {
+			continue
+		}
+
+		availableAgents = append(availableAgents, agent)
+	}
+
+	if len(availableAgents) > 0 {
+		randomAgent := availableAgents[rand.Intn(len(availableAgents))]
+
+		// Use the shared method from ConversationHandler
+		err := h.conversationHandler.AssignConversation(conversation, randomAgent.ID, randomAgent.GetFullName())
+		if err != nil {
+			h.logger.Error("Failed to assign conversation", "error", err)
+		}
 	}
 }
 
@@ -324,7 +365,6 @@ func (h *WebSocketHandler) HandleConversationTypingStop(client *types.WebSocketC
 		"user_type":       client.GetType(),
 	}
 
-	// Publish typing stop event to conversation channel
 	h.pubSub.Publish("conversation:"+payload.ConversationID, types.EventTypeConversationTypingStop, typingStopData)
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationTypingStop, conversation)

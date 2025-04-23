@@ -9,7 +9,6 @@ import { Conversation, Message } from "@/lib/interfaces";
 import { conversationService } from "@/lib/api/services/conversations";
 import { useWebSocket } from "./websocket-context";
 import { useConversationsStore } from "@/stores/conversations";
-import { FileWithPreview } from "@/components/protected/live-chat/chat/input/types";
 
 interface ActiveConversationContextType {
   activeConversation: Conversation | null;
@@ -18,7 +17,6 @@ interface ActiveConversationContextType {
   isContactInfoOpen: boolean;
   setActiveConversationId: (id: string | null) => void;
   setIsContactInfoOpen: (isOpen: boolean) => void;
-  sendMessage: (message: string, files: FileWithPreview[]) => void;
 }
 
 const ActiveConversationContext =
@@ -33,7 +31,7 @@ export function ActiveConversationProvider({
     string | null
   >(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  const [isContactInfoOpen, setIsContactInfoOpen] = useState(true);
+  const [isContactInfoOpen, setIsContactInfoOpen] = useState(false);
   const { wsService } = useWebSocket();
   const { conversations, setConversationMessages } = useConversationsStore();
   const [activeConversation, setActiveConversation] =
@@ -54,6 +52,11 @@ export function ActiveConversationProvider({
   ) => {
     if (!conversationId) {
       setActiveConversationId(null);
+      return;
+    }
+
+    // Skip if it's already the active conversation
+    if (conversationId === activeConversationId) {
       return;
     }
 
@@ -78,16 +81,6 @@ export function ActiveConversationProvider({
     }
   };
 
-  // Function to send a message
-  const sendMessage = (
-    message: string,
-    files: FileWithPreview[],
-    type: "contact" | "agent" = "contact"
-  ) => {
-    if (!activeConversationId) return;
-    wsService.sendMessage(activeConversationId, message, type);
-  };
-
   return (
     <ActiveConversationContext.Provider
       value={{
@@ -97,7 +90,6 @@ export function ActiveConversationProvider({
         isContactInfoOpen,
         setActiveConversationId: handleSetActiveConversationId,
         setIsContactInfoOpen,
-        sendMessage,
       }}
     >
       {children}

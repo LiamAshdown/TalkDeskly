@@ -48,4 +48,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewAuthHandler); err != nil {
 		log.Fatalf("Failed to provide auth handler: %v", err)
 	}
+
+	if err := container.Provide(NewUserHandler); err != nil {
+		log.Fatalf("Failed to provide user handler: %v", err)
+	}
 }
