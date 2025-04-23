@@ -22,7 +22,7 @@ type Inbox struct {
 	Description           string
 	Enabled               bool `gorm:"default:true"`
 	AutoAssignmentEnabled bool `gorm:"default:false"`
-	MaxAutoAssignments    int  `gorm:"default:0"`
+	MaxAutoAssignments    int  `gorm:"default:1"`
 	AutoResponderEnabled  bool `gorm:"default:false"`
 	AutoResponderMessage  string
 	WorkingHours          types.WorkingHoursMap `gorm:"type:jsonb"` // Key is day of week (Monday, Tuesday, etc.)
