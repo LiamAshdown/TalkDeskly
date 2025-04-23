@@ -44,4 +44,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewPublicHandler); err != nil {
 		log.Fatalf("Failed to provide public handler: %v", err)
 	}
+
+	if err := container.Provide(NewAuthHandler); err != nil {
+		log.Fatalf("Failed to provide auth handler: %v", err)
+	}
 }

@@ -24,6 +24,7 @@ type DIParams struct {
 	LanguageHandler     *handler.LanguageHandler
 	WebSocketHandler    *handler.WebSocketHandler
 	PublicHandler       *handler.PublicHandler
+	AuthHandler         *handler.AuthHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -34,6 +35,9 @@ func SetupRoutesWithDI(params DIParams) {
 	app.Static("/uploads", disk.GetBasePath())
 
 	apiGroup := app.Group("/api")
+
+	authGroup := apiGroup.Group("/auth")
+	authGroup.Post("/login", params.AuthHandler.Login)
 
 	// WebSocket routes
 	wsGroup := app.Group("/ws")
@@ -84,11 +88,11 @@ func SetupRoutesWithDI(params DIParams) {
 	onboardingProtectedGroup.Post("/company", params.OnboardingHandler.HandleCreateCompany)
 
 	inboxGroup := apiGroup.Group("/inbox", middleware.Auth(), middleware.RequireCompany())
-	inboxGroup.Post("/", params.InboxHandler.HandleCreateInbox, middleware.IsAdmin())
+	inboxGroup.Post("/", middleware.IsAdmin(), params.InboxHandler.HandleCreateInbox)
 	inboxGroup.Get("/:id", params.InboxHandler.HandleGetInbox)
-	inboxGroup.Put("/:id", params.InboxHandler.HandleUpdateInbox, middleware.IsAdmin())
+	inboxGroup.Put("/:id", middleware.IsAdmin(), params.InboxHandler.HandleUpdateInbox)
 	inboxGroup.Get("/", params.InboxHandler.HandleListInboxes)
-	inboxGroup.Put("/:id/users", params.InboxHandler.HandleUpdateInboxUsers, middleware.IsAdmin())
+	inboxGroup.Put("/:id/users", middleware.IsAdmin(), params.InboxHandler.HandleUpdateInboxUsers)
 
 	contactGroup := apiGroup.Group("/contacts", middleware.Auth(), middleware.RequireCompany())
 	contactGroup.Get("/", params.ContactHandler.HandleListContacts)

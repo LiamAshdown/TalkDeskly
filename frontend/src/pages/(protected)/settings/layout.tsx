@@ -7,11 +7,13 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/context/use-is-mobile";
+import { useAuthStore } from "@/stores/auth";
 
 interface SettingsNavItem {
   title: string;
   href: string;
   icon: React.ElementType;
+  roles: string[];
 }
 
 const settingsNavItems: SettingsNavItem[] = [
@@ -19,21 +21,25 @@ const settingsNavItems: SettingsNavItem[] = [
     title: "Account",
     href: "account",
     icon: User,
+    roles: ["admin", "agent"],
   },
   {
     title: "Inboxes",
     href: "inboxes",
     icon: Inbox,
+    roles: ["admin"],
   },
   {
     title: "Team Members",
     href: "team",
     icon: Users,
+    roles: ["admin"],
   },
   {
     title: "Company",
     href: "company",
     icon: Building,
+    roles: ["admin"],
   },
 ];
 
@@ -41,31 +47,39 @@ export default function SettingsLayout() {
   const pathname = useLocation().pathname;
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { hasRole } = useAuthStore();
 
-  const SettingsNav = () => (
-    <div className="space-y-1">
-      {settingsNavItems.map((item) => {
-        const isActive =
-          pathname === item.href || pathname?.startsWith(`${item.href}/`);
-        return (
-          <Link
-            key={item.href}
-            to={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-            )}
-            onClick={() => isMobile && setSidebarOpen(false)}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.title}
-          </Link>
-        );
-      })}
-    </div>
-  );
+  const SettingsNav = () => {
+    return (
+      <div className="space-y-1">
+        {settingsNavItems.map((item) => {
+          const isActive =
+            pathname === item.href || pathname?.startsWith(`${item.href}/`);
+
+          if (!hasRole(item.roles)) {
+            return null;
+          }
+
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+              )}
+              onClick={() => isMobile && setSidebarOpen(false)}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.title}
+            </Link>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="h-full">

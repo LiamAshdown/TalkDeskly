@@ -48,7 +48,10 @@ export class SubscriptionManager {
 
   // Subscribe to common channels
   subscribeToConversation(conversationId: string): boolean {
-    return this.subscribe(`conversation:${conversationId}`);
+    this.subscribe(`conversation:${conversationId}`);
+
+    // Subscribe to the private conversation channel
+    return this.subscribe(`conversation-agent:${conversationId}`);
   }
 
   subscribeToCompany(companyId: string): boolean {
@@ -65,7 +68,10 @@ export class SubscriptionManager {
 
   // Unsubscribe from common channels
   unsubscribeFromConversation(conversationId: string): boolean {
-    return this.unsubscribe(`conversation:${conversationId}`);
+    this.unsubscribe(`conversation:${conversationId}`);
+
+    // Unsubscribe from the private conversation channel
+    return this.unsubscribe(`conversation-agent:${conversationId}`);
   }
 
   // Resubscribe to all previous topics (useful after reconnection)

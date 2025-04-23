@@ -45,6 +45,8 @@ export default function LoginPage() {
         remember: data.remember,
       });
 
+      console.log(response.data);
+
       setAuth(response.data);
 
       toast({
@@ -52,7 +54,7 @@ export default function LoginPage() {
         description: t("auth.login.successDescription"),
       });
 
-      navigate("/dashboard");
+      navigate("/portal");
     } catch (error) {
       if (!handleServerValidation(error)) {
         // Handle other errors
@@ -76,7 +78,6 @@ export default function LoginPage() {
             label={t("auth.login.email")}
             control={form.control}
             type="email"
-            placeholder="m@example.com"
             disabled={isLoading}
           />
 

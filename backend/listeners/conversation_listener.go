@@ -129,8 +129,13 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			populatedMessage = createdMessage
 		}
 
-		// Broadcast the message to the conversation channel
-		l.pubSub.Publish("conversation:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
+		// If the message is private, then only broadcast the message to agent conversation
+		if internalMessage.Private {
+			l.pubSub.Publish("conversation-agent:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
+		} else {
+			// Broadcast the message to the conversation channel
+			l.pubSub.Publish("conversation:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
+		}
 
 		// Broadcast conversation update to company channel
 		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())

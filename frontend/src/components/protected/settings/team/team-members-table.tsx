@@ -66,7 +66,6 @@ export function TeamMembersTable({
                   onDelete={onDelete}
                   onUpdateRole={onUpdateRole}
                   onResendInvite={onResendInvite}
-                  isMobile={isMobile}
                 />
               ))
             )}

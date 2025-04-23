@@ -13,7 +13,7 @@ export function ChannelSelect({ onSelect }: ChannelSelectProps) {
           support website live-chat widget."
       showBackButton={false}
     >
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
         <button
           onClick={() => onSelect("website")}
           className="flex flex-col items-center gap-4 p-4 sm:p-6 rounded-lg border bg-card text-card-foreground hover:bg-accent/50 transition-colors"

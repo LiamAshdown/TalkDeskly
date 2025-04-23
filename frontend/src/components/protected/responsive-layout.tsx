@@ -6,6 +6,7 @@ import { Menu, MessageSquare, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useMobileView } from "../../context/mobile-view-context";
+import { cn } from "@/lib/utils";
 
 interface ResponsiveLayoutProps {
   inboxSidebar: React.ReactNode;
@@ -22,7 +23,7 @@ export default function ResponsiveLayout({
   contactInfo,
   isContactInfoOpen = true,
 }: ResponsiveLayoutProps) {
-  const { mobileView } = useMobileView();
+  const { mobileView, setMobileView } = useMobileView();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -52,32 +53,54 @@ export default function ResponsiveLayout({
       </Sheet>
 
       {/* Desktop Layout */}
-      <div
-        className={`flex-1 hidden md:grid ${
-          isContactInfoOpen
-            ? "md:grid-cols-[auto_350px_1fr_auto]"
-            : "md:grid-cols-[auto_350px_1fr]"
-        } h-[calc(100vh-4rem)]`}
-      >
+      <div className="flex-1 hidden md:flex h-[calc(100vh-4rem)]">
         <div className="border-r">{inboxSidebar}</div>
-        <div className="border-r">{conversationList}</div>
-        <div className="h-full overflow-hidden">{chatPanel}</div>
-        {isContactInfoOpen && (
-          <div className="hidden lg:block">{contactInfo}</div>
-        )}
+        <div className="border-r w-[350px]">{conversationList}</div>
+        <div className="h-full overflow-hidden flex-1">{chatPanel}</div>
+        <div
+          className={cn(
+            "h-full border-l transition-all duration-300 ease-in-out overflow-hidden",
+            isContactInfoOpen ? "w-80 opacity-100" : "w-0 opacity-0"
+          )}
+        >
+          {contactInfo}
+        </div>
       </div>
 
       {/* Mobile Layout */}
-      <div className="flex-1 md:hidden h-[calc(100vh-4rem)]">
-        {mobileView === "conversations" && (
-          <div className="h-full overflow-hidden">{conversationList}</div>
-        )}
-        {mobileView === "chat" && (
-          <div className="h-full overflow-hidden">{chatPanel}</div>
-        )}
-        {mobileView === "contact" && (
-          <div className="h-full overflow-hidden">{contactInfo}</div>
-        )}
+      <div className="flex-1 md:hidden h-[calc(100vh-4rem)] relative overflow-hidden">
+        <div
+          className={cn(
+            "h-full w-full absolute transition-transform duration-300 ease-in-out",
+            mobileView === "conversations"
+              ? "translate-x-0"
+              : "-translate-x-full"
+          )}
+        >
+          {conversationList}
+        </div>
+
+        <div
+          className={cn(
+            "h-full w-full absolute transition-transform duration-300 ease-in-out",
+            mobileView === "chat"
+              ? "translate-x-0"
+              : mobileView === "conversations"
+              ? "translate-x-full"
+              : "-translate-x-full"
+          )}
+        >
+          {chatPanel}
+        </div>
+
+        <div
+          className={cn(
+            "h-full w-full absolute transition-transform duration-300 ease-in-out",
+            mobileView === "contact" ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          {contactInfo}
+        </div>
       </div>
     </div>
   );

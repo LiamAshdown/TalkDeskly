@@ -22,3 +22,9 @@ func ParseJWT(tokenString string) (*jwt.Token, error) {
 		return []byte(config.App.JwtSecret), nil
 	})
 }
+
+func ValidateJWT(tokenString string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.App.JwtSecret), nil
+	})
+}

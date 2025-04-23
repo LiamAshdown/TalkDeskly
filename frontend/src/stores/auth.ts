@@ -8,12 +8,14 @@ interface AuthState {
   isAuthenticated: boolean;
   setAuth: (auth: AuthResponse | null) => void;
   setToken: (token: string | null) => void;
+  isAdmin: () => boolean;
+  hasRole: (role: string | string[]) => boolean;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
@@ -26,6 +28,13 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           isAuthenticated: false,
         }),
+      isAdmin: () => {
+        return get().user?.role === "admin";
+      },
+      hasRole: (role: string | string[]) => {
+        const roles = Array.isArray(role) ? role : [role];
+        return roles.some((r) => get().user?.role === r);
+      },
     }),
     {
       name: "auth-storage",

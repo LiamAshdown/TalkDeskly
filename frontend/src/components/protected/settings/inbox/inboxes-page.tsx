@@ -61,7 +61,7 @@ export default function InboxesPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
             {inboxes.map((inbox) => (
               <Link key={inbox.id} to={`${inbox.id}`} className="block">
                 <Card className="h-full transition-all hover:shadow-md">

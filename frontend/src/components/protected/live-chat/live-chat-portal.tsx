@@ -3,16 +3,26 @@ import ConversationFilter from "@/components/protected/live-chat/conversation-fi
 import ChatPanel from "@/components/protected/live-chat/chat-panel";
 import ContactInfo from "@/components/protected/live-chat/contact-info";
 import InboxSidebar from "@/components/protected/live-chat/inbox-sidebar";
-import ResponsiveLayout from "@/components/protected/live-chat/responsive-layout";
-
-import { useMobileView } from "@/context/mobile-view-context";
+import ResponsiveLayout from "@/components/protected/responsive-layout";
 import { useInboxesStore } from "@/stores/inboxes";
 import { useConversationsStore } from "@/stores/conversations";
-import { ActiveConversationProvider } from "@/context/active-conversation-context";
+import {
+  ActiveConversationProvider,
+  useActiveConversation,
+} from "@/context/active-conversation-context";
 
 export default function LiveChatPortal() {
+  return (
+    <ActiveConversationProvider>
+      <LiveChatContent />
+    </ActiveConversationProvider>
+  );
+}
+
+function LiveChatContent() {
   const { inboxes, fetchInboxes } = useInboxesStore();
   const { conversations, fetchConversations } = useConversationsStore();
+  const { isContactInfoOpen } = useActiveConversation();
   const [activeInboxId, setActiveInboxId] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
 
@@ -34,31 +44,29 @@ export default function LiveChatPortal() {
     fetchConversations();
   }, []);
 
-  // Update the ResponsiveLayout component to use ActiveConversationProvider
   return (
-    <ActiveConversationProvider>
-      <ResponsiveLayout
-        inboxSidebar={
-          <InboxSidebar
-            inboxes={inboxes}
-            activeInboxId={activeInboxId}
-            onInboxChange={setActiveInboxId}
-          />
-        }
-        conversationList={
-          <ConversationFilter
-            conversations={filteredConversations}
-            filter={filter}
-            setFilter={setFilter}
-          />
-        }
-        chatPanel={
-          <div className="h-full overflow-hidden flex flex-col">
-            <ChatPanel />
-          </div>
-        }
-        contactInfo={<ContactInfo />}
-      />
-    </ActiveConversationProvider>
+    <ResponsiveLayout
+      inboxSidebar={
+        <InboxSidebar
+          inboxes={inboxes}
+          activeInboxId={activeInboxId}
+          onInboxChange={setActiveInboxId}
+        />
+      }
+      conversationList={
+        <ConversationFilter
+          conversations={filteredConversations}
+          filter={filter}
+          setFilter={setFilter}
+        />
+      }
+      chatPanel={
+        <div className="h-full overflow-hidden flex flex-col">
+          <ChatPanel />
+        </div>
+      }
+      contactInfo={<ContactInfo />}
+      isContactInfoOpen={isContactInfoOpen}
+    />
   );
 }

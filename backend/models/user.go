@@ -56,13 +56,23 @@ func (u *User) ToResponse() interface{} {
 		"role":       u.Role,
 		"language":   u.Language,
 		"company_id": u.CompanyID,
-		"company":    u.Company,
+		"company":    u.Company.ToResponse(),
 		"created_at": u.CreatedAt,
 		"updated_at": u.UpdatedAt,
 	}
 }
 
 func (u *User) ToProfileResponse() interface{} {
+	if u.NotificationSettings == nil {
+		u.NotificationSettings = &NotificationSettings{
+			NewConversation: true,
+			NewMessage:      true,
+			Mentions:        true,
+			EmailEnabled:    true,
+			BrowserEnabled:  false,
+		}
+	}
+
 	return map[string]interface{}{
 		"id":                    u.ID,
 		"email":                 u.Email,

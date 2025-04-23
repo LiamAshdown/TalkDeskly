@@ -339,6 +339,10 @@ func (h *CompanyHandler) CreateTeamMember(c *fiber.Ctx) error {
 	}
 
 	password := utils.GenerateRandomString(16)
+	hashedPassword, err := h.securityContext.HashPassword(password)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_hash_password"), err)
+	}
 
 	newUser := models.User{
 		FirstName: input.FirstName,
@@ -346,7 +350,14 @@ func (h *CompanyHandler) CreateTeamMember(c *fiber.Ctx) error {
 		Email:     input.Email,
 		Role:      input.Role,
 		CompanyID: user.User.CompanyID,
-		Password:  password,
+		Password:  hashedPassword,
+		NotificationSettings: &models.NotificationSettings{
+			NewConversation: true,
+			NewMessage:      true,
+			Mentions:        true,
+			EmailEnabled:    true,
+			BrowserEnabled:  false,
+		},
 	}
 
 	if _, err := h.userRepo.CreateUser(&newUser); err != nil {
