@@ -6,6 +6,7 @@ import EmptyChatState from "./chat/empty-chat-state";
 import ChatHeader from "./chat/chat-header";
 import MessageList from "./chat/message-list";
 import ChatPortal from "./chat/input/chat-portal";
+import { useEffect } from "react";
 
 export default function ChatPanel() {
   const {
@@ -29,6 +30,10 @@ export default function ChatPanel() {
     setIsContactInfoOpen(newState);
     setMobileView(newState ? "contact" : "chat");
   };
+
+  useEffect(() => {
+    setMobileView("chat");
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">

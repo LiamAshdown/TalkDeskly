@@ -14,18 +14,19 @@ import (
 type DIParams struct {
 	dig.In
 
-	App                 *fiber.App
-	CompanyHandler      *handler.CompanyHandler
-	ContactHandler      *handler.ContactHandler
-	ProfileHandler      *handler.ProfileHandler
-	InboxHandler        *handler.InboxHandler
-	OnboardingHandler   *handler.OnboardingHandler
-	ConversationHandler *handler.ConversationHandler
-	LanguageHandler     *handler.LanguageHandler
-	WebSocketHandler    *handler.WebSocketHandler
-	PublicHandler       *handler.PublicHandler
-	AuthHandler         *handler.AuthHandler
-	UserHandler         *handler.UserHandler
+	App                   *fiber.App
+	CompanyHandler        *handler.CompanyHandler
+	ContactHandler        *handler.ContactHandler
+	ProfileHandler        *handler.ProfileHandler
+	InboxHandler          *handler.InboxHandler
+	OnboardingHandler     *handler.OnboardingHandler
+	ConversationHandler   *handler.ConversationHandler
+	LanguageHandler       *handler.LanguageHandler
+	WebSocketHandler      *handler.WebSocketHandler
+	PublicHandler         *handler.PublicHandler
+	AuthHandler           *handler.AuthHandler
+	UserHandler           *handler.UserHandler
+	CannedResponseHandler *handler.CannedResponseHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -142,4 +143,10 @@ func SetupRoutesWithDI(params DIParams) {
 	conversationGroup.Post("/:id/assign", params.ConversationHandler.HandleAssignConversation)
 	conversationGroup.Post("/:id/close", params.ConversationHandler.HandleCloseConversation)
 	conversationGroup.Post("/:id/attachments", params.ConversationHandler.HandleSendMessageAttachment)
+
+	cannedResponseGroup := apiGroup.Group("/canned-responses", middleware.Auth(), middleware.RequireCompany())
+	cannedResponseGroup.Get("/", params.CannedResponseHandler.HandleListCannedResponses)
+	cannedResponseGroup.Post("/", params.CannedResponseHandler.HandleCreateCannedResponse)
+	cannedResponseGroup.Put("/:id", params.CannedResponseHandler.HandleUpdateCannedResponse)
+	cannedResponseGroup.Delete("/:id", params.CannedResponseHandler.HandleDeleteCannedResponse)
 }

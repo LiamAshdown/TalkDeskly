@@ -52,4 +52,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewUserHandler); err != nil {
 		log.Fatalf("Failed to provide user handler: %v", err)
 	}
+
+	if err := container.Provide(NewCannedResponseHandler); err != nil {
+		log.Fatalf("Failed to provide canned response handler: %v", err)
+	}
 }

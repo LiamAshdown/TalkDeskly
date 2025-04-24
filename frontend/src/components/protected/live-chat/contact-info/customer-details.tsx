@@ -6,7 +6,6 @@ interface CustomerDetailsProps {
 }
 
 export function CustomerDetails({ contact }: CustomerDetailsProps) {
-  console.log("contact", contact);
   return (
     <div className="space-y-4">
       <h3 className="font-semibold">Customer Details</h3>

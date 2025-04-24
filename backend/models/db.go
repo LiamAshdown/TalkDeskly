@@ -14,7 +14,7 @@ func ConnectDatabase(dsn string) {
 		panic(err)
 	}
 
-	err = DB.AutoMigrate(&Company{}, &User{}, &Inbox{}, &Contact{}, &NotificationSettings{}, &Conversation{}, &Message{}, &ContactNote{}, &CompanyInvite{})
+	err = DB.AutoMigrate(&Company{}, &User{}, &Inbox{}, &Contact{}, &NotificationSettings{}, &Conversation{}, &Message{}, &ContactNote{}, &CompanyInvite{}, &CannedResponse{})
 	if err != nil {
 		panic(err)
 	}

@@ -2,7 +2,7 @@ import type React from "react";
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { User, Inbox, Users, Building, Menu } from "lucide-react";
+import { User, Inbox, Users, Building, Menu, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,12 @@ const settingsNavItems: SettingsNavItem[] = [
     roles: ["admin"],
   },
   {
+    title: "Canned Responses",
+    href: "canned-responses",
+    icon: FileText,
+    roles: ["agent", "admin"],
+  },
+  {
     title: "Company",
     href: "company",
     icon: Building,
@@ -53,8 +59,11 @@ export default function SettingsLayout() {
     return (
       <div className="space-y-1">
         {settingsNavItems.map((item) => {
+          const pathParts = pathname.split("/");
+          const lastPathPart = pathParts[pathParts.length - 1];
+
           const isActive =
-            pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            lastPathPart === item.href || pathname?.startsWith(`${item.href}/`);
 
           if (!hasRole(item.roles)) {
             return null;
@@ -109,12 +118,9 @@ export default function SettingsLayout() {
       {/* Desktop layout */}
       <div className="flex-1 flex overflow-y-auto h-[calc(100vh-80px)] md:h-full">
         {/* Sidebar - hidden on mobile */}
-        <div className="hidden md:block w-64 border-r overflow-y-auto">
-          <div className="p-6">
-            <h1 className="text-xl font-semibold mb-1">Settings</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage your account and workspace
-            </p>
+        <div className="hidden bg-muted/60 md:block w-64 border-r overflow-y-auto">
+          <div className="p-4">
+            <h1 className="text-xl font-semibold ">Settings</h1>
           </div>
           <nav className="px-2 pb-4">
             <SettingsNav />

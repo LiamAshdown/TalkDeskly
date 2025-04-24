@@ -39,11 +39,18 @@ export function ActiveConversationProvider({
 
   useEffect(() => {
     if (activeConversationId) {
-      setActiveConversation(
-        conversations.find(
-          (conv) => conv.conversationId === activeConversationId
-        ) || null
+      const conversation = conversations.find(
+        (conv) => conv.conversationId === activeConversationId
       );
+
+      if (conversation) {
+        setActiveConversation({
+          ...conversation,
+          messages: conversation.messages,
+        });
+      } else {
+        setActiveConversation(null);
+      }
     }
   }, [activeConversationId, conversations]);
 

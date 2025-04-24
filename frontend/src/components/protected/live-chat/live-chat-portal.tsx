@@ -45,10 +45,10 @@ function LiveChatContent() {
 
   // Set conversation from URL param if present
   useEffect(() => {
-    if (id) {
+    if (id && conversations.length > 0) {
       setActiveConversationId(id);
     }
-  }, [id]);
+  }, [id, conversations, setActiveConversationId]);
 
   // Custom handler for conversation selection to update URL
   const handleSelectConversation = (conversationId: string) => {

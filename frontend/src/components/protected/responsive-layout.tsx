@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useState } from "react";
-import { Menu, MessageSquare, Users } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useMobileView } from "../../context/mobile-view-context";

@@ -9,7 +9,8 @@ import { Paperclip, Smile, Send } from "lucide-react";
 import type { FileWithPreview } from "@/components/protected/live-chat/chat/input/types";
 import FilePreview from "@/components/protected/live-chat/chat/input/file-preview";
 import MentionsDropdown from "@/components/protected/live-chat/chat/input/mentions-dropdown";
-import { Agent } from "@/lib/interfaces";
+import CannedResponsesDropdown from "@/components/protected/live-chat/chat/input/canned-responses-dropdown";
+import { Agent, CannedResponse } from "@/lib/interfaces";
 import EmojiPicker from "@/components/protected/emoji-picker";
 import { cn } from "@/lib/utils";
 
@@ -37,10 +38,13 @@ export default function ChatInput({
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [showMentions, setShowMentions] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
+  const [showCannedResponses, setShowCannedResponses] = useState(false);
+  const [cannedResponseFilter, setCannedResponseFilter] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionsRef = useRef<HTMLDivElement>(null);
+  const cannedResponsesRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle text input changes
@@ -70,12 +74,38 @@ export default function ChatInput({
           const filterText = textBeforeCursor.substring(atSignIndex + 1);
           setMentionFilter(filterText);
           setShowMentions(true);
+          setShowCannedResponses(false);
         } else {
           setShowMentions(false);
         }
       } else {
         setShowMentions(false);
       }
+    }
+
+    // Check for canned responses (when user types /)
+    const textBeforeCursor = value.substring(0, position);
+    const slashIndex = textBeforeCursor.lastIndexOf("/");
+
+    if (
+      slashIndex !== -1 &&
+      (slashIndex === 0 || textBeforeCursor[slashIndex - 1] === " ")
+    ) {
+      // Check if we're still typing the command (no space after / or cursor is right after /)
+      const textFromSlashToEnd = value.substring(slashIndex);
+      const nextSpaceIndex = textFromSlashToEnd.indexOf(" ");
+
+      // If there's no space after / or cursor is before that space, it's an active command
+      if (nextSpaceIndex === -1 || position <= slashIndex + nextSpaceIndex) {
+        const filterText = textBeforeCursor.substring(slashIndex + 1);
+        setCannedResponseFilter(filterText);
+        setShowCannedResponses(true);
+        setShowMentions(false);
+      } else {
+        setShowCannedResponses(false);
+      }
+    } else {
+      setShowCannedResponses(false);
     }
   };
 
@@ -100,6 +130,33 @@ export default function ChatInput({
         if (textareaRef.current) {
           textareaRef.current.focus();
           const newPosition = atSignIndex + agent.name.length + 2; // +2 for @ and space
+          textareaRef.current.setSelectionRange(newPosition, newPosition);
+        }
+      }, 0);
+    }
+  };
+
+  // Handle selecting a canned response
+  const handleSelectCannedResponse = (cannedResponse: CannedResponse) => {
+    if (textareaRef.current) {
+      const textBeforeCursor = message.substring(0, cursorPosition);
+      const slashIndex = textBeforeCursor.lastIndexOf("/");
+      const textAfterCursor = message.substring(cursorPosition);
+
+      // Replace the /command text with the canned response content
+      const newText =
+        textBeforeCursor.substring(0, slashIndex) +
+        cannedResponse.message +
+        textAfterCursor;
+
+      setMessage(newText);
+      setShowCannedResponses(false);
+
+      // Focus back on textarea and set cursor position after the inserted response
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const newPosition = slashIndex + cannedResponse.message.length;
           textareaRef.current.setSelectionRange(newPosition, newPosition);
         }
       }, 0);
@@ -168,7 +225,7 @@ export default function ChatInput({
     };
   }, []);
 
-  // Close mentions dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -176,6 +233,13 @@ export default function ChatInput({
         !mentionsRef.current.contains(event.target as Node)
       ) {
         setShowMentions(false);
+      }
+
+      if (
+        cannedResponsesRef.current &&
+        !cannedResponsesRef.current.contains(event.target as Node)
+      ) {
+        setShowCannedResponses(false);
       }
     };
 
@@ -252,6 +316,17 @@ export default function ChatInput({
             filter={mentionFilter}
             onSelect={handleSelectAgent}
             onClose={() => setShowMentions(false)}
+          />
+        </div>
+      )}
+
+      {/* Canned responses dropdown */}
+      {showCannedResponses && (
+        <div ref={cannedResponsesRef}>
+          <CannedResponsesDropdown
+            filter={cannedResponseFilter}
+            onSelect={handleSelectCannedResponse}
+            onClose={() => setShowCannedResponses(false)}
           />
         </div>
       )}

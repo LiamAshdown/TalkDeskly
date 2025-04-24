@@ -190,3 +190,13 @@ export interface Bot {
   description?: string;
   capabilities?: string[];
 }
+
+export interface CannedResponse {
+  id: string;
+  title: string;
+  message: string;
+  tag: string;
+  companyId: string;
+  createdAt: string;
+  updatedAt: string;
+}

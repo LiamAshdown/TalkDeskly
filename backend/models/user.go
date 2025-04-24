@@ -47,6 +47,12 @@ func (u *User) GetAvatar() string {
 }
 
 func (u *User) ToResponse() interface{} {
+	var company interface{}
+
+	if u.Company != nil {
+		company = u.Company.ToResponse()
+	}
+
 	return map[string]interface{}{
 		"id":         u.ID,
 		"email":      u.Email,
@@ -57,7 +63,7 @@ func (u *User) ToResponse() interface{} {
 		"role":       u.Role,
 		"language":   u.Language,
 		"company_id": u.CompanyID,
-		"company":    u.Company.ToResponse(),
+		"company":    company,
 		"created_at": u.CreatedAt,
 		"updated_at": u.UpdatedAt,
 	}

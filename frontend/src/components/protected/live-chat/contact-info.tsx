@@ -48,7 +48,7 @@ export default function ContactInfo() {
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="p-4 overflow-auto h-[calc(100vh-4rem)]">
+      <div className="p-4 overflow-auto md:h-[calc(100vh-4rem)]">
         <ContactHeader contact={activeConversation.contact} />
 
         <ContactDetails contact={activeConversation.contact} />

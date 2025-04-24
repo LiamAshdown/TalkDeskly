@@ -286,7 +286,8 @@
     "save": "Save",
     "saveChanges": "Save Changes",
     "saving": "Saving...",
-    "error": "Error"
+    "error": "Error",
+    "success": "Success"
   },
   "errors": {
     "413": {
@@ -298,6 +299,62 @@
       "error": {
         "title": "Error"
       }
+    }
+  },
+  "cannedResponses": {
+    "title": "Canned Responses",
+    "description": "Create and manage pre-written messages for quick responses to common questions",
+    "search": "Search canned responses...",
+    "addResponse": "Add Response",
+    "createResponse": "Create Canned Response",
+    "copied": "Copied",
+    "updated": "Updated {{time}}",
+    "empty": {
+      "title": "No canned responses found",
+      "description": "You haven't created any canned responses yet. Create your first one to get started.",
+      "searchDescription": "No responses match your search. Try a different search term or clear your search."
+    },
+    "copy": {
+      "title": "Copied to clipboard",
+      "description": "The canned response has been copied to your clipboard."
+    },
+    "create": {
+      "success": "Canned response created successfully",
+      "error": "Failed to create canned response"
+    },
+    "update": {
+      "success": "Canned response updated successfully",
+      "error": "Failed to update canned response"
+    },
+    "delete": {
+      "success": "Canned response deleted successfully",
+      "error": "Failed to delete canned response",
+      "confirmTitle": "Are you sure?",
+      "confirmDescription": "This will permanently delete this canned response. This action cannot be undone."
+    },
+    "errors": {
+      "loadFailed": "Failed to load canned responses"
+    },
+    "modal": {
+      "createTitle": "Create Canned Response",
+      "editTitle": "Edit Canned Response",
+      "createDescription": "Create a pre-written message that can be quickly inserted during conversations.",
+      "editDescription": "Update your pre-written message for quick responses.",
+      "createButton": "Create Response",
+      "saveButton": "Save Changes"
+    },
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "E.g., Greeting, Thank You, Follow-up",
+      "message": "Message",
+      "messagePlaceholder": "Enter your pre-written message here...",
+      "tag": "Tag",
+      "tagPlaceholder": "E.g., greeting, support, technical"
+    },
+    "actions": {
+      "copy": "Copy",
+      "edit": "Edit",
+      "delete": "Delete"
     }
   }
 }

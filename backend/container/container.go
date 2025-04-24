@@ -69,6 +69,15 @@ func (c *DIContainer) GetCompanyRepo() repositories.CompanyRepository {
 	return repo
 }
 
+// GetCannedResponseRepo retrieves the canned response repository
+func (c *DIContainer) GetCannedResponseRepo() repositories.CannedResponseRepository {
+	var repo repositories.CannedResponseRepository
+	c.dig.Invoke(func(r repositories.CannedResponseRepository) {
+		repo = r
+	})
+	return repo
+}
+
 // GetConversationRepo retrieves the conversation repository
 func (c *DIContainer) GetConversationRepo() repositories.ConversationRepository {
 	var repo repositories.ConversationRepository

@@ -17,6 +17,7 @@ import RegisterPage from "@/pages/(auth)/register/page";
 import ForgotPasswordPage from "@/pages/(auth)/forgot-password/page";
 import InvitePage from "./components/auth/invite";
 import { AuthLayout } from "@/components/layouts/auth-layout";
+import CannedResponsesPage from "./pages/(protected)/settings/canned-responses/page";
 
 export const router = createBrowserRouter([
   {
@@ -106,6 +107,11 @@ export const router = createBrowserRouter([
                 path: "company",
                 element: <CompanySettingsPage />,
                 id: "company-settings",
+              },
+              {
+                path: "canned-responses",
+                element: <CannedResponsesPage />,
+                id: "canned-responses",
               },
               {
                 path: "inboxes",

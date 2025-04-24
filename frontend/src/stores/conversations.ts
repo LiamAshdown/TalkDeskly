@@ -186,12 +186,20 @@ export const useConversationsStore = create<ConversationsState>()(
         messages: Message[]
       ) => {
         set((state) => {
-          const conversation = state.conversations.find(
+          const conversationIndex = state.conversations.findIndex(
             (c) => c.conversationId === conversationId
           );
 
-          if (conversation) {
-            conversation.messages = messages;
+          if (conversationIndex !== -1) {
+            state.conversations[conversationIndex] = {
+              ...state.conversations[conversationIndex],
+              messages: messages,
+            };
+
+            // Sort conversations after updating messages
+            state.conversations = sortConversationsByLastMessage(
+              state.conversations
+            );
           }
         });
       },

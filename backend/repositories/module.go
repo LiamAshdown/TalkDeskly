@@ -39,4 +39,10 @@ func RegisterRepositories(container *dig.Container) {
 	}); err != nil {
 		log.Fatalf("Failed to provide conversation repository: %v", err)
 	}
+
+	if err := container.Provide(func(db *gorm.DB) CannedResponseRepository {
+		return NewCannedResponseRepository(db)
+	}); err != nil {
+		log.Fatalf("Failed to provide canned response repository: %v", err)
+	}
 }
