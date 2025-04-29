@@ -13,15 +13,7 @@ import {
 import { useState } from "react";
 import { FilePreviewModal } from "./file-preview-modal";
 import { Button } from "~/components/ui/button";
-
-export interface FileMetadata {
-  extension: string;
-  filename: string;
-  path: string;
-  size: number;
-  type: "documents" | "images" | "videos" | "audio" | "other";
-  timestamp?: string;
-}
+import type { FileMetadata } from "~/types/conversation";
 
 export interface FilePreviewProps {
   content: string;

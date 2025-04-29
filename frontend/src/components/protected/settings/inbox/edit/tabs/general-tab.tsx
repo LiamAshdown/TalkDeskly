@@ -30,7 +30,7 @@ export function GeneralTab() {
     defaultValues: {
       name: inbox.name,
       description: inbox.description || "",
-      welcomeMessage: inbox.welcomeMessage,
+      welcomeMessage: inbox.type === "web_chat" ? inbox.welcomeMessage : "",
     },
     mode: "onChange",
   });
@@ -100,26 +100,28 @@ export function GeneralTab() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {t("inbox.edit.tabs.general.form.welcomeMessage")}
-            </CardTitle>
-            <CardDescription>
-              {t("inbox.edit.tabs.general.form.welcomeMessageDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <TextareaField
-              control={form.control}
-              name="welcomeMessage"
-              label={t("inbox.edit.tabs.general.form.welcomeMessage")}
-              placeholder={t(
-                "inbox.edit.tabs.general.form.welcomeMessagePlaceholder"
-              )}
-            />
-          </CardContent>
-        </Card>
+        {inbox.type === "web_chat" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {t("inbox.edit.tabs.general.form.welcomeMessage")}
+              </CardTitle>
+              <CardDescription>
+                {t("inbox.edit.tabs.general.form.welcomeMessageDescription")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <TextareaField
+                control={form.control}
+                name="welcomeMessage"
+                label={t("inbox.edit.tabs.general.form.welcomeMessage")}
+                placeholder={t(
+                  "inbox.edit.tabs.general.form.welcomeMessagePlaceholder"
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
       </form>
     </Form>
   );

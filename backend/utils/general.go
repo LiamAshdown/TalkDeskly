@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"fmt"
-	"math/rand"
 	"unicode"
 )
 
@@ -14,7 +12,7 @@ var prefixes = []string{
 
 var suffixes = []string{
 	"corn", "gon", "nix", "in", "sus", "x", "aid", "taur", "rie", "in",
-	"lops", "ra", "ilisk", "era", "ken", "athan",	"taur", "ph", "ie", "ie",
+	"lops", "ra", "ilisk", "era", "ken", "athan", "taur", "ph", "ie", "ie",
 	"k", "n", "in", "yrie", "ling", "ie", "i", "ie",
 }
 
@@ -78,16 +76,4 @@ func GetStringValue(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-func generateFantasyName() string {
-	prefix := prefixes[rand.Intn(len(prefixes))]
-	suffix := suffixes[rand.Intn(len(suffixes))]
-	return prefix + suffix
-}
-
-func GenerateRandomName() string {
-	firstPart := generateFantasyName()
-	secondPart := generateFantasyName()
-	return fmt.Sprintf("%s %s", firstPart, secondPart)
 }

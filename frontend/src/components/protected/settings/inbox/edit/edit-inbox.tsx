@@ -17,7 +17,8 @@ import SettingsContent from "@/components/protected/settings/settings-content";
 import { WidgetCustomization } from "@/components/protected/settings/inbox/edit/website/widget-customization";
 import { GeneralTab } from "@/components/protected/settings/inbox/edit/tabs/general-tab";
 import { TeamTab } from "@/components/protected/settings/inbox/edit/tabs/team-tab";
-import { AutomationTab } from "@/components/protected/settings/inbox/edit/tabs/automation-tab";
+import { AutomationTab } from "@/components/protected/settings/inbox/edit/website/automation-tab";
+import { PreChatFormTab } from "@/components/protected/settings/inbox/edit/website/pre-chat-form-tab";
 import { EditInboxProvider, useEditInbox } from "@/context/edit-inbox-context";
 import { useTranslation } from "react-i18next";
 
@@ -79,8 +80,8 @@ function EditInboxContent() {
 
   return (
     <SettingsContent
-      title={t("edit.title")}
-      description={t("edit.description")}
+      title={t("inbox.edit.title")}
+      description={t("inbox.edit.description")}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-6">
         <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -135,6 +136,7 @@ function EditInboxContent() {
           <TabsList className="mb-6 w-full sm:w-auto inline-flex">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="team">Team Members</TabsTrigger>
+            <TabsTrigger value="pre-chat-form">Pre-Chat Form</TabsTrigger>
             <TabsTrigger value="automation">Automation</TabsTrigger>
             <TabsTrigger value="widget">Widget</TabsTrigger>
           </TabsList>
@@ -145,6 +147,10 @@ function EditInboxContent() {
 
           <TabsContent value="team">
             <TeamTab />
+          </TabsContent>
+
+          <TabsContent value="pre-chat-form">
+            <PreChatFormTab />
           </TabsContent>
 
           <TabsContent value="automation">

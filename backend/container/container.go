@@ -177,9 +177,36 @@ func (c *DIContainer) GetUploadService() interfaces.UploadService {
 	return service
 }
 
+// GetConversationHandler retrieves the conversation handler
+func (c *DIContainer) GetConversationHandler() interfaces.ConversationHandler {
+	var handler interfaces.ConversationHandler
+	c.dig.Invoke(func(h interfaces.ConversationHandler) {
+		handler = h
+	})
+	return handler
+}
+
+// GetCommandFactory retrieves the command factory
+func (c *DIContainer) GetCommandFactory() interfaces.CommandFactory {
+	var factory interfaces.CommandFactory
+	c.dig.Invoke(func(f interfaces.CommandFactory) {
+		factory = f
+	})
+	return factory
+}
+
 // GetDig returns the underlying dig container
 func (c *DIContainer) GetDig() *dig.Container {
 	return c.dig
+}
+
+// GetFiberContext retrieves the Fiber context
+func (c *DIContainer) GetFiberContext() *fiber.Ctx {
+	var ctx *fiber.Ctx
+	c.dig.Invoke(func(c *fiber.Ctx) {
+		ctx = c
+	})
+	return ctx
 }
 
 // NewContainer creates a new container with DI
@@ -225,6 +252,11 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		return jobs.NewClient(cfg.RedisAddr)
 	}); err != nil {
 		log.Printf("Failed to provide job client: %v", err)
+	}
+
+	// Register command factory after all handlers are registered
+	if err := digContainer.Provide(factory.NewCommandFactory); err != nil {
+		log.Fatalf("Failed to provide command factory: %v", err)
 	}
 
 	return containerImpl

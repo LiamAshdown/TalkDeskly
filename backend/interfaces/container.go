@@ -6,6 +6,7 @@ import (
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/dig"
 )
 
@@ -32,4 +33,7 @@ type Container interface {
 	GetUploadService() UploadService
 	GetConfig() config.Config
 	GetDig() *dig.Container
+	GetFiberContext() *fiber.Ctx
+	GetConversationHandler() ConversationHandler
+	GetCommandFactory() CommandFactory
 }

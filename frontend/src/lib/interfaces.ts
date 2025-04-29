@@ -92,7 +92,9 @@ export interface ContactNote {
   };
 }
 
-interface WidgetCustomization {
+export type InboxType = "web_chat" | "email" | "sms" | "whatsapp";
+
+export interface WidgetCustomization {
   position: string;
   color: string;
 }
@@ -107,30 +109,78 @@ export interface WorkingHoursMap {
   [key: string]: WorkingHours;
 }
 
-interface UserInbox {
+export interface UserInbox {
   id: string;
   name: string;
 }
 
-export interface Inbox {
+// Base inbox interface with common properties
+export interface BaseInbox {
   id: string;
   name: string;
-  welcomeMessage: string;
+  type: InboxType;
   description: string;
-  icon: string;
   companyId: string;
   enabled: boolean;
   autoAssignmentEnabled: boolean;
   maxAutoAssignments: number;
   autoResponderEnabled: boolean;
   autoResponderMessage: string;
-  workingHours: Record<string, WorkingHours>;
-  outsideHoursMessage: string;
-  widgetCustomization: WidgetCustomization;
   createdAt: string;
   updatedAt: string;
   users: UserInbox[];
+  userCount?: number;
 }
+
+// Pre-chat form field types
+export type PreChatFieldType =
+  | "text"
+  | "email"
+  | "phone"
+  | "select"
+  | "textarea";
+
+// Pre-chat form field interface
+export interface PreChatFormField {
+  id: string;
+  type: PreChatFieldType;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  options?: string[]; // For select fields
+  contactField?: string; // Maps to a contact property: "name", "email", "phone"
+}
+
+// Pre-chat form interface
+export interface PreChatForm {
+  enabled: boolean;
+  title: string;
+  description: string;
+  fields: PreChatFormField[];
+}
+
+// Type-specific inbox interfaces
+export interface WebChatInbox extends BaseInbox {
+  type: "web_chat";
+  welcomeMessage: string;
+  workingHours: Record<string, WorkingHours>;
+  workingHoursEnabled: boolean;
+  outsideHoursMessage: string;
+  widgetCustomization: WidgetCustomization;
+  preChatForm?: PreChatForm;
+}
+
+export interface EmailInbox extends BaseInbox {
+  type: "email";
+  imapServer: string;
+  imapPort: number;
+  smtpServer: string;
+  smtpPort: number;
+  username: string;
+}
+
+// Union type for all inbox types
+export type Inbox = WebChatInbox | EmailInbox;
 
 type ConversationStatus = "active" | "closed" | "pending";
 
@@ -178,6 +228,7 @@ export interface Conversation {
   updatedAt: string;
   lastMessage: string;
   lastMessageAt: string;
+  createdAt: string;
 }
 
 export type SenderType = "agent" | "contact" | "bot" | "system";

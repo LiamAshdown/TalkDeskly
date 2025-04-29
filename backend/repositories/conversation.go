@@ -4,6 +4,7 @@ import (
 	"live-chat-server/models"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ConversationRepository interface {
@@ -16,6 +17,7 @@ type ConversationRepository interface {
 	CreateMessage(message *models.Message) (*models.Message, error)
 	PopulateSender(message *models.Message) (*models.Message, error)
 	GetActiveAssignedConversationsForUser(userID string) ([]models.Conversation, error)
+	GetConversationsByContactID(contactID string, preloads ...string) ([]models.Conversation, error)
 }
 
 type conversationRepository struct {
@@ -86,7 +88,11 @@ func (r *conversationRepository) GetConversationsForUser(userID string, preloads
 
 	query := r.db.Where("inbox_id IN ?", inboxIDs).Where("company_id = ?", user.CompanyID)
 	query = r.ApplyPreloads(query, preloads...)
-	query = query.Order("last_message_at DESC")
+	query.Order(clause.OrderBy{Columns: []clause.OrderByColumn{
+		{Column: clause.Column{Name: "last_message_at"}, Desc: true},
+		{Column: clause.Column{Name: "created_at"}, Desc: true},
+		{Column: clause.Column{Name: "status"}, Desc: true},
+	}})
 
 	err = query.Find(&conversations).Error
 	if err != nil {
@@ -285,4 +291,32 @@ func (r *conversationRepository) populateMessageSenders(conversations *[]models.
 	}
 
 	return nil
+}
+
+func (r *conversationRepository) GetConversationsByContactID(contactID string, preloads ...string) ([]models.Conversation, error) {
+	var conversations []models.Conversation
+	query := r.db.Where("contact_id = ?", contactID)
+
+	// Check if we need to load senders
+	loadSenders := false
+	for _, preload := range preloads {
+		if preload == "Messages" {
+			loadSenders = true
+			break
+		}
+	}
+
+	query = r.ApplyPreloads(query, preloads...)
+	if err := query.Find(&conversations).Error; err != nil {
+		return nil, err
+	}
+
+	// If we need to load senders, do it here
+	if loadSenders {
+		if err := r.populateMessageSenders(&conversations); err != nil {
+			return nil, err
+		}
+	}
+
+	return conversations, nil
 }

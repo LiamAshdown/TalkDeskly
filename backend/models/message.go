@@ -30,17 +30,17 @@ const (
 
 // Message represents a single message in a conversation
 type Message struct {
-	ID             string         `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
-	ConversationID string         `gorm:"type:uuid;not null" json:"conversation_id"`
-	SenderType     SenderType     `gorm:"type:varchar(10);not null" json:"sender_type"`
-	SenderID       *string        `gorm:"type:uuid" json:"sender_id"`
-	Type           MessageType    `gorm:"type:varchar(20);not null;default:'text'" json:"type"`
-	Content        string         `gorm:"type:text;not null" json:"content"`
-	Metadata       *string        `gorm:"type:jsonb" json:"metadata"` // For storing additional data like file info
-	Private        bool           `gorm:"type:boolean;not null;default:false" json:"private"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
+	ID             string          `gorm:"primaryKey;type:uuid;default:gen_random_uuid()" json:"id"`
+	ConversationID string          `gorm:"type:uuid;not null" json:"conversation_id"`
+	SenderType     SenderType      `gorm:"type:varchar(10);not null" json:"sender_type"`
+	SenderID       *string         `gorm:"type:uuid" json:"sender_id"`
+	Type           MessageType     `gorm:"type:varchar(20);not null;default:'text'" json:"type"`
+	Content        string          `gorm:"type:text;not null" json:"content"`
+	Metadata       json.RawMessage `gorm:"type:jsonb;serializer:json" json:"metadata"` // For storing additional data like file info
+	Private        bool            `gorm:"type:boolean;not null;default:false" json:"private"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt  `gorm:"index" json:"-"`
 
 	// Relationships
 	Conversation  Conversation `gorm:"foreignKey:ConversationID" json:"conversation"`
@@ -158,9 +158,9 @@ func (m *Message) GetSenderType() string {
 func (m *Message) ToPayload() types.MessagePayload {
 
 	// Parse metadata
-	var metadata map[string]interface{}
+	var metadata interface{}
 	if m.Metadata != nil {
-		err := json.Unmarshal([]byte(*m.Metadata), &metadata)
+		err := json.Unmarshal(m.Metadata, &metadata)
 		if err != nil {
 			log.Printf("Error parsing metadata: %v", err)
 		}
@@ -171,7 +171,10 @@ func (m *Message) ToPayload() types.MessagePayload {
 		m.Content = utils.Asset(m.Content)
 
 		if metadata != nil {
-			metadata["path"] = m.Content
+			if metadataMap, ok := metadata.(map[string]interface{}); ok && metadataMap["path"] != nil {
+				metadataMap["path"] = m.Content
+				metadata = metadataMap
+			}
 		}
 	}
 

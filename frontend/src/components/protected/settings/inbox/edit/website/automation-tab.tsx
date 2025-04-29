@@ -28,6 +28,7 @@ import {
 } from "@/lib/schemas/automation-schema";
 import { useEffect, useCallback } from "react";
 import { debounce } from "@/lib/utils";
+import { WebChatInbox } from "@/lib/interfaces";
 
 // Generate time options for the dropdown
 const generateTimeOptions = () => {
@@ -65,8 +66,10 @@ const getEndTimeOptions = (startTime: string | undefined) => {
 };
 
 export function AutomationTab() {
-  const { inbox, updateInbox, setTabValidation } = useEditInbox();
+  const { inbox: webChatInbox, updateInbox, setTabValidation } = useEditInbox();
   const { t } = useTranslation();
+
+  const inbox = webChatInbox as WebChatInbox;
 
   // Keep TS happy
   if (!inbox) return null;
@@ -98,10 +101,7 @@ export function AutomationTab() {
 
   useEffect(() => {
     const subscription = form.watch((value) => {
-      // Only run debounced validation when the form has been interacted with
-      if (form.formState.isDirty) {
-        debouncedValidateAndUpdate(value as AutomationFormData);
-      }
+      debouncedValidateAndUpdate(value as AutomationFormData);
     });
 
     return () => {
@@ -111,6 +111,7 @@ export function AutomationTab() {
   }, [form, debouncedValidateAndUpdate]);
 
   const onSubmit = (data: AutomationFormData) => {
+    console.log(data);
     form.trigger().then((isValid) => {
       setTabValidation("automation", isValid);
       if (isValid) {
@@ -287,6 +288,7 @@ export function AutomationTab() {
                                     : config.endTime,
                               },
                             };
+                            console.log(newWorkingHours);
                             form.setValue("workingHours", newWorkingHours);
                           }}
                           disabled={!config.enabled}
@@ -324,6 +326,7 @@ export function AutomationTab() {
                                     : value,
                               },
                             };
+                            console.log(newWorkingHours);
                             form.setValue("workingHours", newWorkingHours);
                           }}
                           disabled={!config.enabled}

@@ -118,7 +118,7 @@ export default function SettingsLayout() {
       {/* Desktop layout */}
       <div className="flex-1 flex overflow-y-auto h-[calc(100vh-80px)] md:h-full">
         {/* Sidebar - hidden on mobile */}
-        <div className="hidden bg-muted/60 md:block w-64 border-r overflow-y-auto">
+        <div className="hidden bg-muted/60 md:block w-60 border-r overflow-y-auto">
           <div className="p-4">
             <h1 className="text-xl font-semibold ">Settings</h1>
           </div>

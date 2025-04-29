@@ -49,7 +49,7 @@ export default function InboxSidebar({
   );
 
   return (
-    <div className={cn("flex flex-col h-full bg-background w-100 md:w-60")}>
+    <div className={cn("flex flex-col h-full bg-muted/60 w-100 md:w-60")}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="font-semibold text-lg">Inboxes</h2>

@@ -3,34 +3,16 @@ import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { CheckCheck, Bot } from "lucide-react";
 import { forwardRef } from "react";
-import { FilePreview, type FileMetadata } from "./file-preview";
+import { FilePreview } from "./file-preview";
+import type { Message } from "~/types/conversation";
 
 export interface ChatBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
-  message: {
-    content: string;
-    timestamp: string;
-    sender: {
-      id: string;
-      name: string;
-      type: string;
-      avatarUrl?: string;
-    };
-    isRead?: boolean;
-    type?: "text" | "file";
-    metadata?: FileMetadata & { timestamp?: string };
-  };
+  message: Message;
 }
 
 const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
   ({ message, className, ...props }, ref) => {
-    const {
-      content,
-      timestamp,
-      sender,
-      isRead = false,
-      type = "text",
-      metadata,
-    } = message;
+    const { content, timestamp, sender, type = "text", metadata } = message;
 
     const isSystemMessage = sender?.type === "system";
     const isAgentMessage = sender?.type === "agent";
@@ -77,10 +59,10 @@ const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
         ref={ref}
         className={cn(
           "flex w-full flex-col gap-2",
-          isContactMessage && "ml-auto items-start",
+          isContactMessage && "items-start",
           isSystemMessage && "mx-auto items-center",
-          (isAgentMessage || isBotMessage) && "mr-auto items-end",
-          isFileMessage ? "max-w-md" : "max-w-xs",
+          (isAgentMessage || isBotMessage) && "items-end",
+          isFileMessage ? "max-w-md" : "",
           className
         )}
         {...props}
@@ -117,9 +99,6 @@ const ChatBubble = forwardRef<HTMLDivElement, ChatBubbleProps>(
         {!isFileMessage && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <span>{timestamp}</span>
-            {isContactMessage && isRead && (
-              <CheckCheck className="h-3 w-3 text-primary" />
-            )}
           </div>
         )}
       </div>

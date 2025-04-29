@@ -20,6 +20,7 @@ type InboxInput struct {
 
 type CreateInboxInput struct {
 	InboxInput
+	Type string `json:"type" validate:"required,oneof=web_chat email"`
 }
 
 type UpdateInboxInput struct {
@@ -33,6 +34,7 @@ type UpdateInboxInput struct {
 	WorkingHours          map[string]types.WorkingHours `json:"working_hours" validate:"omitempty,working_hours"`
 	OutsideHoursMessage   string                        `json:"outside_hours_message" validate:"omitempty"`
 	WidgetCustomization   types.WidgetCustomization     `json:"widget_customization" validate:"required"`
+	PreChatForm           *types.PreChatForm            `json:"pre_chat_form" validate:"omitempty"`
 }
 
 type UserResponse struct {
@@ -78,6 +80,7 @@ func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
 
 	inboxes, err := h.repo.GetInboxesByCompanyID(*user.User.CompanyID)
 	if err != nil {
+		h.logger.Error("Failed to list inboxes", "error", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_list_inboxes"), err)
 	}
 
@@ -103,23 +106,66 @@ func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 
 	users := []models.User{*user.User}
 
+	// Create the main inbox record
 	inbox := models.Inbox{
-		Name:           input.Name,
-		CompanyID:      *user.User.CompanyID,
-		WelcomeMessage: input.WelcomeMessage,
-		Type:           models.InboxTypeWebChat,
-		Users:          users,
+		Name:                  input.Name,
+		CompanyID:             *user.User.CompanyID,
+		Description:           input.Description,
+		Type:                  models.InboxTypeWebChat,
+		Enabled:               true,
+		AutoAssignmentEnabled: false,
+		MaxAutoAssignments:    1,
+		AutoResponderEnabled:  false,
+		Users:                 users,
 	}
 
-	// TODO; Implement different inbox types
+	// Create the webchat configuration
+	webchat := models.InboxWebChat{
+		WelcomeMessage: input.WelcomeMessage,
+		WorkingHours: types.WorkingHoursMap{
+			"monday":    types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: true},
+			"tuesday":   types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: true},
+			"wednesday": types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: true},
+			"thursday":  types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: true},
+			"friday":    types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: true},
+			"saturday":  types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: false},
+			"sunday":    types.WorkingHours{StartTime: "09:00", EndTime: "17:00", Enabled: false},
+		},
+		WidgetCustomization: types.WidgetCustomization{
+			PrimaryColor: "#0A2540",
+			Position:     "right",
+		},
+		PreChatForm: types.PreChatForm{
+			Enabled:     false,
+			Title:       h.langContext.T(c, "pre_form_title"),
+			Description: h.langContext.T(c, "pre_form_description"),
+			Fields: []types.PreChatFormField{
+				{
+					ID:           "field-" + utils.GenerateRandomID(),
+					Type:         "text",
+					Label:        h.langContext.T(c, "pre_form_name_label"),
+					Placeholder:  h.langContext.T(c, "pre_form_name_placeholder"),
+					Required:     true,
+					ContactField: "name",
+				},
+			},
+		},
+	}
 
-	if err := h.repo.CreateInbox(&inbox); err != nil {
+	// Create inbox with webchat configuration
+	if err := h.repo.CreateInboxWithWebChat(&inbox, &webchat); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_inbox"), err.Error())
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeInboxCreated, &inbox)
+	// Reload the inbox with its relationships to get the full data
+	reloadedInbox, err := h.repo.GetInboxByID(inbox.ID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err.Error())
+	}
 
-	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "inbox_created"), inbox.ToResponse())
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxCreated, reloadedInbox)
+
+	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "inbox_created"), reloadedInbox.ToResponse())
 }
 
 func (h *InboxHandler) UpdateInboxUsers(tx *gorm.DB, inbox *models.Inbox, newUserIDs []string, companyID string) ([]string, error) {
@@ -177,38 +223,77 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "inbox_not_found"), err)
 	}
 
-	// Update inbox fields
+	// Update common inbox fields
 	inbox.Name = input.Name
-	inbox.WelcomeMessage = input.WelcomeMessage
 	inbox.Description = input.Description
 	inbox.Enabled = input.Enabled
 	inbox.AutoAssignmentEnabled = input.AutoAssignmentEnabled
 	inbox.MaxAutoAssignments = input.MaxAutoAssignments
 	inbox.AutoResponderEnabled = input.AutoResponderEnabled
 	inbox.AutoResponderMessage = input.AutoResponderMessage
-	inbox.WorkingHours = input.WorkingHours
-	inbox.OutsideHoursMessage = input.OutsideHoursMessage
-	inbox.WidgetCustomization = input.WidgetCustomization
 
-	// Update user associations and save inbox in a single transaction
+	// Update type-specific fields based on inbox type
 	var removedUserIDs []string
 	if err := models.DB.Transaction(func(tx *gorm.DB) error {
+		// Update users
 		var err error
 		removedUserIDs, err = h.UpdateInboxUsers(tx, inbox, input.UserIDs, *user.User.CompanyID)
 		if err != nil {
 			return err
 		}
-		return tx.Save(inbox).Error
+
+		// Save main inbox
+		if err := h.repo.UpdateInbox(inbox, tx); err != nil {
+			return err
+		}
+
+		// Update type-specific configuration
+		switch inbox.Type {
+		case models.InboxTypeWebChat:
+			if inbox.WebChat == nil {
+				// Create WebChat config if it doesn't exist
+				inbox.WebChat = &models.InboxWebChat{
+					InboxID: inbox.ID,
+				}
+			}
+
+			// Update WebChat fields
+			inbox.WebChat.WelcomeMessage = input.WelcomeMessage
+			inbox.WebChat.WorkingHours = input.WorkingHours
+			inbox.WebChat.OutsideHoursMessage = input.OutsideHoursMessage
+			inbox.WebChat.WidgetCustomization = input.WidgetCustomization
+
+			// Update PreChatForm if provided
+			if input.PreChatForm != nil {
+				inbox.WebChat.PreChatForm = *input.PreChatForm
+			}
+
+			return h.repo.UpdateWebChatConfig(inbox.WebChat, tx)
+
+		case models.InboxTypeEmail:
+			// Update Email fields if this is an email inbox
+			if inbox.Email != nil {
+				return h.repo.UpdateEmailConfig(inbox.Email, tx)
+			}
+		}
+
+		return nil
 	}); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_inbox"), err)
 	}
 
+	// Reload the inbox with its relationships to get the updated data
+	updatedInbox, err := h.repo.GetInboxByID(inbox.ID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err)
+	}
+
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &types.InboxUpdatedPayload{
-		Inbox:          &inbox,
+		Inbox:          updatedInbox,
 		RemovedUserIDs: removedUserIDs,
 	})
 
-	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_updated"), inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_updated"), updatedInbox.ToResponse())
 }
 
 func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
@@ -255,17 +340,16 @@ func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_inbox_users"), err)
 	}
 
-	// Reload inbox with users
-	var err error
-	inbox, err = h.repo.GetInboxByID(inboxID)
+	// Reload inbox with users and configurations
+	updatedInbox, err := h.repo.GetInboxByID(inboxID)
 	if err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err)
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, map[string]interface{}{
-		"inbox":            inbox.ToResponse(),
+		"inbox":            updatedInbox.ToResponse(),
 		"removed_user_ids": removedUserIDs,
 	})
 
-	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_users_updated"), inbox.ToResponse())
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_users_updated"), updatedInbox.ToResponse())
 }

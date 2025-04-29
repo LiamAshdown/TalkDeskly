@@ -30,14 +30,26 @@ const sortConversationsByLastMessage = (
   conversations: Conversation[]
 ): Conversation[] => {
   return [...conversations].sort((a, b) => {
-    // Get the last message timestamp for each conversation
-    const aLastMessage =
+    // Primary sort: last_message_at (from the last message timestamp)
+    const aLastMessageTime =
       a.messages.length > 0 ? a.messages[a.messages.length - 1].timestamp : "";
-    const bLastMessage =
+    const bLastMessageTime =
       b.messages.length > 0 ? b.messages[b.messages.length - 1].timestamp : "";
 
-    // Sort in descending order (newest first)
-    return bLastMessage.localeCompare(aLastMessage);
+    // If there's a difference in last message times, use that
+    const lastMessageCompare = bLastMessageTime.localeCompare(aLastMessageTime);
+    if (lastMessageCompare !== 0) return lastMessageCompare;
+
+    // Secondary sort: created_at (conversation creation time)
+    const aCreatedAt = a.createdAt || "";
+    const bCreatedAt = b.createdAt || "";
+    const createdAtCompare = bCreatedAt.localeCompare(aCreatedAt);
+    if (createdAtCompare !== 0) return createdAtCompare;
+
+    // Tertiary sort: status
+    const aStatus = a.status || "";
+    const bStatus = b.status || "";
+    return bStatus.localeCompare(aStatus);
   });
 };
 
@@ -106,22 +118,7 @@ export const useConversationsStore = create<ConversationsState>()(
 
       handleConversationStart: (payload: ConversationPayload) => {
         set((state) => {
-          const conversation = state.conversations.find(
-            (c) => c.conversationId === payload.conversationId
-          );
-          if (!conversation) {
-            state.conversations.push({
-              ...payload,
-              messages: [],
-              updatedAt: new Date().toISOString(),
-              lastMessage: "",
-              lastMessageAt: new Date().toISOString(),
-            });
-            // Sort conversations by last message
-            state.conversations = sortConversationsByLastMessage(
-              state.conversations
-            );
-          }
+          get().fetchConversations();
         });
       },
 

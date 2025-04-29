@@ -4,8 +4,17 @@ import { APIResponse } from "../types";
 import { Inbox } from "@/lib/interfaces";
 
 export const inboxService = {
-  async createInbox(data: CreateInboxFormData): Promise<APIResponse<Inbox>> {
-    const response = await apiClient.post<APIResponse<Inbox>>("/inbox", data);
+  async createInbox(
+    data: CreateInboxFormData,
+    type: "web_chat" | "email" = "web_chat"
+  ): Promise<APIResponse<Inbox>> {
+    const response = await apiClient.post<APIResponse<Inbox>>(
+      `/inbox?type=${type}`,
+      {
+        ...data,
+        type,
+      }
+    );
     return response.data;
   },
   async getInboxes(): Promise<APIResponse<Inbox[]>> {

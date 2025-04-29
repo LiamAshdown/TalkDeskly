@@ -1,20 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Inbox, WorkingHours, WorkingHoursMap } from "@/lib/interfaces";
+import {
+  Inbox,
+  WorkingHours,
+  WorkingHoursMap,
+  WebChatInbox,
+  EmailInbox,
+} from "@/lib/interfaces";
 import { useInboxesStore } from "@/stores/inboxes";
 import { inboxService } from "@/lib/api/services/inbox";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/lib/hooks/use-toast";
 
-// Default working hours configuration
-const defaultWorkingHours = {
-  monday: { startTime: "09:00", endTime: "17:00", enabled: true },
-  tuesday: { startTime: "09:00", endTime: "17:00", enabled: true },
-  wednesday: { startTime: "09:00", endTime: "17:00", enabled: true },
-  thursday: { startTime: "09:00", endTime: "17:00", enabled: true },
-  friday: { startTime: "09:00", endTime: "17:00", enabled: true },
-  saturday: { startTime: "09:00", endTime: "17:00", enabled: false },
-  sunday: { startTime: "09:00", endTime: "17:00", enabled: false },
-};
+function isWebChatInbox(inbox: Inbox): inbox is WebChatInbox {
+  return inbox.type === "web_chat";
+}
+
+function isEmailInbox(inbox: Inbox): inbox is EmailInbox {
+  return inbox.type === "email";
+}
 
 // Helper function to convert time string to minutes for comparison
 const timeToMinutes = (time: string): number => {
@@ -98,7 +101,7 @@ export function EditInboxProvider({
         if (inboxData.users) {
           setTeamMembers(inboxData.users.map((user) => user.id));
         }
-        if (inboxData.widgetCustomization) {
+        if (isWebChatInbox(inboxData)) {
           setWidgetColor(inboxData.widgetCustomization.color);
           setWidgetPosition(inboxData.widgetCustomization.position);
         }
@@ -115,9 +118,10 @@ export function EditInboxProvider({
   const updateInbox = async (updates: Partial<Inbox>) => {
     if (!inbox) return;
 
-    // If updating working hours, validate them first
-    if (updates.workingHours) {
-      if (!validateWorkingHours(updates.workingHours)) {
+    // Check if working hours are being updated on a WebChat inbox
+    if (isWebChatInbox(inbox) && "workingHours" in updates) {
+      const workingHours = updates.workingHours as WorkingHoursMap;
+      if (!validateWorkingHours(workingHours)) {
         toast({
           title: t("inbox.edit.invalidWorkingHours"),
           description: t("inbox.edit.endTimeBeforeStartTime"),
@@ -127,7 +131,17 @@ export function EditInboxProvider({
       }
     }
 
-    setInbox((prev) => (prev ? { ...prev, ...updates } : null));
+    // Create a properly typed updated inbox
+    const updatedInbox = { ...inbox, ...updates };
+
+    // Ensure the type field remains consistent
+    if (isWebChatInbox(inbox)) {
+      (updatedInbox as WebChatInbox).type = "web_chat";
+    } else if (isEmailInbox(inbox)) {
+      (updatedInbox as EmailInbox).type = "email";
+    }
+
+    setInbox(updatedInbox as Inbox);
   };
 
   const updateTeamMembers = async (memberIds: string[]) => {

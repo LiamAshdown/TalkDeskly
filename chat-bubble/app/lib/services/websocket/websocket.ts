@@ -123,6 +123,17 @@ export class WebSocketService {
     this.connectionManager.send(message);
   }
 
+  // Method to start conversation with pre-chat form data
+  public startConversation(formData: any) {
+    const payload = MessageFactory.preparePayload({
+      inbox_id: this.connectionManager.getInboxId(),
+      pre_chat_form_data: formData.formData,
+    });
+
+    const message = MessageFactory.createMessage("conversation_start", payload);
+    this.connectionManager.send(message);
+  }
+
   public sendMessage(conversationId: string, content: string) {
     const payload = MessageFactory.preparePayload({
       conversation_id: conversationId,

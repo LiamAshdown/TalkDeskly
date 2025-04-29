@@ -4,6 +4,16 @@ export interface Sender {
   id: string;
   name: string;
   type: SenderType;
+  avatarUrl?: string;
+}
+
+export interface FileMetadata {
+  extension: string;
+  filename: string;
+  path: string;
+  size: number;
+  type: "documents" | "images" | "videos" | "audio" | "other";
+  timestamp?: string;
 }
 
 export interface Message {
@@ -12,8 +22,8 @@ export interface Message {
   name: string;
   content: string;
   sender: Sender;
-  type: string;
-  metadata?: any;
+  type: "text" | "file";
+  metadata?: FileMetadata & { timestamp?: string };
   timestamp: string;
 }
 

@@ -1,13 +1,13 @@
 package handler
 
 import (
+	"live-chat-server/commands"
 	"live-chat-server/interfaces"
 	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"live-chat-server/utils"
-	"math/rand"
 
 	"github.com/gofiber/websocket/v2"
 	"github.com/mitchellh/mapstructure"
@@ -26,6 +26,7 @@ type WebSocketHandler struct {
 	contactRepo         repositories.ContactRepository
 	userRepo            repositories.UserRepository
 	conversationHandler *ConversationHandler
+	commandFactory      interfaces.CommandFactory
 }
 
 // WebSocketHandlerParams contains dependencies for WebSocketHandler
@@ -41,6 +42,7 @@ type WebSocketHandlerParams struct {
 	ContactRepo         repositories.ContactRepository
 	UserRepo            repositories.UserRepository
 	ConversationHandler *ConversationHandler
+	CommandFactory      interfaces.CommandFactory
 }
 
 // NewWebSocketHandler creates a new WebSocketHandler
@@ -56,6 +58,7 @@ func NewWebSocketHandler(params WebSocketHandlerParams) *WebSocketHandler {
 		contactRepo:         params.ContactRepo,
 		userRepo:            params.UserRepo,
 		conversationHandler: params.ConversationHandler,
+		commandFactory:      params.CommandFactory,
 	}
 }
 
@@ -173,81 +176,41 @@ func (h *WebSocketHandler) HandleConversationStart(client *types.WebSocketClient
 		return
 	}
 
-	conversation := models.Conversation{
-		InboxID:   payload.InboxID,
-		ContactID: client.GetID(),
-		CompanyID: client.GetCompanyID(),
-		Status:    models.ConversationStatusPending,
-	}
-
-	if err := h.conversationRepo.CreateConversation(&conversation); err != nil {
-		client.SendError("Failed to create conversation", "SERVER_ERROR")
-		return
-	}
-
-	conversationPtr, err := h.conversationRepo.GetConversationByID(conversation.ID, "Messages", "Inbox", "Contact", "AssignedTo")
+	// Create and execute StartConversation command
+	startCmd := h.commandFactory.NewStartConversationCommand(client, &payload)
+	inbox, err := startCmd.Handle()
 	if err != nil {
-		client.SendError("Failed to get conversation", "SERVER_ERROR")
+		h.logger.Error("Failed to start conversation", "error", err)
+		client.SendError("Failed to start conversation", "SERVER_ERROR")
 		return
 	}
 
-	inbox, err := h.inboxRepo.GetInboxByID(conversationPtr.InboxID)
-	if err != nil {
-		client.SendError("Failed to get inbox", "SERVER_ERROR")
-		return
-	}
+	// Get the concrete command to access its fields
+	cmd := startCmd.(*commands.StartConversationCommand)
 
-	// Subscribe the client to this conversation
-	h.pubSub.Subscribe(client, "conversation:"+conversationPtr.ID)
-
-	// Publish to company channel for all agents to see
-	h.publishConversationCreatedToCompany(conversationPtr)
-
-	h.pubSub.Publish("conversation:"+conversationPtr.ID, types.EventTypeConversationStart, conversationPtr.ToPayloadWithoutMessages())
-
-	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, conversationPtr)
-
-	if inbox.AutoResponderMessage != "" && inbox.AutoResponderEnabled {
-		h.SendBotMessage(conversationPtr, inbox.AutoResponderMessage)
-	}
-
-	if inbox.AutoAssignmentEnabled {
-		h.assignConversationToAgent(conversationPtr, inbox.MaxAutoAssignments)
-	}
-}
-
-func (h *WebSocketHandler) assignConversationToAgent(conversation *models.Conversation, maxAutoAssignments int) {
-	agents, err := h.inboxRepo.GetUsersForInbox(conversation.InboxID)
-	if err != nil {
-		h.logger.Error("Failed to get agents", "error", err)
-		return
-	}
-
-	availableAgents := []models.User{}
-
-	for _, agent := range agents {
-		conversations, err := h.conversationRepo.GetActiveAssignedConversationsForUser(agent.ID)
+	// Handle pre-chat form if present
+	if payload.PreChatFormData != nil {
+		formCmd := h.commandFactory.NewHandlePreChatFormCommand(client, cmd.Conversation, payload.PreChatFormData)
+		_, err := formCmd.Handle()
 		if err != nil {
-			h.logger.Error("Failed to get conversations", "error", err)
-			continue
-		}
-
-		if len(conversations) >= maxAutoAssignments {
-			continue
-		}
-
-		availableAgents = append(availableAgents, agent)
-	}
-
-	if len(availableAgents) > 0 {
-		randomAgent := availableAgents[rand.Intn(len(availableAgents))]
-
-		// Use the shared method from ConversationHandler
-		err := h.conversationHandler.AssignConversation(conversation, randomAgent.ID, randomAgent.GetFullName())
-		if err != nil {
-			h.logger.Error("Failed to assign conversation", "error", err)
+			h.logger.Error("Failed to handle pre-chat form", "error", err)
+			client.SendError("Failed to handle pre-chat form", "SERVER_ERROR")
+			return
 		}
 	}
+
+	// Handle inbox features
+	inboxCmd := h.commandFactory.NewHandleInboxFeaturesCommand(cmd.Conversation, inbox.(*models.Inbox))
+	_, err = inboxCmd.Handle()
+	if err != nil {
+		h.logger.Error("Failed to handle inbox features", "error", err)
+		client.SendError("Failed to handle inbox features", "SERVER_ERROR")
+		return
+	}
+
+	h.pubSub.Subscribe(client, "conversation:"+cmd.Conversation.ID)
+
+	h.dispatcher.Dispatch(interfaces.EventTypeConversationStart, cmd.Conversation)
 }
 
 // HandleConversationGetByID handles getting a conversation by ID
@@ -429,11 +392,6 @@ func (h *WebSocketHandler) SendBotMessage(conversation *models.Conversation, con
 	}
 
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationSendMessage, messagePayload)
-}
-
-// publishConversationCreatedToCompany publishes a new conversation to the company channel
-func (h *WebSocketHandler) publishConversationCreatedToCompany(conversation *models.Conversation) {
-	h.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationStart, conversation.ToPayloadWithoutMessages())
 }
 
 func (h *WebSocketHandler) HandleSubscribe(client *types.WebSocketClient, msg *types.WebSocketMessage) {

@@ -92,5 +92,10 @@
   "failed_to_reopen_conversation": "Failed to reopen conversation",
   "conversation_already_assigned": "Conversation already assigned",
 
-  "missing_required_fields": "Missing required fields"
+  "missing_required_fields": "Missing required fields",
+
+  "pre_form_title": "Before we chat...",
+  "pre_form_description": "Please fill out this short form to help us serve you better.",
+  "pre_form_name_label": "Name",
+  "pre_form_name_placeholder": "Enter your name"
 }

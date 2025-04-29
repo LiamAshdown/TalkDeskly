@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"live-chat-server/types"
 	"live-chat-server/utils"
 	"time"
@@ -27,6 +28,7 @@ type Conversation struct {
 	Status        ConversationStatus `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
 	LastMessage   string             `json:"last_message"`
 	LastMessageAt *time.Time         `json:"last_message_at"`
+	Metadata      json.RawMessage    `gorm:"type:jsonb;serializer:json" json:"metadata"`
 	CreatedAt     time.Time          `json:"created_at"`
 	UpdatedAt     time.Time          `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt     `gorm:"index" json:"-"`
@@ -41,9 +43,11 @@ type Conversation struct {
 
 func (c *Conversation) ToPayload() *types.ConversationPayload {
 	return &types.ConversationPayload{
+		ID:             c.ID,
 		ConversationID: c.ID,
 		Status:         string(c.Status),
 		InboxID:        c.InboxID,
+		Metadata:       c.Metadata,
 		AssignedTo: func() *struct {
 			ID   string `json:"id"`
 			Name string `json:"name"`
@@ -82,6 +86,7 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			Name: c.Inbox.Name,
 		},
 		UpdatedAt:   c.UpdatedAt.Format("01/02/2006 15:04:05"),
+		CreatedAt:   c.CreatedAt.Format("01/02/2006 15:04:05"),
 		LastMessage: c.LastMessage,
 		LastMessageAt: func() string {
 			if c.LastMessageAt == nil {

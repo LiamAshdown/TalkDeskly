@@ -81,9 +81,15 @@ export function getNextOpeningTime(
       const [startHour, startMinute] = nextDayConfig.startTime
         .split(":")
         .map(Number);
-      const day =
+      let day =
         days[nextDayIndex].charAt(0).toUpperCase() +
         days[nextDayIndex].slice(1);
+
+      // If the next day is tomorrow, return "tomorrow"
+      if (nextDayIndex === (currentDayIndex + 1) % 7) {
+        day = "tomorrow";
+      }
+
       return `${day} at ${formatTime(startHour, startMinute)}`;
     }
   }

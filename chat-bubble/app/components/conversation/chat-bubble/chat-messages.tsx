@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ChatBubble } from "~/components/chat-bubble/chat-bubble";
+import { ChatBubble } from "~/components/conversation/chat-bubble/chat-bubble";
 import type { Message } from "~/types/conversation";
 interface ChatMessagesProps {
   messages: Message[];
@@ -29,7 +29,6 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
         >
           <ChatBubble
             message={message}
-            isRead={false}
             className={message.sender.type === "contact" ? "opacity-70" : ""}
           />
         </motion.div>

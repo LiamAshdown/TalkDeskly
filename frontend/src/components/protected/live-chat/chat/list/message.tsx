@@ -9,6 +9,16 @@ interface MessageProps {
   message: MessageType;
 }
 
+interface PreChatForm {
+  contactField: string;
+  id: string;
+  label: string;
+  placeholder: string;
+  required: boolean;
+  type: string;
+  value: string;
+}
+
 export function Message({ message }: MessageProps) {
   const renderMessageWithMentions = (text: string, mention: string) => {
     const regex = new RegExp(`@${mention}`, "gi");
@@ -33,6 +43,14 @@ export function Message({ message }: MessageProps) {
       }
     }
     return result;
+  };
+
+  const renderPreChatForm = (form: PreChatForm) => {
+    return (
+      <div>
+        <p>{form.label}</p>
+      </div>
+    );
   };
 
   return (

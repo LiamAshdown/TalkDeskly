@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import { ChatWindow } from "~/components/organisms/chat-window";
-import { WelcomeScreen } from "~/components/molecules/welcome-screen";
+import { ChatWindow } from "~/components/conversation/chat-window";
+import { WelcomeScreen } from "~/components/welcome-screen/welcome-screen";
 import { useWebSocket } from "~/contexts/websocket-context";
 import {
   AlertDialog,
@@ -58,7 +58,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    const inboxId = "e7a8c575-6dc2-48c2-89e2-02c5a90e1000"; // Your inbox ID
+    const inboxId = "5bf48d72-b399-4b24-a74d-ac5dfd4de274"; // Your inbox ID
 
     wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;
@@ -112,6 +112,12 @@ function LiveChatWidgetContent() {
                     }
                   : {}
               }
+              whileHover={{
+                scale: 1.1,
+                y: -5,
+                rotate: 2,
+                transition: { type: "spring", stiffness: 400, damping: 10 },
+              }}
               transition={{
                 duration: 0.5,
                 repeat: chatState.hasNewMessage ? 3 : 0,
@@ -121,12 +127,12 @@ function LiveChatWidgetContent() {
             >
               <Button
                 onClick={() => dispatch({ type: "TOGGLE_CHAT", payload: true })}
-                className="h-14 w-14 rounded-full shadow-lg flex items-center justify-center bg-primary hover:bg-primary/90"
+                className="h-18 w-18 rounded-full shadow-lg flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white overflow-hidden"
               >
-                <MessageCircle className="h-6 w-6" />
-                {chatState.unreadCount > 0 && (
+                <MessageCircle className="transform scale-[1.8]" />
+                {/* {chatState.unreadCount > 0 && (
                   <motion.span
-                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-medium text-destructive-foreground"
+                    className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{
@@ -137,7 +143,7 @@ function LiveChatWidgetContent() {
                   >
                     {chatState.unreadCount}
                   </motion.span>
-                )}
+                )} */}
               </Button>
             </motion.div>
           </motion.div>
@@ -149,25 +155,25 @@ function LiveChatWidgetContent() {
         {chatState.isOpen && (
           <motion.div
             className={cn(
-              "fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-xl",
+              "fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-xl dark:bg-zinc-900 dark:border-zinc-700",
               chatState.isFullScreen
                 ? "inset-4 md:inset-6 lg:inset-8"
-                : "bottom-4 right-4 h-[500px] w-[350px]"
+                : "bottom-4 right-4 h-[600px] w-[380px]"
             )}
-            initial={{ opacity: 0, y: 100, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.8 }}
+            style={{ transformOrigin: "bottom right" }}
+            initial={{ opacity: 0, scale: 0.5, rotate: 15 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.5, rotate: -15 }}
             transition={{
               type: "spring",
-              stiffness: 300,
-              damping: 25,
+              stiffness: 350,
+              damping: 30,
             }}
           >
             {!chatState.conversationStarted ? (
               <WelcomeScreen
                 isConnected={chatState.isConnected}
                 isLoading={chatState.isInboxLoading}
-                inboxData={chatState.inboxData}
               />
             ) : (
               <ChatWindow />
@@ -183,7 +189,7 @@ function LiveChatWidgetContent() {
           dispatch({ type: open ? "OPEN_END_DIALOG" : "CLOSE_END_DIALOG" })
         }
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="dark:bg-zinc-800 border-0">
           <AlertDialogHeader>
             <AlertDialogTitle>End Conversation</AlertDialogTitle>
             <AlertDialogDescription>
@@ -193,7 +199,10 @@ function LiveChatWidgetContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEndConversation}>
+            <AlertDialogAction
+              onClick={confirmEndConversation}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
               End Conversation
             </AlertDialogAction>
           </AlertDialogFooter>

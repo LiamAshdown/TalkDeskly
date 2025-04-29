@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button";
 import { X, Minimize2, Maximize2, RefreshCw } from "lucide-react";
-import { ChatAvatar } from "~/components/atoms/chat-avatar";
+import { ChatAvatar } from "~/components/conversation/chat-bubble/chat-avatar";
 import { useChatStateContext } from "~/contexts/chat-state-context";
 
 export function ChatHeader() {

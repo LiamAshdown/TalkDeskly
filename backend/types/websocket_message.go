@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -62,7 +63,8 @@ type IncomingMessagePayload struct {
 }
 
 type IncomingStartConversationPayload struct {
-	InboxID string `mapstructure:"inbox_id"`
+	InboxID         string                 `mapstructure:"inbox_id"`
+	PreChatFormData map[string]interface{} `mapstructure:"pre_chat_form_data,omitempty"`
 }
 
 type IncomingCloseConversationPayload struct {
@@ -70,11 +72,11 @@ type IncomingCloseConversationPayload struct {
 }
 
 type IncomingSendMessagePayload struct {
-	ConversationID string      `mapstructure:"conversation_id"`
-	Content        string      `mapstructure:"content"`
-	Type           string      `mapstructure:"type"`
-	Private        bool        `mapstructure:"private,omitempty"`
-	Metadata       interface{} `mapstructure:"metadata,omitempty"`
+	ConversationID string          `mapstructure:"conversation_id"`
+	Content        string          `mapstructure:"content"`
+	Type           string          `mapstructure:"type"`
+	Private        bool            `mapstructure:"private,omitempty"`
+	Metadata       json.RawMessage `mapstructure:"metadata,omitempty"`
 }
 
 type IncomingGetConversationByIDPayload struct {

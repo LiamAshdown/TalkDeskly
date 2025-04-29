@@ -14,7 +14,7 @@ type InternalMessagePayload struct {
 	ConversationID string
 	Content        string
 	Type           string
-	Metadata       interface{}
+	Metadata       json.RawMessage
 	Private        bool
 	Sender         struct {
 		ID   string
@@ -51,7 +51,10 @@ func (l *ConversationListener) subscribe() {
 }
 
 func (l *ConversationListener) HandleConversationStart(event interfaces.Event) {
-
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationStart, conversation.ToPayloadWithoutMessages())
+		l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationStart, conversation.ToPayloadWithoutMessages())
+	}
 }
 
 func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Event) {
@@ -78,16 +81,10 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			messageType = models.MessageType(internalMessage.Type)
 		}
 
-		// Handle metadata conversion for storage
-		var metadataStr *string
-		if internalMessage.Metadata != nil {
-			// Convert metadata to string
-			if metadataJSON, err := json.Marshal(internalMessage.Metadata); err == nil {
-				metadataString := string(metadataJSON)
-				metadataStr = &metadataString
-			} else {
-				l.logger.Error("Error marshaling metadata:", err)
-			}
+		metaData := internalMessage.Metadata
+
+		if metaData == nil {
+			metaData = json.RawMessage{}
 		}
 
 		// Create the message model for storage
@@ -96,7 +93,7 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			Content:        internalMessage.Content,
 			Type:           messageType,
 			SenderType:     models.SenderType(internalMessage.Sender.Type),
-			Metadata:       metadataStr,
+			Metadata:       metaData,
 			Private:        internalMessage.Private,
 		}
 
@@ -171,15 +168,14 @@ func (l *ConversationListener) HandleConversationTypingStop(event interfaces.Eve
 }
 
 func (l *ConversationListener) HandleConversationAssign(event interfaces.Event) {
-	if payload, ok := event.Payload.(map[string]interface{}); ok {
-		if conversation, ok := payload["conversation"].(*models.Conversation); ok {
-			// Broadcast assignment to company channel
-			l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
+	if conversation, ok := event.Payload.(*models.Conversation); ok {
+		// Broadcast assignment to company channel
+		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
 
-			// Also broadcast to the conversation channel
-			l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
-		}
+		// Also broadcast to the conversation channel
+		l.pubSub.Publish("conversation:"+conversation.ID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
 	}
+
 }
 
 func (l *ConversationListener) HandleConversationClose(event interfaces.Event) {
