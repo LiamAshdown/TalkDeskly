@@ -28,7 +28,7 @@ type Conversation struct {
 	Status        ConversationStatus `gorm:"type:varchar(20);not null;default:'pending'" json:"status"`
 	LastMessage   string             `json:"last_message"`
 	LastMessageAt *time.Time         `json:"last_message_at"`
-	Metadata      json.RawMessage    `gorm:"type:jsonb;serializer:json" json:"metadata"`
+	Metadata      *json.RawMessage   `gorm:"type:jsonb;serializer:json" json:"metadata"`
 	CreatedAt     time.Time          `json:"created_at"`
 	UpdatedAt     time.Time          `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt     `gorm:"index" json:"-"`

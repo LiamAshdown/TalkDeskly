@@ -4,6 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { FileMessage } from ".";
 import { MessageAvatar } from ".";
 import { Fragment, ReactNode } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface MessageProps {
   message: MessageType;
@@ -45,11 +53,31 @@ export function Message({ message }: MessageProps) {
     return result;
   };
 
-  const renderPreChatForm = (form: PreChatForm) => {
+  const renderPreChatForm = (metaData: any) => {
+    console.log(metaData);
+    if (!metaData.preChatForm) return null;
+
+    const form = metaData.preChatForm as PreChatForm[];
+
     return (
-      <div>
-        <p>{form.label}</p>
-      </div>
+      <Table className="mt-4">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-xs font-medium h-0">Field</TableHead>
+            <TableHead className="text-xs font-medium h-0">Value</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {form.map((field) => (
+            <TableRow key={field.id}>
+              <TableCell className="text-xs font-medium">
+                {field.label || field.id}
+              </TableCell>
+              <TableCell className="text-sm">{field.value}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
   };
 
@@ -106,6 +134,8 @@ export function Message({ message }: MessageProps) {
                   message.content,
                   message.sender.name
                 )}
+
+                {message.metadata && renderPreChatForm(message.metadata)}
               </p>
             )}
 

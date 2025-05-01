@@ -46,8 +46,9 @@ func (c *HandlePreChatFormCommand) Handle() (interface{}, error) {
 		return nil, err
 	}
 
-	// Update conversation metadata
-	c.Conversation.Metadata = metadataBytes
+	// Convert to *json.RawMessage
+	rawJSON := json.RawMessage(metadataBytes)
+	c.Conversation.Metadata = &rawJSON
 	if err := c.conversationRepo.UpdateConversation(c.Conversation); err != nil {
 		return nil, err
 	}

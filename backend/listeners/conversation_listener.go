@@ -83,17 +83,13 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 
 		metaData := internalMessage.Metadata
 
-		if metaData == nil {
-			metaData = json.RawMessage{}
-		}
-
 		// Create the message model for storage
 		messageModel := models.Message{
 			ConversationID: internalMessage.ConversationID,
 			Content:        internalMessage.Content,
 			Type:           messageType,
 			SenderType:     models.SenderType(internalMessage.Sender.Type),
-			Metadata:       metaData,
+			Metadata:       &metaData,
 			Private:        internalMessage.Private,
 		}
 
