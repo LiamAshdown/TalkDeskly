@@ -9,8 +9,6 @@ import (
 	"live-chat-server/utils"
 	"time"
 
-	"live-chat-server/email"
-
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,14 +34,14 @@ type CompanyHandler struct {
 	userRepo        repositories.UserRepository
 	dispatcher      interfaces.Dispatcher
 	jobClient       interfaces.JobClient
-	emailProvider   email.EmailProvider
+	emailProvider   interfaces.EmailProvider
 	securityContext interfaces.SecurityContext
 	logger          interfaces.Logger
 	i18n            interfaces.I18n
 	langContext     interfaces.LanguageContext
 }
 
-func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient interfaces.JobClient, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger, i18n interfaces.I18n, langContext interfaces.LanguageContext) *CompanyHandler {
+func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient interfaces.JobClient, emailProvider interfaces.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger, i18n interfaces.I18n, langContext interfaces.LanguageContext) *CompanyHandler {
 	// Create a named logger for the company handler
 	handlerLogger := logger.Named("company_handler")
 

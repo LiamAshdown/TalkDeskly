@@ -1,7 +1,7 @@
 import { ContactFormData } from "@/lib/schemas/contact-schema";
-import apiClient from "../client";
-import { APIResponse } from "../types";
-import { Contact, ContactNote } from "@/lib/interfaces";
+import apiClient from "@/lib/api/client";
+import { APIResponse } from "@/lib/api/types";
+import { Contact, ContactNote, Conversation } from "@/lib/interfaces";
 
 export const contactsService = {
   async getContacts(): Promise<APIResponse<Contact[]>> {
@@ -44,6 +44,15 @@ export const contactsService = {
       {
         content,
       }
+    );
+    return response.data;
+  },
+
+  async getContactConversations(
+    id: string
+  ): Promise<APIResponse<Conversation[]>> {
+    const response = await apiClient.get<APIResponse<Conversation[]>>(
+      `/contacts/${id}/conversations`
     );
     return response.data;
   },

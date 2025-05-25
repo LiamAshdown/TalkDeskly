@@ -115,10 +115,10 @@ func (c *DIContainer) GetJobClient() interfaces.JobClient {
 }
 
 // GetEmailProvider retrieves the email provider
-func (c *DIContainer) GetEmailProvider() email.EmailProvider {
-	var provider email.EmailProvider
-	c.dig.Invoke(func(p email.EmailProvider) {
-		provider = p
+func (c *DIContainer) GetEmailProvider() interfaces.EmailProvider {
+	var provider interfaces.EmailProvider
+	c.dig.Invoke(func(p interfaces.EmailProvider) {
+		provider = c.GetEmailProviderFactory().NewEmailProvider()
 	})
 	return provider
 }
@@ -195,6 +195,15 @@ func (c *DIContainer) GetCommandFactory() interfaces.CommandFactory {
 	return factory
 }
 
+// GetEmailProviderFactory retrieves the email provider factory
+func (c *DIContainer) GetEmailProviderFactory() interfaces.EmailProviderFactory {
+	var factory interfaces.EmailProviderFactory
+	c.dig.Invoke(func(f interfaces.EmailProviderFactory) {
+		factory = f
+	})
+	return factory
+}
+
 // GetDig returns the underlying dig container
 func (c *DIContainer) GetDig() *dig.Container {
 	return c.dig
@@ -207,6 +216,15 @@ func (c *DIContainer) GetFiberContext() *fiber.Ctx {
 		ctx = c
 	})
 	return ctx
+}
+
+// GetNotificationService retrieves the notification service
+func (c *DIContainer) GetNotificationService() interfaces.NotificationService {
+	var service *services.NotificationService
+	c.dig.Invoke(func(s *services.NotificationService) {
+		service = s
+	})
+	return service
 }
 
 // NewContainer creates a new container with DI
@@ -228,25 +246,6 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		log.Fatalf("Failed to provide config: %v", err)
 	}
 
-	repositories.RegisterRepositories(digContainer)
-	services.RegisterServices(digContainer)
-	email.RegisterEmailService(digContainer, factory.NewEmailProvider)
-	disk.RegisterStorageServices(digContainer)
-	i18n.RegisterI18nServices(digContainer)
-	context.RegisterContexts(digContainer)
-	handler.RegisterHandlers(digContainer)
-	listeners.RegisterListeners(digContainer)
-
-	// Create container
-	containerImpl := &DIContainer{
-		dig: digContainer,
-	}
-
-	// Register container itself
-	if err := digContainer.Provide(func() interfaces.Container { return containerImpl }); err != nil {
-		log.Fatalf("Failed to provide container: %v", err)
-	}
-
 	// Register job client
 	if err := digContainer.Provide(func(cfg config.Config) interfaces.JobClient {
 		return jobs.NewClient(cfg.RedisAddr)
@@ -254,9 +253,24 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		log.Printf("Failed to provide job client: %v", err)
 	}
 
-	// Register command factory after all handlers are registered
-	if err := digContainer.Provide(factory.NewCommandFactory); err != nil {
-		log.Fatalf("Failed to provide command factory: %v", err)
+	// Create container
+	containerImpl := &DIContainer{
+		dig: digContainer,
+	}
+
+	repositories.RegisterRepositories(digContainer)
+	services.RegisterServices(digContainer)
+	factory.RegisterModule(digContainer)
+	email.RegisterEmailService(digContainer)
+	disk.RegisterStorageServices(digContainer)
+	i18n.RegisterI18nServices(digContainer)
+	context.RegisterContexts(digContainer)
+	handler.RegisterHandlers(digContainer)
+	listeners.RegisterListeners(digContainer)
+
+	// Register container itself
+	if err := digContainer.Provide(func() interfaces.Container { return containerImpl }); err != nil {
+		log.Fatalf("Failed to provide container: %v", err)
 	}
 
 	return containerImpl
@@ -265,10 +279,11 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 // StartJobServer initializes and starts the job server
 // This should be called after the container is fully initialized
 func StartJobServer(container interfaces.Container) *jobs.Server {
+	emailProvider := container.GetEmailProvider()
 	config := container.GetConfig()
 	jobServer := jobs.RegisterJobServer(
 		config.RedisAddr,
-		container.GetEmailProvider(),
+		emailProvider,
 		container.GetLogger(),
 	)
 	return jobServer

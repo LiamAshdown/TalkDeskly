@@ -22,21 +22,23 @@ type ContactNoteInput struct {
 }
 
 type ContactHandler struct {
-	repo            repositories.ContactRepository
-	securityContext interfaces.SecurityContext
-	dispatcher      interfaces.Dispatcher
-	logger          interfaces.Logger
-	langContext     interfaces.LanguageContext
+	repo             repositories.ContactRepository
+	conversationRepo repositories.ConversationRepository
+	securityContext  interfaces.SecurityContext
+	dispatcher       interfaces.Dispatcher
+	logger           interfaces.Logger
+	langContext      interfaces.LanguageContext
 }
 
-func NewContactHandler(repo repositories.ContactRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext) *ContactHandler {
+func NewContactHandler(repo repositories.ContactRepository, conversationRepo repositories.ConversationRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext) *ContactHandler {
 	handlerLogger := logger.Named("contact_handler")
 	return &ContactHandler{
-		repo:            repo,
-		securityContext: securityContext,
-		dispatcher:      dispatcher,
-		logger:          handlerLogger,
-		langContext:     langContext,
+		repo:             repo,
+		conversationRepo: conversationRepo,
+		securityContext:  securityContext,
+		dispatcher:       dispatcher,
+		logger:           handlerLogger,
+		langContext:      langContext,
 	}
 }
 
@@ -197,4 +199,21 @@ func (h *ContactHandler) HandleListContactNotes(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_notes_fetched"), responses)
+}
+
+func (h *ContactHandler) HandleGetContactConversations(c *fiber.Ctx) error {
+	contactID := c.Params("id")
+
+	conversations, err := h.conversationRepo.GetConversationsByContactID(contactID, "Inbox")
+
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, h.langContext.T(c, "failed_to_fetch_conversations"), err)
+	}
+
+	responses := make([]types.ConversationPayload, len(conversations))
+	for i, conversation := range conversations {
+		responses[i] = *conversation.ToPayload()
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversations_fetched"), responses)
 }

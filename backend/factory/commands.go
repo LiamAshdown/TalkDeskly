@@ -63,5 +63,6 @@ func (f *CommandFactoryImpl) NewHandleAssignConversationCommand(conversationID s
 		f.container.GetLanguageContext(),
 		f.container.GetUserRepo(),
 		f.container.GetFiberContext(),
+		f.container.GetNotificationService(),
 	)
 }

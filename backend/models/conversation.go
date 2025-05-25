@@ -74,7 +74,7 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			Name:      utils.GetStringValue(c.Contact.Name),
 			Email:     utils.GetStringValue(c.Contact.Email),
 			Phone:     utils.GetStringValue(c.Contact.Phone),
-			CreatedAt: c.Contact.CreatedAt.Format("01/02/2006 15:04:05"),
+			CreatedAt: c.Contact.CreatedAt.Format("2006-01-02 15:04:05"),
 		},
 		Messages: []types.MessagePayload{}, // Use `PayloadWithoutPrivateMessages` to get the messages
 		// Reason this is not included due to heavy processing
@@ -85,14 +85,14 @@ func (c *Conversation) ToPayload() *types.ConversationPayload {
 			ID:   c.InboxID,
 			Name: c.Inbox.Name,
 		},
-		UpdatedAt:   c.UpdatedAt.Format("01/02/2006 15:04:05"),
-		CreatedAt:   c.CreatedAt.Format("01/02/2006 15:04:05"),
+		UpdatedAt:   c.UpdatedAt.Format("2006-01-02 15:04:05"),
+		CreatedAt:   c.CreatedAt.Format("2006-01-02 15:04:05"),
 		LastMessage: c.LastMessage,
 		LastMessageAt: func() string {
 			if c.LastMessageAt == nil {
 				return ""
 			}
-			return c.LastMessageAt.Format("01/02/2006 15:04:05")
+			return c.LastMessageAt.Format("2006-01-02 15:04:05")
 		}(),
 	}
 }

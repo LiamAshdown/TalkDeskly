@@ -41,36 +41,27 @@ func SetupRoutesWithDI(params DIParams) {
 	authGroup := apiGroup.Group("/auth")
 	authGroup.Post("/login", params.AuthHandler.Login)
 
-	// WebSocket routes
 	wsGroup := app.Group("/ws")
 
-	// Agent WebSocket endpoint
 	wsGroup.Use("/agents/:user_id", func(c *fiber.Ctx) error {
-		// Check if it's a WebSocket upgrade request
 		if websocket.IsWebSocketUpgrade(c) {
 			return c.Next()
 		}
 		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade to WebSocket required")
 	})
 
-	// Use the actual WebSocket handler
 	wsGroup.Get("/agents/:user_id", websocket.New(func(c *websocket.Conn) {
-		// Pass to the WebSocketHandler
 		params.WebSocketHandler.HandleAgentWebSocket(c)
 	}))
 
-	// Contact WebSocket endpoint
 	wsGroup.Use("/contacts/:contact_id", func(c *fiber.Ctx) error {
-		// Check if it's a WebSocket upgrade request
 		if websocket.IsWebSocketUpgrade(c) {
 			return c.Next()
 		}
 		return c.Status(fiber.StatusUpgradeRequired).SendString("Upgrade to WebSocket required")
 	})
 
-	// Use the actual WebSocket handler
 	wsGroup.Get("/contacts", websocket.New(func(c *websocket.Conn) {
-		// Pass to the WebSocketHandler
 		params.WebSocketHandler.HandleContactWebSocket(c)
 	}))
 
@@ -82,6 +73,7 @@ func SetupRoutesWithDI(params DIParams) {
 	// Public routes (Used by the chat bubble)
 	publicGroup := apiGroup.Group("/public")
 	publicGroup.Get("/inbox/:id", params.PublicHandler.HandleGetInboxDetails)
+	publicGroup.Get("/conversations/:id/:contact_id", params.PublicHandler.HandleGetConversationDetails)
 
 	onboardingGroup := apiGroup.Group("/onboarding")
 	onboardingGroup.Post("/user", params.OnboardingHandler.HandleCreateUser)
@@ -104,6 +96,7 @@ func SetupRoutesWithDI(params DIParams) {
 	contactGroup.Delete("/:id", params.ContactHandler.HandleDeleteContact)
 	contactGroup.Post("/:id/notes", params.ContactHandler.HandleCreateContactNote)
 	contactGroup.Get("/:id/notes", params.ContactHandler.HandleListContactNotes)
+	contactGroup.Get("/:id/conversations", params.ContactHandler.HandleGetContactConversations)
 
 	companyGroup := apiGroup.Group("/companies")
 	companyGroup.Get("/invite/:token", params.CompanyHandler.GetInvite)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"live-chat-server/email"
 	"live-chat-server/interfaces"
 
 	"github.com/hibiken/asynq"
@@ -21,12 +20,12 @@ type SendUserCredentialsJobPayload struct {
 // SendUserCredentialsJob handles sending user credentials emails
 type SendUserCredentialsJob struct {
 	*BaseJob
-	emailProvider email.EmailProvider
+	emailProvider interfaces.EmailProvider
 	logger        interfaces.Logger
 }
 
 // NewSendInviteJob creates a new send invite job
-func NewSendUserCredentialsJob(emailProvider email.EmailProvider, logger interfaces.Logger) *SendUserCredentialsJob {
+func NewSendUserCredentialsJob(emailProvider interfaces.EmailProvider, logger interfaces.Logger) *SendUserCredentialsJob {
 	return &SendUserCredentialsJob{
 		BaseJob:       NewBaseJob("send_user_credentials"),
 		emailProvider: emailProvider,

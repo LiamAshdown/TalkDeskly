@@ -4,14 +4,26 @@ import (
 	"fmt"
 	"live-chat-server/config"
 	"live-chat-server/email"
+	"live-chat-server/interfaces"
 	"strconv"
 )
 
-// NewEmailProvider creates a new email provider based on the application configuration
-func NewEmailProvider() email.EmailProvider {
+type EmailProviderFactoryImpl struct {
+	jobClient interfaces.JobClient
+	logger    interfaces.Logger
+}
+
+func NewEmailProviderFactory(jobClient interfaces.JobClient, logger interfaces.Logger) interfaces.EmailProviderFactory {
+	return &EmailProviderFactoryImpl{
+		jobClient: jobClient,
+		logger:    logger,
+	}
+}
+
+func (f *EmailProviderFactoryImpl) NewEmailProvider() interfaces.EmailProvider {
 	providerType := config.App.EmailProvider
 
-	var provider email.EmailProvider
+	var provider interfaces.EmailProvider
 
 	switch providerType {
 	case "gomail":
@@ -27,7 +39,7 @@ func NewEmailProvider() email.EmailProvider {
 			Password: config.App.EmailPassword,
 			From:     config.App.EmailFrom,
 		}
-		gomailProvider.BaseEmailProvider = email.BaseEmailProvider{EmailProvider: gomailProvider}
+		gomailProvider.BaseEmailProvider = email.NewBaseEmailProvider(gomailProvider, f.logger, f.jobClient)
 		provider = gomailProvider
 	default:
 		panic(fmt.Errorf("invalid email provider: %s", providerType))

@@ -12,7 +12,7 @@ function TabsComponent({
 }) {
   return (
     <Tabs defaultValue="all" className="my-4" onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-4 w-full">
+      <TabsList className="grid grid-cols-4 w-full rounded-none">
         <TabsTrigger value="all" className="text-xs sm:text-sm px-1 sm:px-2">
           All
         </TabsTrigger>

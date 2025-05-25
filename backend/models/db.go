@@ -27,6 +27,7 @@ func ConnectDatabase(dsn string) {
 		&ContactNote{},
 		&CompanyInvite{},
 		&CannedResponse{},
+		&UserNotification{},
 	)
 	if err != nil {
 		panic(err)

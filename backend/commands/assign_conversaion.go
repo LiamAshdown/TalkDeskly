@@ -14,11 +14,12 @@ type HandleAssignConversationCommand struct {
 	AgentID        string
 
 	// DI dependencies
-	conversationRepo repositories.ConversationRepository
-	logger           interfaces.Logger
-	langContext      interfaces.LanguageContext
-	userRepo         repositories.UserRepository
-	c                *fiber.Ctx
+	conversationRepo    repositories.ConversationRepository
+	logger              interfaces.Logger
+	langContext         interfaces.LanguageContext
+	userRepo            repositories.UserRepository
+	c                   *fiber.Ctx
+	notificationService interfaces.NotificationService
 }
 
 func (c *HandleAssignConversationCommand) Handle() (interface{}, error) {
@@ -44,6 +45,8 @@ func (c *HandleAssignConversationCommand) Handle() (interface{}, error) {
 
 	conversation.AssignedTo = user
 
+	c.notificationService.CreateNotification(user, models.UserNotificationTypeAssignedConversation)
+
 	return conversation, c.conversationRepo.UpdateConversation(conversation)
 }
 
@@ -55,14 +58,16 @@ func NewHandleAssignConversationCommand(
 	langContext interfaces.LanguageContext,
 	userRepo repositories.UserRepository,
 	c *fiber.Ctx,
+	notificationService interfaces.NotificationService,
 ) interfaces.Command {
 	return &HandleAssignConversationCommand{
-		ConversationID:   conversationID,
-		AgentID:          agentID,
-		conversationRepo: conversationRepo,
-		logger:           logger,
-		langContext:      langContext,
-		userRepo:         userRepo,
-		c:                c,
+		ConversationID:      conversationID,
+		AgentID:             agentID,
+		conversationRepo:    conversationRepo,
+		logger:              logger,
+		langContext:         langContext,
+		userRepo:            userRepo,
+		c:                   c,
+		notificationService: notificationService,
 	}
 }

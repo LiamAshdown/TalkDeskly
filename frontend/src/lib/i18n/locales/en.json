@@ -77,6 +77,10 @@
       "noteAddedFailed": "Failed to add note",
       "cancel": "Cancel",
       "save": "Save"
+    },
+    "previous": {
+      "title": "Previous Conversations",
+      "noConversations": "No previous conversations"
     }
   },
   "company": {

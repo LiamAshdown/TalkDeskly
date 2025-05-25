@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"live-chat-server/email"
 	"live-chat-server/interfaces"
 
 	"github.com/hibiken/asynq"
@@ -21,12 +20,12 @@ type SendInviteJobPayload struct {
 // SendInviteJob handles sending agent invite emails
 type SendInviteJob struct {
 	*BaseJob
-	emailProvider email.EmailProvider
+	emailProvider interfaces.EmailProvider
 	logger        interfaces.Logger
 }
 
 // NewSendInviteJob creates a new send invite job
-func NewSendInviteJob(emailProvider email.EmailProvider, logger interfaces.Logger) *SendInviteJob {
+func NewSendInviteJob(emailProvider interfaces.EmailProvider, logger interfaces.Logger) *SendInviteJob {
 	return &SendInviteJob{
 		BaseJob:       NewBaseJob("send_invite"),
 		emailProvider: emailProvider,

@@ -10,7 +10,7 @@ export const cannedResponsesService = {
     return response.data;
   },
   async createCannedResponse(
-    data: CannedResponse
+    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">
   ): Promise<APIResponse<CannedResponse>> {
     const response = await apiClient.post<APIResponse<CannedResponse>>(
       "/canned-responses",

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"live-chat-server/email"
+	"live-chat-server/interfaces"
 
 	"github.com/hibiken/asynq"
 )
@@ -18,10 +18,10 @@ type SendWelcomeJobPayload struct {
 
 type SendWelcomeJob struct {
 	*BaseJob
-	emailProvider email.EmailProvider
+	emailProvider interfaces.EmailProvider
 }
 
-func NewSendWelcomeJob(emailProvider email.EmailProvider) *SendWelcomeJob {
+func NewSendWelcomeJob(emailProvider interfaces.EmailProvider) *SendWelcomeJob {
 	return &SendWelcomeJob{
 		BaseJob:       NewBaseJob("send_welcome"),
 		emailProvider: emailProvider,

@@ -10,6 +10,7 @@ import { contactsService } from "@/lib/api/services/contacts";
 import { useWebSocket } from "@/context/websocket-context";
 import { useTranslation } from "react-i18next";
 import { ScrollableContainer } from "@/components/ui/scrollable-container";
+import { format } from "date-fns";
 
 interface NotesSectionProps {
   contact: Contact;
@@ -140,7 +141,7 @@ export function NotesSection({ contact }: NotesSectionProps) {
                   <p className="text-sm">{note.content}</p>
                   <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
                     <span>{note.user.name}</span>
-                    <span>{note.createdAt}</span>
+                    <span>{format(note.createdAt, "MM/dd/yyyy")}</span>
                   </div>
                 </CardContent>
               </Card>

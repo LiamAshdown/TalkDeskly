@@ -30,7 +30,10 @@ type InputFieldProps = BaseFieldProps & {
   type?: "text" | "email" | "password" | "number" | "tel" | "url";
 };
 
-type TextareaFieldProps = BaseFieldProps;
+type TextareaFieldProps = BaseFieldProps & {
+  className?: string;
+  rows?: number;
+};
 
 type CheckboxFieldProps = BaseFieldProps & {
   description?: string;
@@ -84,6 +87,8 @@ export function TextareaField({
   control,
   disabled,
   placeholder,
+  className,
+  rows,
 }: TextareaFieldProps) {
   return (
     <FormFieldBase
@@ -96,6 +101,8 @@ export function TextareaField({
             <Textarea
               placeholder={placeholder}
               disabled={disabled}
+              className={className}
+              rows={rows}
               {...field}
             />
           </FormControl>

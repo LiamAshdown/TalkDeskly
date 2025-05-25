@@ -5,6 +5,7 @@ import type { Conversation, Message } from "~/types/conversation";
 
 interface ConversationState {
   conversation: Conversation | null;
+  conversationId: string | null;
   setConversation: (conversation: Conversation) => void;
   setStatus: (status: string) => void;
   setMessages: (messages: Message[]) => void;
@@ -16,8 +17,16 @@ export const useConversationStore = create<ConversationState>()(
   persist(
     (set) => ({
       conversation: null,
+      conversationId: null,
       setConversation: (conversation: Conversation) => {
         set({ conversation });
+
+        if (conversation.conversationId) {
+          set({ conversationId: conversation.conversationId });
+        }
+      },
+      setConversationId: (conversationId: string) => {
+        set({ conversationId });
       },
       setStatus: (status: string) => {
         set(
@@ -48,11 +57,12 @@ export const useConversationStore = create<ConversationState>()(
         );
       },
       endConversation: () => {
-        set({ conversation: null });
+        set({ conversation: null, conversationId: null });
       },
     }),
     {
       name: "conversation-storage",
+      partialize: (state) => ({ conversationId: state.conversationId }),
     }
   )
 );

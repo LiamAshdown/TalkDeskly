@@ -63,7 +63,10 @@ export default function ContactInfo() {
 
         <Separator className="my-4" />
 
-        <PreviousConversations contact={activeConversation.contact} />
+        <PreviousConversations
+          contact={activeConversation.contact}
+          activeConversationId={activeConversation.conversationId}
+        />
 
         <div className="mt-6">
           <Button variant="outline" className="w-full">

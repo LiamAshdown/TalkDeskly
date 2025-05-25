@@ -94,3 +94,16 @@ func (u *User) ToProfileResponse() interface{} {
 		"notification_settings": u.NotificationSettings,
 	}
 }
+
+func (u *User) GetNotificationSettings() *NotificationSettings {
+	if u.NotificationSettings == nil {
+		u.NotificationSettings = &NotificationSettings{
+			NewConversation: true,
+			NewMessage:      true,
+			Mentions:        true,
+			EmailEnabled:    true,
+		}
+	}
+
+	return u.NotificationSettings
+}

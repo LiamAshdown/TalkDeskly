@@ -10,16 +10,18 @@ import (
 )
 
 type PublicHandler struct {
-	inboxRepo   repositories.InboxRepository
-	logger      interfaces.Logger
-	langContext interfaces.LanguageContext
+	inboxRepo        repositories.InboxRepository
+	logger           interfaces.Logger
+	langContext      interfaces.LanguageContext
+	conversationRepo repositories.ConversationRepository
 }
 
-func NewPublicHandler(inboxRepo repositories.InboxRepository, logger interfaces.Logger, langContext interfaces.LanguageContext) *PublicHandler {
+func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext) *PublicHandler {
 	return &PublicHandler{
-		inboxRepo:   inboxRepo,
-		logger:      logger,
-		langContext: langContext,
+		inboxRepo:        inboxRepo,
+		logger:           logger,
+		langContext:      langContext,
+		conversationRepo: conversationRepo,
 	}
 }
 
@@ -37,4 +39,20 @@ func (h *PublicHandler) HandleGetInboxDetails(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_details_retrieved"), inbox.ToResponse())
+}
+
+func (h *PublicHandler) HandleGetConversationDetails(c *fiber.Ctx) error {
+	conversationID := c.Params("id")
+	contactID := c.Params("contact_id")
+
+	conversation, err := h.conversationRepo.GetConversationByID(conversationID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "conversation_not_found"), err)
+	}
+
+	if conversation.ContactID != contactID {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "conversation_not_found"), errors.New("conversation not found"))
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_details_retrieved"), conversation.ToPayloadWithoutPrivateMessages())
 }

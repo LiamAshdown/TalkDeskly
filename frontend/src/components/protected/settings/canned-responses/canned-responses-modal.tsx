@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,10 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
+import { useForm, UseFormReturn } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Form } from "@/components/ui/form";
+import { InputField, TextareaField } from "@/components/ui/form-field";
+import {
+  createCannedResponseSchema,
+  type CannedResponseFormData,
+} from "@/lib/schemas/canned-response-schema";
 
 interface CannedResponse {
   id: string;
@@ -29,7 +34,11 @@ interface CannedResponseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (
-    response: Omit<CannedResponse, "id" | "createdAt" | "updatedAt">
+    response: Omit<
+      CannedResponse,
+      "id" | "createdAt" | "updatedAt" | "companyId"
+    >,
+    form: UseFormReturn<CannedResponseFormData>
   ) => void;
   response?: CannedResponse;
 }
@@ -42,31 +51,39 @@ export function CannedResponseModal({
   response,
 }: CannedResponseModalProps) {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    title: "",
-    message: "",
-    tag: "",
+
+  const form = useForm<CannedResponseFormData>({
+    resolver: zodResolver(createCannedResponseSchema(t)),
+    defaultValues: {
+      title: "",
+      message: "",
+      tag: "",
+    },
+    mode: "onBlur",
   });
 
   // Reset form when modal opens or response changes
   useEffect(() => {
     if (type === "edit" && response) {
-      setFormData({
+      form.reset({
         title: response.title,
         message: response.message,
         tag: response.tag,
       });
     } else if (type === "create") {
-      setFormData({
+      form.reset({
         title: "",
         message: "",
         tag: "",
       });
     }
-  }, [type, response, open]);
+  }, [type, response, open, form]);
 
-  const handleSave = () => {
-    onSave(formData);
+  const handleSave = (data: CannedResponseFormData) => {
+    onSave(data, form);
+    if (type === "create") {
+      form.reset();
+    }
   };
 
   const isCreateMode = type === "create";
@@ -87,54 +104,43 @@ export function CannedResponseModal({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="response-title">
-              {t("cannedResponses.form.title")}
-            </Label>
-            <Input
-              id="response-title"
-              placeholder={t("cannedResponses.form.titlePlaceholder")}
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="response-message">
-              {t("cannedResponses.form.message")}
-            </Label>
-            <Textarea
-              id="response-message"
-              placeholder={t("cannedResponses.form.messagePlaceholder")}
-              className="min-h-[120px]"
-              value={formData.message}
-              onChange={(e) =>
-                setFormData({ ...formData, message: e.target.value })
-              }
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="response-tag">
-              {t("cannedResponses.form.tag")}
-            </Label>
-            <Input
-              id="response-tag"
-              placeholder={t("cannedResponses.form.tagPlaceholder")}
-              value={formData.tag}
-              onChange={(e) =>
-                setFormData({ ...formData, tag: e.target.value })
-              }
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={handleSave}>{buttonText}</Button>
-        </DialogFooter>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSave)}>
+            <div className="grid gap-4 py-4">
+              <InputField
+                name="title"
+                label={t("cannedResponses.form.title")}
+                control={form.control}
+                placeholder={t("cannedResponses.form.titlePlaceholder")}
+              />
+
+              <TextareaField
+                name="message"
+                label={t("cannedResponses.form.message")}
+                control={form.control}
+                placeholder={t("cannedResponses.form.messagePlaceholder")}
+                className="min-h-[120px]"
+              />
+
+              <InputField
+                name="tag"
+                label={t("cannedResponses.form.tag")}
+                control={form.control}
+                placeholder={t("cannedResponses.form.tagPlaceholder")}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => onOpenChange(false)}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit">{buttonText}</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

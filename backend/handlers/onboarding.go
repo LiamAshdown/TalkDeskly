@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"live-chat-server/config"
-	"live-chat-server/email"
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
@@ -25,12 +24,12 @@ type OnboardingHandler struct {
 	userRepo        repositories.UserRepository
 	companyRepo     repositories.CompanyRepository
 	jobClient       interfaces.JobClient
-	emailProvider   email.EmailProvider
+	emailProvider   interfaces.EmailProvider
 	securityContext interfaces.SecurityContext
 	logger          interfaces.Logger
 }
 
-func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient interfaces.JobClient, emailProvider email.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger) *OnboardingHandler {
+func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient interfaces.JobClient, emailProvider interfaces.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger) *OnboardingHandler {
 	handlerLogger := logger.Named("onboarding_handler")
 	return &OnboardingHandler{
 		userRepo:        userRepo,

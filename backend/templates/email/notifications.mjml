@@ -1,0 +1,56 @@
+<mjml>
+  <mj-body>
+    <!-- START EMAIL CONTENT -->
+    <mj-section background-color="#ffffff">
+      <mj-column>
+        <mj-text
+          font-size="24px"
+          color="#1a1a1a"
+          font-weight="600"
+          align="center"
+        >
+          New Notification
+        </mj-text>
+        <mj-text
+          font-size="16px"
+          color="#4a4a4a"
+          line-height="24px"
+          padding="20px 0"
+        >
+          Hi {{ .UserName }},
+        </mj-text>
+        <mj-text
+          font-size="16px"
+          color="#4a4a4a"
+          line-height="24px"
+          padding="0 0 20px 0"
+        >
+          {{ .MessageContent }}
+        </mj-text>
+
+        <mj-button
+          background-color="#2563eb"
+          color="#ffffff"
+          font-size="16px"
+          font-weight="600"
+          href="{{ .ActionURL }}"
+          padding="15px 30px"
+          border-radius="8px"
+        >
+          View Details
+        </mj-button>
+
+        <mj-text
+          font-size="14px"
+          color="#666666"
+          line-height="20px"
+          padding="20px 0"
+        >
+          You're receiving this email because you have notifications enabled for
+          TalkDeskly.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <!-- END EMAIL CONTENT -->
+  </mj-body>
+</mjml>

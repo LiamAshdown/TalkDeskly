@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"live-chat-server/config"
-	"live-chat-server/email"
 	"live-chat-server/repositories"
 	"live-chat-server/storage"
 
@@ -25,7 +24,7 @@ type Container interface {
 	GetDispatcher() Dispatcher
 	GetDiskManager() storage.Manager
 	GetJobClient() JobClient
-	GetEmailProvider() email.EmailProvider
+	GetEmailProvider() EmailProvider
 	GetSecurityContext() SecurityContext
 	GetLogger() Logger
 	GetI18n() I18n
@@ -36,4 +35,5 @@ type Container interface {
 	GetFiberContext() *fiber.Ctx
 	GetConversationHandler() ConversationHandler
 	GetCommandFactory() CommandFactory
+	GetNotificationService() NotificationService
 }

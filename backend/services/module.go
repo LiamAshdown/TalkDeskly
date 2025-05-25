@@ -31,4 +31,8 @@ func RegisterServices(container *dig.Container) {
 	if err := container.Provide(NewWebSocketService); err != nil {
 		panic(err)
 	}
+
+	if err := container.Provide(NewNotificationService); err != nil {
+		panic(err)
+	}
 }

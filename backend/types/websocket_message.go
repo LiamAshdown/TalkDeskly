@@ -34,6 +34,9 @@ const (
 	EventTypeInboxCreated EventType = "inbox_created"
 	EventTypeInboxDeleted EventType = "inbox_deleted"
 
+	// User notification events
+	EventTypeUserNotificationCreated EventType = "user_notification_created"
+
 	// Error events
 	EventTypeError EventType = "connection_error"
 )
@@ -98,6 +101,13 @@ type OutgoingMessagePayload struct {
 	Metadata       interface{} `json:"metadata,omitempty"`
 	SenderID       string      `json:"sender_id"`
 	SenderType     string      `json:"sender_type"`
+}
+
+type OutgoingUserNotificationPayload struct {
+	NotificationID string `json:"notification_id"`
+	Type           string `json:"type"`
+	Message        string `json:"message"`
+	Read           bool   `json:"read"`
 }
 
 type OutgoingCreateConversationPayload = ConversationPayload

@@ -232,16 +232,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 	inbox.AutoResponderEnabled = input.AutoResponderEnabled
 	inbox.AutoResponderMessage = input.AutoResponderMessage
 
-	// Update type-specific fields based on inbox type
-	var removedUserIDs []string
 	if err := models.DB.Transaction(func(tx *gorm.DB) error {
-		// Update users
-		var err error
-		removedUserIDs, err = h.UpdateInboxUsers(tx, inbox, input.UserIDs, *user.User.CompanyID)
-		if err != nil {
-			return err
-		}
-
 		// Save main inbox
 		if err := h.repo.UpdateInbox(inbox, tx); err != nil {
 			return err
@@ -290,7 +281,7 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 
 	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &types.InboxUpdatedPayload{
 		Inbox:          updatedInbox,
-		RemovedUserIDs: removedUserIDs,
+		RemovedUserIDs: []string{},
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_updated"), updatedInbox.ToResponse())

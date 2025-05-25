@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CodeBlock } from "@/components/ui/code-block";
 import { useEditInbox } from "@/context/edit-inbox-context";
 
 export function WidgetCustomization() {
@@ -20,12 +19,10 @@ export function WidgetCustomization() {
     widgetPosition,
     setWidgetPosition,
   } = useEditInbox();
-  const [copied, setCopied] = useState(false);
 
   if (!inbox) return null;
 
-  const handleCopyCode = () => {
-    const code = `<script>
+  const installationCode = `<script>
 (function(d,t) {
   var BASE_URL="https://chat.example.com";
   var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
@@ -41,11 +38,6 @@ export function WidgetCustomization() {
   }
 })(document,"script");
 </script>`;
-
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <Card>
@@ -85,47 +77,8 @@ export function WidgetCustomization() {
         </div>
 
         <div className="space-y-2 pt-4">
-          <Label>Widget Preview</Label>
-          <div className="border rounded-md p-4 h-64 flex items-center justify-center bg-muted/50">
-            <div className="text-center">
-              <p className="text-muted-foreground">
-                Widget preview coming soon
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2 pt-4">
           <Label>Installation Code</Label>
-          <div className="relative">
-            <div className="rounded-lg p-4 text-sm overflow-x-auto text-left bg-zinc-900 text-zinc-100">
-              <pre>{`<script>
-(function(d,t) {
-  var BASE_URL="https://chat.example.com";
-  var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-  g.src=BASE_URL+"/packs/js/sdk.js";
-  g.defer = true;
-  g.async = true;
-  s.parentNode.insertBefore(g,s);
-  g.onload=function(){
-    window.chatwootSDK.run({
-      websiteToken: "${inbox.id}",
-      baseUrl: BASE_URL
-    })
-  }
-})(document,"script");
-</script>`}</pre>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-2 right-2 h-8 text-zinc-400 hover:text-white hover:bg-zinc-800"
-              onClick={handleCopyCode}
-            >
-              {copied ? "Copied!" : "Copy"}
-              {!copied && <Copy className="ml-2 h-3 w-3" />}
-            </Button>
-          </div>
+          <CodeBlock code={installationCode} language="javascript" />
         </div>
       </CardContent>
     </Card>

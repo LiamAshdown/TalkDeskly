@@ -38,7 +38,12 @@ export function AppSidebar() {
       >
         {/* Header Section */}
         <div className="h-14 flex items-center px-4">
-          {!sidebarCollapsed && <h1 className="font-semibold">TalkDeskly</h1>}
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              <h1 className="font-semibold">TalkDeskly</h1>
+            </div>
+          )}
           {sidebarCollapsed && <MessageSquare className="h-5 w-5 mx-auto" />}
         </div>
         <Separator />

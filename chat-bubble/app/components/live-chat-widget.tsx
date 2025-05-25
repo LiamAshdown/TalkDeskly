@@ -27,7 +27,8 @@ import type { WebSocketMessage } from "~/lib/services/websocket/types";
 import { inboxService } from "~/lib/api/services/inbox";
 
 function LiveChatWidgetContent() {
-  const { conversation, endConversation } = useConversationStore();
+  const { conversation, endConversation, conversationId } =
+    useConversationStore();
   const { chatState, dispatch } = useChatStateContext();
   const { wsService } = useWebSocket();
   const contactId = useContactStore((state) => state.contactId);
@@ -43,6 +44,7 @@ function LiveChatWidgetContent() {
         try {
           const response = await inboxService.getInbox(wsService.getInboxId()!);
           dispatch({ type: "SET_INBOX_DATA", data: response.data });
+
           dispatch({ type: "SET_CONNECTED", isConnected: true });
         } catch (error) {
           console.error("Failed to load inbox data:", error);
@@ -58,7 +60,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    const inboxId = "3992796f-d577-4513-855f-6a3349719b5b"; // Your inbox ID
+    const inboxId = "63d7a06c-8645-4e9e-95ef-a8d7f27d1409"; // Your inbox ID
 
     wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;
@@ -75,8 +77,8 @@ function LiveChatWidgetContent() {
       dispatch({ type: "NEW_MESSAGE", hasNew: false });
     }
 
-    if (conversation) {
-      wsService.getConversationById(conversation.conversationId);
+    if (conversationId) {
+      wsService.getConversationById(conversationId);
       dispatch({ type: "START_CONVERSATION" });
     }
   }, [chatState.isOpen]);

@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"live-chat-server/email"
 	"live-chat-server/interfaces"
 	"os"
 	"os/signal"
@@ -9,7 +8,7 @@ import (
 )
 
 // RegisterJobServer initializes and starts the job server with an email provider
-func RegisterJobServer(redisAddr string, emailProvider email.EmailProvider, logger interfaces.Logger) *Server {
+func RegisterJobServer(redisAddr string, emailProvider interfaces.EmailProvider, logger interfaces.Logger) *Server {
 	// Initialize job server
 	jobServer := NewServer(redisAddr)
 
@@ -39,7 +38,7 @@ func RegisterJobServer(redisAddr string, emailProvider email.EmailProvider, logg
 }
 
 // registerJobHandlers registers all job handlers
-func registerJobHandlers(jobServer *Server, emailProvider email.EmailProvider, logger interfaces.Logger) {
+func registerJobHandlers(jobServer *Server, emailProvider interfaces.EmailProvider, logger interfaces.Logger) {
 	sendInviteJob := NewSendInviteJob(emailProvider, logger)
 	jobServer.RegisterHandler("send_invite", sendInviteJob)
 
@@ -48,4 +47,7 @@ func registerJobHandlers(jobServer *Server, emailProvider email.EmailProvider, l
 
 	sendUserCredentialsJob := NewSendUserCredentialsJob(emailProvider, logger)
 	jobServer.RegisterHandler("send_user_credentials", sendUserCredentialsJob)
+
+	emailJob := NewSendEmailJob(emailProvider, logger)
+	jobServer.RegisterHandler("send_email", emailJob)
 }

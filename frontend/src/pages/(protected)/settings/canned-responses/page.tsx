@@ -18,6 +18,9 @@ import {
 import { CannedResponsesList } from "@/components/protected/settings/canned-responses/canned-responses-list";
 import { CannedResponseModal } from "@/components/protected/settings/canned-responses/canned-responses-modal";
 import { useTranslation } from "react-i18next";
+import { handleServerValidation } from "@/lib/utils/form-validation";
+import { CannedResponseFormData } from "@/lib/schemas/canned-response-schema";
+import { UseFormReturn } from "react-hook-form";
 
 export default function CannedResponsesPage() {
   const { toast } = useToast();
@@ -59,16 +62,11 @@ export default function CannedResponsesPage() {
 
   // Handle create response
   const handleCreateResponse = async (
-    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">
+    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">,
+    form: UseFormReturn<CannedResponseFormData>
   ) => {
     try {
-      const response = await cannedResponsesService.createCannedResponse({
-        ...data,
-        id: "",
-        companyId: "",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      const response = await cannedResponsesService.createCannedResponse(data);
 
       setCannedResponses([...cannedResponses, response.data]);
       setIsCreateModalOpen(false);
@@ -79,18 +77,15 @@ export default function CannedResponsesPage() {
         description: t("cannedResponses.create.success"),
       });
     } catch (error) {
-      toast({
-        title: t("common.error"),
-        description: t("cannedResponses.create.error"),
-        variant: "destructive",
-      });
+      handleServerValidation(form, error, t);
     }
   };
 
   // Handle update response
   const handleUpdateResponse = async (
     id: string,
-    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">
+    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">,
+    form: UseFormReturn<CannedResponseFormData>
   ) => {
     try {
       const response = await cannedResponsesService.updateCannedResponse(id, {
@@ -112,11 +107,7 @@ export default function CannedResponsesPage() {
         description: t("cannedResponses.update.success"),
       });
     } catch (error) {
-      toast({
-        title: t("common.error"),
-        description: t("cannedResponses.update.error"),
-        variant: "destructive",
-      });
+      handleServerValidation(form, error, t);
     }
   };
 

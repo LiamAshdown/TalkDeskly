@@ -46,7 +46,10 @@ interface CannedResponsesListProps {
   onDelete: (id: string) => void;
   onUpdate: (
     id: string,
-    response: Omit<CannedResponse, "id" | "createdAt" | "updatedAt">
+    response: Omit<
+      CannedResponse,
+      "id" | "createdAt" | "updatedAt" | "companyId"
+    >
   ) => void;
 }
 
@@ -82,7 +85,7 @@ export function CannedResponsesList({
   };
 
   const handleUpdate = (
-    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt">
+    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">
   ) => {
     if (editingResponse) {
       onUpdate(editingResponse.id, data);
