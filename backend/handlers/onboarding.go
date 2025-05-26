@@ -24,20 +24,31 @@ type OnboardingHandler struct {
 	userRepo        repositories.UserRepository
 	companyRepo     repositories.CompanyRepository
 	jobClient       interfaces.JobClient
-	emailProvider   interfaces.EmailProvider
+	emailService    interfaces.EmailService
 	securityContext interfaces.SecurityContext
 	logger          interfaces.Logger
+	config          config.Config
+	langContext     interfaces.LanguageContext
 }
 
-func NewOnboardingHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, jobClient interfaces.JobClient, emailProvider interfaces.EmailProvider, securityContext interfaces.SecurityContext, logger interfaces.Logger) *OnboardingHandler {
+func NewOnboardingHandler(userRepo repositories.UserRepository,
+	companyRepo repositories.CompanyRepository,
+	jobClient interfaces.JobClient,
+	emailService interfaces.EmailService,
+	securityContext interfaces.SecurityContext,
+	logger interfaces.Logger,
+	config config.Config,
+	langContext interfaces.LanguageContext) *OnboardingHandler {
 	handlerLogger := logger.Named("onboarding_handler")
 	return &OnboardingHandler{
 		userRepo:        userRepo,
 		companyRepo:     companyRepo,
 		jobClient:       jobClient,
-		emailProvider:   emailProvider,
+		emailService:    emailService,
 		securityContext: securityContext,
 		logger:          handlerLogger,
+		config:          config,
+		langContext:     langContext,
 	}
 }
 
@@ -162,15 +173,10 @@ func (h *OnboardingHandler) HandleCreateCompany(c *fiber.Ctx) error {
 	actionURL := fmt.Sprintf("%s/portal", config.App.FrontendURL)
 
 	payload := map[string]interface{}{
-		"email":        user.User.Email,
-		"first_name":   user.User.FirstName,
-		"company_name": company.Name,
-		"action_url":   actionURL,
+		"AcceptURL": actionURL,
 	}
 
-	if err := h.jobClient.Enqueue("send_welcome", payload); err != nil {
-		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "failed_to_enqueue_welcome_task", err)
-	}
+	h.emailService.SendTemplatedEmailAsync(user.User.Email, h.langContext.T(c, "welcome_email_subject", h.config.ApplicationName), "welcome.html", payload)
 
 	user.User = fetchedUser
 

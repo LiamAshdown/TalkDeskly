@@ -23,6 +23,7 @@ type Config struct {
 	// Internationalization settings
 	DefaultLanguage    string
 	SupportedLanguages []string
+	ApplicationName    string
 }
 
 // NewConfig creates a new config instance with loaded configuration
@@ -56,6 +57,7 @@ func loadConfig() Config {
 		// Default language setting
 		DefaultLanguage:    getEnv("DEFAULT_LANGUAGE", "en"),
 		SupportedLanguages: getSupportedLanguages(getEnv("SUPPORTED_LANGUAGES", "en")),
+		ApplicationName:    getEnv("APPLICATION_NAME", "TalkDeskly"),
 	}
 }
 

@@ -251,3 +251,26 @@ export interface CannedResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export type NotificationType =
+  | "assigned_conversation"
+  | "new_message"
+  | "mention";
+
+export interface UserNotification {
+  id: string;
+  type: NotificationType;
+  message: string;
+  metadata: Record<string, any>;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationListResponse {
+  notifications: UserNotification[];
+  total: number;
+  unreadCount: number;
+  page: number;
+  limit: number;
+}

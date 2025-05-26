@@ -5,6 +5,8 @@ import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/types"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // CommandFactoryImpl implements CommandFactory
@@ -54,7 +56,7 @@ func (f *CommandFactoryImpl) NewHandleInboxFeaturesCommand(conversation *models.
 	)
 }
 
-func (f *CommandFactoryImpl) NewHandleAssignConversationCommand(conversationID string, agentID string) interfaces.Command {
+func (f *CommandFactoryImpl) NewHandleAssignConversationCommand(conversationID string, agentID string, c *fiber.Ctx) interfaces.Command {
 	return commands.NewHandleAssignConversationCommand(
 		conversationID,
 		agentID,
@@ -62,7 +64,7 @@ func (f *CommandFactoryImpl) NewHandleAssignConversationCommand(conversationID s
 		f.container.GetLogger(),
 		f.container.GetLanguageContext(),
 		f.container.GetUserRepo(),
-		f.container.GetFiberContext(),
+		c,
 		f.container.GetNotificationService(),
 	)
 }

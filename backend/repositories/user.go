@@ -13,6 +13,7 @@ type UserRepository interface {
 	CreateUser(user *models.User) (*models.User, error)
 	UpdateUser(user *models.User) error
 	DeleteUser(id string) error
+	GetNotifications(userID string) ([]models.UserNotification, error)
 }
 
 type userRepository struct {
@@ -69,4 +70,13 @@ func (r *userRepository) UpdateUser(user *models.User) error {
 
 func (r *userRepository) DeleteUser(id string) error {
 	return r.db.Delete(&models.User{}, "id = ?", id).Error
+}
+
+func (r *userRepository) GetNotifications(userID string) ([]models.UserNotification, error) {
+	var notifications []models.UserNotification
+	if err := r.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&notifications).Error; err != nil {
+		return nil, err
+	}
+
+	return notifications, nil
 }

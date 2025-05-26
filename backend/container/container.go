@@ -114,13 +114,13 @@ func (c *DIContainer) GetJobClient() interfaces.JobClient {
 	return client
 }
 
-// GetEmailProvider retrieves the email provider
-func (c *DIContainer) GetEmailProvider() interfaces.EmailProvider {
-	var provider interfaces.EmailProvider
-	c.dig.Invoke(func(p interfaces.EmailProvider) {
-		provider = c.GetEmailProviderFactory().NewEmailProvider()
+// GetEmailService retrieves the email service
+func (c *DIContainer) GetEmailService() interfaces.EmailService {
+	var service interfaces.EmailService
+	c.dig.Invoke(func(s interfaces.EmailService) {
+		service = s
 	})
-	return provider
+	return service
 }
 
 // GetSecurityContext retrieves the security context
@@ -195,33 +195,15 @@ func (c *DIContainer) GetCommandFactory() interfaces.CommandFactory {
 	return factory
 }
 
-// GetEmailProviderFactory retrieves the email provider factory
-func (c *DIContainer) GetEmailProviderFactory() interfaces.EmailProviderFactory {
-	var factory interfaces.EmailProviderFactory
-	c.dig.Invoke(func(f interfaces.EmailProviderFactory) {
-		factory = f
-	})
-	return factory
-}
-
 // GetDig returns the underlying dig container
 func (c *DIContainer) GetDig() *dig.Container {
 	return c.dig
 }
 
-// GetFiberContext retrieves the Fiber context
-func (c *DIContainer) GetFiberContext() *fiber.Ctx {
-	var ctx *fiber.Ctx
-	c.dig.Invoke(func(c *fiber.Ctx) {
-		ctx = c
-	})
-	return ctx
-}
-
 // GetNotificationService retrieves the notification service
 func (c *DIContainer) GetNotificationService() interfaces.NotificationService {
-	var service *services.NotificationService
-	c.dig.Invoke(func(s *services.NotificationService) {
+	var service interfaces.NotificationService
+	c.dig.Invoke(func(s interfaces.NotificationService) {
 		service = s
 	})
 	return service
@@ -259,9 +241,9 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	}
 
 	repositories.RegisterRepositories(digContainer)
-	services.RegisterServices(digContainer)
-	factory.RegisterModule(digContainer)
 	email.RegisterEmailService(digContainer)
+	factory.RegisterModule(digContainer)
+	services.RegisterServices(digContainer)
 	disk.RegisterStorageServices(digContainer)
 	i18n.RegisterI18nServices(digContainer)
 	context.RegisterContexts(digContainer)
@@ -279,11 +261,11 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 // StartJobServer initializes and starts the job server
 // This should be called after the container is fully initialized
 func StartJobServer(container interfaces.Container) *jobs.Server {
-	emailProvider := container.GetEmailProvider()
+	emailService := container.GetEmailService()
 	config := container.GetConfig()
 	jobServer := jobs.RegisterJobServer(
 		config.RedisAddr,
-		emailProvider,
+		emailService,
 		container.GetLogger(),
 	)
 	return jobServer

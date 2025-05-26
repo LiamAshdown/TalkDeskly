@@ -20,16 +20,16 @@ type SendInviteJobPayload struct {
 // SendInviteJob handles sending agent invite emails
 type SendInviteJob struct {
 	*BaseJob
-	emailProvider interfaces.EmailProvider
-	logger        interfaces.Logger
+	emailService interfaces.EmailService
+	logger       interfaces.Logger
 }
 
 // NewSendInviteJob creates a new send invite job
-func NewSendInviteJob(emailProvider interfaces.EmailProvider, logger interfaces.Logger) *SendInviteJob {
+func NewSendInviteJob(emailService interfaces.EmailService, logger interfaces.Logger) *SendInviteJob {
 	return &SendInviteJob{
-		BaseJob:       NewBaseJob("send_invite"),
-		emailProvider: emailProvider,
-		logger:        logger,
+		BaseJob:      NewBaseJob("send_invite"),
+		emailService: emailService,
+		logger:       logger,
 	}
 }
 
@@ -40,7 +40,7 @@ func (j *SendInviteJob) ProcessTask(ctx context.Context, task *asynq.Task) error
 		return fmt.Errorf("failed to unmarshal payload: %v", err)
 	}
 
-	if err := j.emailProvider.SendInviteEmail(payload.Email, payload.InviterName, payload.AcceptURL); err != nil {
+	if err := j.emailService.SendInviteEmail(payload.Email, payload.InviterName, payload.AcceptURL); err != nil {
 		return fmt.Errorf("failed to send invite email: %v", err)
 	}
 

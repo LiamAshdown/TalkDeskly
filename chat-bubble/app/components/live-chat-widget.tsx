@@ -60,7 +60,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    const inboxId = "63d7a06c-8645-4e9e-95ef-a8d7f27d1409"; // Your inbox ID
+    const inboxId = "a5b9ca2e-9be9-4f33-afdd-7fd21b2d9a66"; // Your inbox ID
 
     wsService.connect(contactId || "", inboxId);
     wsServiceConnected.current = true;

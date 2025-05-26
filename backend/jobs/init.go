@@ -7,13 +7,13 @@ import (
 	"syscall"
 )
 
-// RegisterJobServer initializes and starts the job server with an email provider
-func RegisterJobServer(redisAddr string, emailProvider interfaces.EmailProvider, logger interfaces.Logger) *Server {
+// RegisterJobServer initializes and starts the job server with an email service
+func RegisterJobServer(redisAddr string, emailService interfaces.EmailService, logger interfaces.Logger) *Server {
 	// Initialize job server
 	jobServer := NewServer(redisAddr)
 
 	// Register job handlers
-	registerJobHandlers(jobServer, emailProvider, logger)
+	registerJobHandlers(jobServer, emailService, logger)
 
 	// Handle graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -38,16 +38,13 @@ func RegisterJobServer(redisAddr string, emailProvider interfaces.EmailProvider,
 }
 
 // registerJobHandlers registers all job handlers
-func registerJobHandlers(jobServer *Server, emailProvider interfaces.EmailProvider, logger interfaces.Logger) {
-	sendInviteJob := NewSendInviteJob(emailProvider, logger)
+func registerJobHandlers(jobServer *Server, emailService interfaces.EmailService, logger interfaces.Logger) {
+	sendInviteJob := NewSendInviteJob(emailService, logger)
 	jobServer.RegisterHandler("send_invite", sendInviteJob)
 
-	sendWelcomeJob := NewSendWelcomeJob(emailProvider)
-	jobServer.RegisterHandler("send_welcome", sendWelcomeJob)
-
-	sendUserCredentialsJob := NewSendUserCredentialsJob(emailProvider, logger)
+	sendUserCredentialsJob := NewSendUserCredentialsJob(emailService, logger)
 	jobServer.RegisterHandler("send_user_credentials", sendUserCredentialsJob)
 
-	emailJob := NewSendEmailJob(emailProvider, logger)
+	emailJob := NewSendEmailJob(emailService, logger)
 	jobServer.RegisterHandler("send_email", emailJob)
 }

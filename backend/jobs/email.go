@@ -9,22 +9,22 @@ import (
 )
 
 type EmailJobPayload struct {
-	Email   string `json:"email"`
+	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
 }
 
 type EmailJob struct {
 	*BaseJob
-	emailProvider interfaces.EmailProvider
-	logger        interfaces.Logger
+	emailService interfaces.EmailService
+	logger       interfaces.Logger
 }
 
-func NewSendEmailJob(emailProvider interfaces.EmailProvider, logger interfaces.Logger) *EmailJob {
+func NewSendEmailJob(emailService interfaces.EmailService, logger interfaces.Logger) *EmailJob {
 	return &EmailJob{
-		BaseJob:       NewBaseJob("email"),
-		emailProvider: emailProvider,
-		logger:        logger,
+		BaseJob:      NewBaseJob("email"),
+		emailService: emailService,
+		logger:       logger,
 	}
 }
 
@@ -35,12 +35,12 @@ func (j *EmailJob) ProcessTask(ctx context.Context, task *asynq.Task) error {
 		return err
 	}
 
-	return j.emailProvider.Send(payload.Email, payload.Subject, payload.Body)
+	return j.emailService.SendEmail(payload.To, payload.Subject, payload.Body)
 }
 
-func (j *EmailJob) CreateSendEmailTask(email, subject, body string) (*asynq.Task, error) {
+func (j *EmailJob) CreateSendEmailTask(to, subject, body string) (*asynq.Task, error) {
 	payload := EmailJobPayload{
-		Email:   email,
+		To:      to,
 		Subject: subject,
 		Body:    body,
 	}

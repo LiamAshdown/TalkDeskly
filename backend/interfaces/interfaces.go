@@ -13,7 +13,7 @@ type LanguageContext interface {
 	GetLanguage(c *fiber.Ctx) string
 
 	// Translate translates a key to the current language
-	T(c *fiber.Ctx, key string) string
+	T(c *fiber.Ctx, key string, args ...interface{}) string
 }
 
 type UploadService interface {

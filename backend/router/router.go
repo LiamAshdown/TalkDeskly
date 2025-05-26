@@ -27,6 +27,7 @@ type DIParams struct {
 	AuthHandler           *handler.AuthHandler
 	UserHandler           *handler.UserHandler
 	CannedResponseHandler *handler.CannedResponseHandler
+	NotificationHandler   *handler.NotificationHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -127,6 +128,16 @@ func SetupRoutesWithDI(params DIParams) {
 	notificationSettingsGroup := apiGroup.Group("/notification-settings", middleware.Auth(), middleware.RequireCompany())
 	notificationSettingsGroup.Get("/", handler.GetNotificationSettings)
 	notificationSettingsGroup.Put("/", handler.UpdateNotificationSettings)
+
+	// Notification routes
+	notificationGroup := apiGroup.Group("/notifications", middleware.Auth(), middleware.RequireCompany())
+	notificationGroup.Get("/", params.NotificationHandler.GetNotifications)
+	notificationGroup.Get("/unread-count", params.NotificationHandler.GetUnreadCount)
+	notificationGroup.Get("/:id", params.NotificationHandler.GetNotification)
+	notificationGroup.Put("/mark-as-read", params.NotificationHandler.MarkAsRead)
+	notificationGroup.Put("/mark-all-as-read", params.NotificationHandler.MarkAllAsRead)
+	notificationGroup.Delete("/:id", params.NotificationHandler.DeleteNotification)
+	notificationGroup.Delete("/", params.NotificationHandler.DeleteAllNotifications)
 
 	conversationGroup := apiGroup.Group("/conversations", middleware.Auth(), middleware.RequireCompany())
 	conversationGroup.Get("/", params.ConversationHandler.HandleListConversations)

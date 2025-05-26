@@ -22,6 +22,11 @@ func NewLanguageContext(i18n interfaces.I18n, securityContext interfaces.Securit
 
 // GetLanguage returns the current language from the context
 func (lc *DefaultLanguageContext) GetLanguage(c *fiber.Ctx) string {
+
+	if c == nil {
+		return lc.i18n.GetDefaultLanguage()
+	}
+
 	// Priority 1: Check if user has a language preference
 	authUser := lc.securityContext.GetAuthenticatedUser(c)
 	if authUser != nil && authUser.User != nil && authUser.User.Language != "" {
@@ -39,6 +44,6 @@ func (lc *DefaultLanguageContext) GetLanguage(c *fiber.Ctx) string {
 }
 
 // T translates a key to the current language
-func (lc *DefaultLanguageContext) T(c *fiber.Ctx, key string) string {
-	return lc.i18n.T(lc.GetLanguage(c), key)
+func (lc *DefaultLanguageContext) T(c *fiber.Ctx, key string, args ...interface{}) string {
+	return lc.i18n.T(lc.GetLanguage(c), key, args...)
 }

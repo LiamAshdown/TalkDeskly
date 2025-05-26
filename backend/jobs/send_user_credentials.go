@@ -20,16 +20,16 @@ type SendUserCredentialsJobPayload struct {
 // SendUserCredentialsJob handles sending user credentials emails
 type SendUserCredentialsJob struct {
 	*BaseJob
-	emailProvider interfaces.EmailProvider
-	logger        interfaces.Logger
+	emailService interfaces.EmailService
+	logger       interfaces.Logger
 }
 
-// NewSendInviteJob creates a new send invite job
-func NewSendUserCredentialsJob(emailProvider interfaces.EmailProvider, logger interfaces.Logger) *SendUserCredentialsJob {
+// NewSendUserCredentialsJob creates a new send user credentials job
+func NewSendUserCredentialsJob(emailService interfaces.EmailService, logger interfaces.Logger) *SendUserCredentialsJob {
 	return &SendUserCredentialsJob{
-		BaseJob:       NewBaseJob("send_user_credentials"),
-		emailProvider: emailProvider,
-		logger:        logger,
+		BaseJob:      NewBaseJob("send_user_credentials"),
+		emailService: emailService,
+		logger:       logger,
 	}
 }
 
@@ -40,7 +40,7 @@ func (j *SendUserCredentialsJob) ProcessTask(ctx context.Context, task *asynq.Ta
 		return fmt.Errorf("failed to unmarshal payload: %v", err)
 	}
 
-	if err := j.emailProvider.SendUserCredentialsEmail(payload.Email, payload.InviterName, payload.AcceptURL, payload.Password); err != nil {
+	if err := j.emailService.SendUserCredentialsEmail(payload.Email, payload.InviterName, payload.AcceptURL, payload.Password); err != nil {
 		return fmt.Errorf("failed to send user credentials email: %v", err)
 	}
 

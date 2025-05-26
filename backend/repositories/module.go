@@ -45,4 +45,10 @@ func RegisterRepositories(container *dig.Container) {
 	}); err != nil {
 		log.Fatalf("Failed to provide canned response repository: %v", err)
 	}
+
+	if err := container.Provide(func(db *gorm.DB) NotificationRepository {
+		return NewNotificationRepository(db)
+	}); err != nil {
+		log.Fatalf("Failed to provide notification repository: %v", err)
+	}
 }

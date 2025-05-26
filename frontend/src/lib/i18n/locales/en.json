@@ -168,7 +168,12 @@
           },
           "complete": {
             "name": "Voila!",
-            "description": "You are all set to go!"
+            "description": "You are all set to go!",
+            "content": {
+              "title": "Your Inbox is ready!",
+              "description": "You have successfully finished creating a website channel. Copy the code shown below and paste it on your website. Next time a customer use the live chat, the conversation will automatically appear on your inbox."
+            },
+            "button": "Take me there"
           }
         }
       },
@@ -359,6 +364,67 @@
       "copy": "Copy",
       "edit": "Edit",
       "delete": "Delete"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Stay updated with messages, alerts, and system notifications",
+    "filter": "Filter",
+    "markAllAsRead": "Mark all as read",
+    "clearAll": "Clear all notifications",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "messages": "Messages",
+      "assignments": "Assignments",
+      "mentions": "Mentions"
+    },
+    "empty": {
+      "title": "No notifications",
+      "all": "You don't have any notifications yet",
+      "unread": "You don't have any unread notifications",
+      "new_message": "You don't have any message notifications",
+      "assigned_conversation": "You don't have any assignment notifications",
+      "mention": "You don't have any mention notifications"
+    },
+    "error": {
+      "title": "Error loading notifications",
+      "tryAgain": "Try again"
+    },
+    "actions": {
+      "markAsRead": "Mark as read",
+      "delete": "Delete"
+    },
+    "footer": {
+      "showing": "Showing {{count}} of {{total}} notifications",
+      "markAllAsRead": "Mark all as read"
+    },
+    "toast": {
+      "markedAsRead": "Notification marked as read",
+      "allMarkedAsRead": "All notifications marked as read",
+      "deleted": "Notification deleted",
+      "allCleared": "All notifications cleared",
+      "markAsReadFailed": "Failed to mark notification as read",
+      "markAllAsReadFailed": "Failed to mark all notifications as read",
+      "deleteFailed": "Failed to delete notification",
+      "clearAllFailed": "Failed to clear all notifications",
+      "loadFailed": "Failed to fetch notifications"
+    },
+    "types": {
+      "assigned_conversation": "New conversation assigned to you",
+      "new_message": "New message in your conversation",
+      "mention": "Someone mentioned you in a conversation"
+    },
+    "badges": {
+      "new_message": "Message",
+      "assigned_conversation": "Assignment",
+      "mention": "Mention"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
     }
   }
 }

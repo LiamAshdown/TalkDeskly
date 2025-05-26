@@ -3,6 +3,8 @@ package interfaces
 import (
 	"live-chat-server/models"
 	"live-chat-server/types"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // CommandFactory creates commands
@@ -17,5 +19,5 @@ type CommandFactory interface {
 	NewHandleInboxFeaturesCommand(conversation *models.Conversation, inbox *models.Inbox) Command
 
 	// NewHandleAssignConversationCommand creates a new HandleAssignConversationCommand
-	NewHandleAssignConversationCommand(conversationID string, agentID string) Command
+	NewHandleAssignConversationCommand(conversationID string, agentID string, c *fiber.Ctx) Command
 }

@@ -99,5 +99,13 @@
   "pre_form_title": "Before we chat...",
   "pre_form_description": "Please fill out this short form to help us serve you better.",
   "pre_form_name_label": "Name",
-  "pre_form_name_placeholder": "Enter your name"
+  "pre_form_name_placeholder": "Enter your name",
+
+  "welcome_email_subject": "Welcome to %s",
+  "notification_subject_new_message": "New conversation message",
+  "notification_subject_new_conversation": "You have a new conversation",
+  "notification_subject_mention": "You have been mentioned in a message",
+  "notification_content_new_message": "You have a new message",
+  "notification_content_new_conversation": "You have a new conversation",
+  "notification_content_mention": "You have been mentioned in a message"
 }

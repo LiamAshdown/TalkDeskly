@@ -18,155 +18,198 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-// Types for our notifications
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  type: "message" | "system" | "alert";
-}
+import { useToast } from "@/lib/hooks/use-toast";
+import { notificationService } from "@/lib/api/services/notifications";
+import { UserNotification, NotificationType } from "@/lib/interfaces";
+import { useTranslation } from "react-i18next";
 
 export default function NotificationsPage() {
   // State for notifications
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [activeTab, setActiveTab] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { t } = useTranslation();
 
-  // Fetch notifications (simulated)
+  // Fetch notifications from API
   useEffect(() => {
     const fetchNotifications = async () => {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      try {
+        setIsLoading(true);
+        setError(null);
 
-      // Mock data
-      const mockNotifications: Notification[] = [
-        {
-          id: "1",
-          title: "New message from Customer Support",
-          message: "You have a new message in the support channel",
-          timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-          read: false,
-          type: "message",
-        },
-        {
-          id: "2",
-          title: "System maintenance scheduled",
-          message:
-            "The system will be down for maintenance on Saturday from 2-4 AM",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-          read: true,
-          type: "system",
-        },
-        {
-          id: "3",
-          title: "High priority alert",
-          message:
-            "Customer #1092 has an urgent request that requires immediate attention",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-          read: false,
-          type: "alert",
-        },
-        {
-          id: "4",
-          title: "New agent joined your team",
-          message: "Sarah Johnson has joined your support team",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-          read: true,
-          type: "system",
-        },
-        {
-          id: "5",
-          title: "Chat transferred to you",
-          message: "A chat with customer #2045 has been transferred to you",
-          timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-          read: false,
-          type: "message",
-        },
-      ];
+        const unreadOnly = activeTab === "unread";
+        const typeFilter = [
+          "assigned_conversation",
+          "new_message",
+          "mention",
+        ].includes(activeTab)
+          ? (activeTab as NotificationType)
+          : undefined;
 
-      setNotifications(mockNotifications);
-      setIsLoading(false);
+        const response = await notificationService.getNotifications({
+          page: currentPage,
+          limit: 20,
+          unread_only: unreadOnly,
+        });
+
+        // Debug logging to help identify the issue
+        console.log("API Response:", response);
+        console.log("Response data:", response.data);
+        console.log("Notifications array:", response.data.notifications);
+
+        // Ensure we always have an array, even if the API returns null/undefined
+        let filteredNotifications = response.data.notifications || [];
+
+        // Ensure filteredNotifications is an array
+        if (!Array.isArray(filteredNotifications)) {
+          console.warn("Notifications is not an array:", filteredNotifications);
+          filteredNotifications = [];
+        }
+
+        // Filter by type if needed (since backend doesn't support type filtering yet)
+        if (typeFilter && filteredNotifications.length > 0) {
+          filteredNotifications = filteredNotifications.filter(
+            (notification) => notification.type === typeFilter
+          );
+        }
+
+        setNotifications(filteredNotifications);
+        setTotal(response.data.total || 0);
+        setUnreadCount(response.data.unreadCount || 0);
+      } catch (err) {
+        setError(t("notifications.toast.loadFailed"));
+        console.error("Error fetching notifications:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchNotifications();
-  }, []);
+  }, [activeTab, currentPage]);
 
-  // Filter notifications based on active tab
-  const filteredNotifications = notifications.filter((notification) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "unread") return !notification.read;
-    return notification.type === activeTab;
-  });
+  // Filter notifications based on active tab (already handled in useEffect)
+  // Ensure filteredNotifications is always an array to prevent .length errors
+  const filteredNotifications = notifications || [];
 
   // Mark a notification as read
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
-    toast({
-      description: "Notification marked as read",
-    });
+  const markAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead({ notification_ids: [id] });
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      toast({
+        description: t("notifications.toast.markedAsRead"),
+      });
+    } catch (err) {
+      toast({
+        description: t("notifications.toast.markAsReadFailed"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Mark all notifications as read
-  const markAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, read: true }))
-    );
-    toast({
-      description: "All notifications marked as read",
-    });
+  const markAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read: true }))
+      );
+      setUnreadCount(0);
+      toast({
+        description: t("notifications.toast.allMarkedAsRead"),
+      });
+    } catch (err) {
+      toast({
+        description: t("notifications.toast.markAllAsReadFailed"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Delete a notification
-  const deleteNotification = (id: string) => {
-    setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
-    );
-    toast({
-      description: "Notification deleted",
-    });
+  const deleteNotification = async (id: string) => {
+    try {
+      await notificationService.deleteNotification(id);
+      setNotifications((prev) =>
+        prev.filter((notification) => notification.id !== id)
+      );
+      setTotal((prev) => prev - 1);
+      // Update unread count if the deleted notification was unread
+      const deletedNotification = notifications.find((n) => n.id === id);
+      if (deletedNotification && !deletedNotification.read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+      toast({
+        description: t("notifications.toast.deleted"),
+      });
+    } catch (err) {
+      toast({
+        description: t("notifications.toast.deleteFailed"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Clear all notifications
-  const clearAllNotifications = () => {
-    setNotifications([]);
-    toast({
-      description: "All notifications cleared",
-    });
+  const clearAllNotifications = async () => {
+    try {
+      await notificationService.deleteAllNotifications();
+      setNotifications([]);
+      setTotal(0);
+      setUnreadCount(0);
+      toast({
+        description: t("notifications.toast.allCleared"),
+      });
+    } catch (err) {
+      toast({
+        description: t("notifications.toast.clearAllFailed"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Format timestamp
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return t("notifications.time.justNow");
+    if (diffMins < 60)
+      return t("notifications.time.minutesAgo", { count: diffMins });
 
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24)
+      return t("notifications.time.hoursAgo", { count: diffHours });
 
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 7)
+      return t("notifications.time.daysAgo", { count: diffDays });
 
     return date.toLocaleDateString();
   };
 
   // Get notification icon based on type
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
-      case "message":
+      case "new_message":
         return <Bell className="h-4 w-4 text-blue-500" />;
-      case "system":
+      case "assigned_conversation":
         return <Clock className="h-4 w-4 text-purple-500" />;
-      case "alert":
+      case "mention":
         return <Bell className="h-4 w-4 text-red-500" />;
       default:
         return <Bell className="h-4 w-4" />;
@@ -174,42 +217,39 @@ export default function NotificationsPage() {
   };
 
   // Get notification badge based on type
-  const getNotificationBadge = (type: string) => {
+  const getNotificationBadge = (type: NotificationType) => {
     switch (type) {
-      case "message":
+      case "new_message":
         return (
           <Badge
             variant="outline"
             className="bg-blue-50 text-blue-700 border-blue-200"
           >
-            Message
+            {t("notifications.badges.new_message")}
           </Badge>
         );
-      case "system":
+      case "assigned_conversation":
         return (
           <Badge
             variant="outline"
             className="bg-purple-50 text-purple-700 border-purple-200"
           >
-            System
+            {t("notifications.badges.assigned_conversation")}
           </Badge>
         );
-      case "alert":
+      case "mention":
         return (
           <Badge
             variant="outline"
             className="bg-red-50 text-red-700 border-red-200"
           >
-            Alert
+            {t("notifications.badges.mention")}
           </Badge>
         );
       default:
         return null;
     }
   };
-
-  // Count unread notifications
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
@@ -218,10 +258,10 @@ export default function NotificationsPage() {
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-2xl font-bold">
-                Notifications
+                {t("notifications.title")}
               </CardTitle>
               <CardDescription>
-                Stay updated with messages, alerts, and system notifications
+                {t("notifications.description")}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -229,17 +269,17 @@ export default function NotificationsPage() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4 mr-2" />
-                    Filter
+                    {t("notifications.filter")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => markAllAsRead()}>
                     <CheckCheck className="h-4 w-4 mr-2" />
-                    Mark all as read
+                    {t("notifications.markAllAsRead")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => clearAllNotifications()}>
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Clear all notifications
+                    {t("notifications.clearAll")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -252,30 +292,51 @@ export default function NotificationsPage() {
           >
             <TabsList className="grid grid-cols-5 mb-4">
               <TabsTrigger value="all">
-                All
-                {notifications.length > 0 && (
+                {t("notifications.tabs.all")}
+                {total > 0 && (
                   <Badge className="ml-2" variant="secondary">
-                    {notifications.length}
+                    {total}
                   </Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="unread">
-                Unread
+                {t("notifications.tabs.unread")}
                 {unreadCount > 0 && (
                   <Badge className="ml-2" variant="secondary">
                     {unreadCount}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="message">Messages</TabsTrigger>
-              <TabsTrigger value="system">System</TabsTrigger>
-              <TabsTrigger value="alert">Alerts</TabsTrigger>
+              <TabsTrigger value="new_message">
+                {t("notifications.tabs.messages")}
+              </TabsTrigger>
+              <TabsTrigger value="assigned_conversation">
+                {t("notifications.tabs.assignments")}
+              </TabsTrigger>
+              <TabsTrigger value="mention">
+                {t("notifications.tabs.mentions")}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-0">
               {isLoading ? (
                 <div className="flex justify-center items-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Bell className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">
+                    {t("notifications.error.title")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">{error}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => window.location.reload()}
+                  >
+                    {t("notifications.error.tryAgain")}
+                  </Button>
                 </div>
               ) : filteredNotifications.length > 0 ? (
                 <div className="space-y-4">
@@ -296,16 +357,13 @@ export default function NotificationsPage() {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-medium">
-                                {notification.title}
+                                {t(`notifications.types.${notification.type}`)}
                               </h3>
                               {getNotificationBadge(notification.type)}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {notification.message}
-                            </p>
                             <div className="flex items-center gap-4 mt-2">
                               <span className="text-xs text-muted-foreground">
-                                {formatTime(notification.timestamp)}
+                                {formatTime(notification.createdAt)}
                               </span>
                               {!notification.read && (
                                 <Button
@@ -315,7 +373,7 @@ export default function NotificationsPage() {
                                   onClick={() => markAsRead(notification.id)}
                                 >
                                   <Check className="h-3 w-3 mr-1" />
-                                  Mark as read
+                                  {t("notifications.actions.markAsRead")}
                                 </Button>
                               )}
                             </div>
@@ -328,7 +386,9 @@ export default function NotificationsPage() {
                           onClick={() => deleteNotification(notification.id)}
                         >
                           <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
+                          <span className="sr-only">
+                            {t("notifications.actions.delete")}
+                          </span>
                         </Button>
                       </div>
                     </div>
@@ -337,13 +397,13 @@ export default function NotificationsPage() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Bell className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No notifications</h3>
+                  <h3 className="text-lg font-medium">
+                    {t("notifications.empty.title")}
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {activeTab === "all"
-                      ? "You don't have any notifications yet"
-                      : `You don't have any ${
-                          activeTab === "unread" ? "unread" : activeTab
-                        } notifications`}
+                    {t(`notifications.empty.${activeTab}`, {
+                      defaultValue: t("notifications.empty.all"),
+                    })}
                   </p>
                 </div>
               )}
@@ -351,11 +411,13 @@ export default function NotificationsPage() {
           </Tabs>
         </CardHeader>
         <CardContent>
-          {notifications.length > 0 && (
+          {total > 0 && (
             <div className="flex justify-between items-center pt-2">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredNotifications.length} of {notifications.length}{" "}
-                notifications
+                {t("notifications.footer.showing", {
+                  count: filteredNotifications.length,
+                  total: total,
+                })}
               </p>
               {unreadCount > 0 && (
                 <Button
@@ -364,7 +426,7 @@ export default function NotificationsPage() {
                   onClick={markAllAsRead}
                   className="h-auto p-0"
                 >
-                  Mark all as read
+                  {t("notifications.footer.markAllAsRead")}
                 </Button>
               )}
             </div>

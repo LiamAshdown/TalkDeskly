@@ -45,7 +45,10 @@ func (c *HandleAssignConversationCommand) Handle() (interface{}, error) {
 
 	conversation.AssignedTo = user
 
-	c.notificationService.CreateNotification(user, models.UserNotificationTypeAssignedConversation)
+	c.notificationService.CreateNotification(user, models.UserNotificationTypeAssignedConversation, map[string]interface{}{
+		"ActionURL":      c.c.BaseURL() + "/conversations/" + conversation.ID,
+		"ConversationID": conversation.ID,
+	})
 
 	return conversation, c.conversationRepo.UpdateConversation(conversation)
 }
