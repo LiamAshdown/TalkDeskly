@@ -37,6 +37,9 @@ const (
 	// User notification events
 	EventTypeUserNotificationCreated EventType = "user_notification_created"
 
+	// Company events
+	EventTypeCompanyUpdated EventType = "company_updated"
+
 	// Error events
 	EventTypeError EventType = "connection_error"
 )

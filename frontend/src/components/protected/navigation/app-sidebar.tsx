@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   MessageSquare,
   Users,
@@ -10,18 +11,31 @@ import {
   Moon,
   Sun,
   ChevronLeft,
+  User,
+  LogOut,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import NavItem from "@/components/protected/navigation/nav-item";
 import { useMiscStore } from "@/stores/misc";
+import { useAuthStore } from "@/stores/auth";
 
 export function AppSidebar() {
   const { theme, sidebarCollapsed, toggleTheme, toggleSidebar } =
     useMiscStore();
   const location = useLocation();
+  const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   // Add class to document on initial load
   useEffect(() => {
@@ -53,14 +67,14 @@ export function AppSidebar() {
           <nav className="space-y-1 p-2">
             <NavItem
               icon={<MessageSquare />}
-              label="Conversations"
+              label={t("sidebar.conversations")}
               active={location.pathname === "/"}
               collapsed={sidebarCollapsed}
               href="/portal"
             />
             <NavItem
               icon={<Users />}
-              label="Contacts"
+              label={t("sidebar.contacts")}
               active={location.pathname === "/contacts"}
               collapsed={sidebarCollapsed}
               href="contacts"
@@ -73,21 +87,25 @@ export function AppSidebar() {
           <nav className="space-y-1 p-2">
             <NavItem
               icon={<Bell />}
-              label="Notifications"
+              label={t("sidebar.notifications")}
               active={location.pathname === "/notifications"}
               collapsed={sidebarCollapsed}
               href="notifications"
             />
             <NavItem
               icon={<Settings />}
-              label="Settings"
+              label={t("sidebar.settings")}
               active={location.pathname.startsWith("/settings")}
               collapsed={sidebarCollapsed}
               href="settings/inboxes"
             />
             <NavItem
               icon={theme === "dark" ? <Sun /> : <Moon />}
-              label={theme === "dark" ? "Light Mode" : "Dark Mode"}
+              label={
+                theme === "dark"
+                  ? t("sidebar.lightMode")
+                  : t("sidebar.darkMode")
+              }
               onClick={toggleTheme}
               collapsed={sidebarCollapsed}
             />
@@ -98,27 +116,63 @@ export function AppSidebar() {
 
         {/* User Profile Section */}
         <div className="h-14 flex items-center px-4">
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full flex items-center gap-2 justify-start -ml-2",
-              sidebarCollapsed && "justify-center p-2 ml-0"
-            )}
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarImage
-                src="/placeholder.svg?height=32&width=32"
-                alt="Agent"
-              />
-              <AvatarFallback>AG</AvatarFallback>
-            </Avatar>
-            {!sidebarCollapsed && (
-              <div className="flex flex-col items-start text-left">
-                <span className="text-sm font-medium">Agent Name</span>
-                <span className="text-xs text-muted-foreground">Online</span>
-              </div>
-            )}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full flex items-center gap-2 justify-start -ml-2",
+                  sidebarCollapsed && "justify-center p-2 ml-0"
+                )}
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.avatar} alt="Agent" />
+                  <AvatarFallback>
+                    {user?.firstName.charAt(0)}
+                    {user?.lastName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                {!sidebarCollapsed && (
+                  <div className="flex flex-col items-start text-left">
+                    <span className="text-sm font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("sidebar.online")}
+                    </span>
+                  </div>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={sidebarCollapsed ? "center" : "start"}
+              side="top"
+              className="w-56"
+            >
+              <DropdownMenuLabel>{t("sidebar.myAccount")}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/portal/settings/account"
+                  className="flex items-center"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  <span>{t("sidebar.accountSettings")}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/portal/notifications" className="flex items-center">
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>{t("sidebar.notifications")}</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>{t("sidebar.logOut")}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -131,7 +185,11 @@ export function AppSidebar() {
           "absolute top-4 -right-3 h-6 w-6 rounded-full border bg-background shadow-sm",
           sidebarCollapsed ? "rotate-180" : ""
         )}
-        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={
+          sidebarCollapsed
+            ? t("sidebar.expandSidebar")
+            : t("sidebar.collapseSidebar")
+        }
       >
         <ChevronLeft className="h-3 w-3" />
       </Button>

@@ -3,8 +3,10 @@ import {
   ConversationHandler,
   InboxHandler,
   ContactHandler,
+  CompanyHandler,
 } from "@/lib/services/websocket/handlers";
-import type { EventType, WebSocketMessage } from "./types";
+import type { WebSocketMessage } from "./types";
+import { EventType } from "./handlers/types";
 
 export class EventDispatcher {
   private handlers: Map<EventType, Array<(message: any) => void>> = new Map();
@@ -17,6 +19,7 @@ export class EventDispatcher {
     const contactHandler = new ContactHandler();
     const inboxHandler = new InboxHandler();
     const conversationHandler = new ConversationHandler();
+    const companyHandler = new CompanyHandler();
 
     // Contact event handlers
     this.typeHandlers.set("contact_updated", contactHandler);
@@ -37,6 +40,9 @@ export class EventDispatcher {
     this.typeHandlers.set("conversation_typing_stop", conversationHandler);
     this.typeHandlers.set("conversation_close", conversationHandler);
     this.typeHandlers.set("conversation_get_by_id", conversationHandler);
+
+    // Company event handlers
+    this.typeHandlers.set("company_updated", companyHandler);
 
     // Connection events handlers
     this.typeHandlers.set("connection_established", {

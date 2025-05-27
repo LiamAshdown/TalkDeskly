@@ -13,7 +13,7 @@ export default function ProtectedLayout() {
     console.log(user);
     if (isAuthenticated && !hasConnected.current && user && user.company) {
       wsService.initializeHandlers();
-      wsService.connect(user.id, "agent");
+      wsService.connect(user.id, "agent", user.company.id);
       hasConnected.current = true;
     } else if (!isAuthenticated) {
       wsService.disconnect();

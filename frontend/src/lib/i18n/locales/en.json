@@ -366,6 +366,20 @@
       "delete": "Delete"
     }
   },
+  "sidebar": {
+    "conversations": "Conversations",
+    "contacts": "Contacts",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "myAccount": "My Account",
+    "accountSettings": "Account Settings",
+    "logOut": "Log out",
+    "online": "Online",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
+  },
   "notifications": {
     "title": "Notifications",
     "description": "Stay updated with messages, alerts, and system notifications",

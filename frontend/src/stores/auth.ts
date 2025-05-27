@@ -7,6 +7,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   setAuth: (auth: AuthResponse | null) => void;
+  updateUser: (user: AuthResponse["user"]) => void;
   setToken: (token: string | null) => void;
   isAdmin: () => boolean;
   hasRole: (role: string | string[]) => boolean;
@@ -21,6 +22,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setAuth: (auth: AuthResponse | null) =>
         set({ user: auth?.user, token: auth?.token, isAuthenticated: !!auth }),
+      updateUser: (user: AuthResponse["user"]) =>
+        set({
+          user: {
+            ...get().user,
+            ...user,
+          },
+        }),
       setToken: (token: string | null) => set({ token }),
       logout: () =>
         set({

@@ -44,13 +44,12 @@ export type EventType =
   | "unsubscribe"
   | "publish"
   | "subscribed"
-  | "unsubscribed";
-
-type ConversationStatus = "active" | "closed" | "pending";
+  | "unsubscribed"
+  | "company_updated";
 
 export interface ContactPayload extends Contact {}
 
-export interface InboxPayload extends Inbox {}
+export type InboxPayload = Inbox;
 
 export interface ContactNotePayload extends ContactNote {}
 

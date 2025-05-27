@@ -6,6 +6,7 @@ import (
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/services"
+	"live-chat-server/types"
 	"live-chat-server/utils"
 	"time"
 
@@ -39,9 +40,10 @@ type CompanyHandler struct {
 	logger          interfaces.Logger
 	i18n            interfaces.I18n
 	langContext     interfaces.LanguageContext
+	pubSub          interfaces.PubSub
 }
 
-func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient interfaces.JobClient, emailService interfaces.EmailService, securityContext interfaces.SecurityContext, logger interfaces.Logger, i18n interfaces.I18n, langContext interfaces.LanguageContext) *CompanyHandler {
+func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositories.UserRepository, dispatcher interfaces.Dispatcher, jobClient interfaces.JobClient, emailService interfaces.EmailService, securityContext interfaces.SecurityContext, logger interfaces.Logger, i18n interfaces.I18n, langContext interfaces.LanguageContext, pubSub interfaces.PubSub) *CompanyHandler {
 	// Create a named logger for the company handler
 	handlerLogger := logger.Named("company_handler")
 
@@ -55,6 +57,7 @@ func NewCompanyHandler(repo repositories.CompanyRepository, userRepo repositorie
 		logger:          handlerLogger,
 		i18n:            i18n,
 		langContext:     langContext,
+		pubSub:          pubSub,
 	}
 }
 
@@ -110,6 +113,8 @@ func (h *CompanyHandler) UpdateCompany(c *fiber.Ctx) error {
 	if err := h.repo.UpdateCompany(company); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_company"), err)
 	}
+
+	h.pubSub.Publish("company:"+company.ID, types.EventTypeCompanyUpdated, company.ToResponse())
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "company_updated"), company.ToResponse())
 }

@@ -41,17 +41,6 @@ export class WebSocketService {
 
   public initializeHandlers() {
     this.eventDispatcher.registerTypeHandlers();
-
-    // Add handlers for subscription confirmations
-    this.eventDispatcher.registerHandler("subscribed", (message) => {
-      console.log(`Successfully subscribed to topic: ${message.payload.topic}`);
-    });
-
-    this.eventDispatcher.registerHandler("unsubscribed", (message) => {
-      console.log(
-        `Successfully unsubscribed from topic: ${message.payload.topic}`
-      );
-    });
   }
 
   // Connection methods

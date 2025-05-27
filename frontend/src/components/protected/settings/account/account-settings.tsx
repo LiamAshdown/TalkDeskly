@@ -7,7 +7,7 @@ import PasswordTab from "@/components/protected/settings/account/password-tab";
 import NotificationsTab from "@/components/protected/settings/account/notifications-tab";
 import { useState } from "react";
 import { useEffect } from "react";
-import { Profile } from "@/lib/interfaces";
+import { Company, Profile } from "@/lib/interfaces";
 import { profileService } from "@/lib/api/services/profile";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -17,9 +17,11 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useAuthStore } from "@/stores/auth";
 
 export default function AccountSettings() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const { updateUser, user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function AccountSettings() {
       try {
         const response = await profileService.getProfile();
         setProfile(response.data);
+        updateUser({
+          ...response.data,
+          company: user?.company as Company,
+        });
       } finally {
         setIsLoading(false);
       }
