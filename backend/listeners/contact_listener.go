@@ -4,6 +4,8 @@ import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/types"
+
+	"go.uber.org/dig"
 )
 
 type ContactListener struct {
@@ -11,10 +13,17 @@ type ContactListener struct {
 	pubSub     interfaces.PubSub
 }
 
-func NewContactListener(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub) *ContactListener {
+// ContactListenerParams contains dependencies for ContactListener
+type ContactListenerParams struct {
+	dig.In
+	Dispatcher interfaces.Dispatcher
+	PubSub     interfaces.PubSub
+}
+
+func NewContactListener(params ContactListenerParams) *ContactListener {
 	listener := &ContactListener{
-		dispatcher: dispatcher,
-		pubSub:     pubSub,
+		dispatcher: params.Dispatcher,
+		pubSub:     params.PubSub,
 	}
 	listener.subscribe()
 	return listener

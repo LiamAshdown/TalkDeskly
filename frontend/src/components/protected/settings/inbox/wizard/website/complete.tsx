@@ -12,16 +12,15 @@ export function Complete({ inbox }: CompleteProps) {
 
   const installationCode = `<script>
 (function(d,t) {
-  var BASE_URL="https://chat.example.com";
+  var BASE_URL="${window.location.origin}";
   var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
   g.src=BASE_URL+"/packs/js/sdk.js";
   g.defer = true;
   g.async = true;
   s.parentNode.insertBefore(g,s);
   g.onload=function(){
-    window.chatwootSDK.run({
-      websiteToken: "${inbox.id}",
-      baseUrl: BASE_URL
+    window.talkDeskly.init({
+      inboxId: "${inbox.id}"
     })
   }
 })(document,"script");

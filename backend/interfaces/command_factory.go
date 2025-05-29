@@ -20,4 +20,7 @@ type CommandFactory interface {
 
 	// NewHandleAssignConversationCommand creates a new HandleAssignConversationCommand
 	NewHandleAssignConversationCommand(conversationID string, agentID string, c *fiber.Ctx) Command
+
+	// NewHandleMessageNotificationCommand creates a new HandleMessageNotificationCommand
+	NewHandleMessageNotificationCommand(conversation *models.Conversation, message *models.Message) Command
 }

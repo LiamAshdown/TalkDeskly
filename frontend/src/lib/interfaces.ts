@@ -97,7 +97,7 @@ export type InboxType = "web_chat" | "email" | "sms" | "whatsapp";
 
 export interface WidgetCustomization {
   position: string;
-  color: string;
+  primaryColor: string;
 }
 
 export interface WorkingHours {

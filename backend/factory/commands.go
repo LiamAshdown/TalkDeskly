@@ -68,3 +68,15 @@ func (f *CommandFactoryImpl) NewHandleAssignConversationCommand(conversationID s
 		f.container.GetNotificationService(),
 	)
 }
+
+func (f *CommandFactoryImpl) NewHandleMessageNotificationCommand(conversation *models.Conversation, message *models.Message) interfaces.Command {
+	return commands.NewHandleMessageNotificationCommand(
+		conversation,
+		message,
+		f.container.GetConversationRepo(),
+		f.container.GetUserRepo(),
+		f.container.GetNotificationService(),
+		f.container.GetPubSubService(),
+		f.container.GetLogger(),
+	)
+}

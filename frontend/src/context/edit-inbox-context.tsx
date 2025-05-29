@@ -102,7 +102,7 @@ export function EditInboxProvider({
           setTeamMembers(inboxData.users.map((user) => user.id));
         }
         if (isWebChatInbox(inboxData)) {
-          setWidgetColor(inboxData.widgetCustomization.color);
+          setWidgetColor(inboxData.widgetCustomization.primaryColor);
           setWidgetPosition(inboxData.widgetCustomization.position);
         }
       } catch (error) {

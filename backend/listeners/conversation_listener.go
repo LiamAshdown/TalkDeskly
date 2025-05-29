@@ -7,6 +7,8 @@ import (
 	"live-chat-server/repositories"
 	"live-chat-server/types"
 	"time"
+
+	"go.uber.org/dig"
 )
 
 // InternalMessagePayload is used for standardized message handling within the system
@@ -23,18 +25,36 @@ type InternalMessagePayload struct {
 }
 
 type ConversationListener struct {
-	dispatcher       interfaces.Dispatcher
-	pubSub           interfaces.PubSub
-	conversationRepo repositories.ConversationRepository
-	logger           interfaces.Logger
+	dispatcher          interfaces.Dispatcher
+	pubSub              interfaces.PubSub
+	conversationRepo    repositories.ConversationRepository
+	userRepo            repositories.UserRepository
+	logger              interfaces.Logger
+	notificationService interfaces.NotificationService
+	commandFactory      interfaces.CommandFactory
 }
 
-func NewConversationListener(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub, conversationRepo repositories.ConversationRepository, logger interfaces.Logger) *ConversationListener {
+// ConversationListenerParams contains dependencies for ConversationListener
+type ConversationListenerParams struct {
+	dig.In
+	Dispatcher          interfaces.Dispatcher
+	PubSub              interfaces.PubSub
+	ConversationRepo    repositories.ConversationRepository
+	UserRepo            repositories.UserRepository
+	Logger              interfaces.Logger
+	NotificationService interfaces.NotificationService
+	CommandFactory      interfaces.CommandFactory
+}
+
+func NewConversationListener(params ConversationListenerParams) *ConversationListener {
 	listener := &ConversationListener{
-		dispatcher:       dispatcher,
-		pubSub:           pubSub,
-		conversationRepo: conversationRepo,
-		logger:           logger,
+		dispatcher:          params.Dispatcher,
+		pubSub:              params.PubSub,
+		conversationRepo:    params.ConversationRepo,
+		userRepo:            params.UserRepo,
+		logger:              params.Logger,
+		notificationService: params.NotificationService,
+		commandFactory:      params.CommandFactory,
 	}
 	listener.subscribe()
 	return listener
@@ -122,6 +142,8 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			populatedMessage = createdMessage
 		}
 
+		l.commandFactory.NewHandleMessageNotificationCommand(conversation, populatedMessage).Handle()
+
 		// If the message is private, then only broadcast the message to agent conversation
 		if internalMessage.Private {
 			l.pubSub.Publish("conversation-agent:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
@@ -130,7 +152,6 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			l.pubSub.Publish("conversation:"+internalMessage.ConversationID, types.EventTypeConversationSendMessage, populatedMessage.ToPayload())
 		}
 
-		// Broadcast conversation update to company channel
 		l.pubSub.Publish("company:"+conversation.CompanyID, types.EventTypeConversationUpdate, conversation.ToPayloadWithoutMessages())
 	}
 }

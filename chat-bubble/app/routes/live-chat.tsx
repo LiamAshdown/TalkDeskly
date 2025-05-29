@@ -4,13 +4,12 @@ import { WebSocketProvider } from "~/contexts/websocket-context";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "TalkDeskly Chat Bubble" },
+    { name: "description", content: "TalkDeskly Chat Bubble" },
   ];
 }
 
 export default function Home() {
-  console.log("Home");
   return (
     <WebSocketProvider>
       <LiveChatWidget />

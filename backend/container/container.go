@@ -209,6 +209,15 @@ func (c *DIContainer) GetNotificationService() interfaces.NotificationService {
 	return service
 }
 
+// GetPubSubService retrieves the pubsub service
+func (c *DIContainer) GetPubSubService() interfaces.PubSub {
+	var service interfaces.PubSub
+	c.dig.Invoke(func(s interfaces.PubSub) {
+		service = s
+	})
+	return service
+}
+
 // NewContainer creates a new container with DI
 func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	digContainer := dig.New()
@@ -240,6 +249,10 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		dig: digContainer,
 	}
 
+	if err := digContainer.Provide(func() interfaces.Container { return containerImpl }); err != nil {
+		log.Fatalf("Failed to provide container: %v", err)
+	}
+
 	repositories.RegisterRepositories(digContainer)
 	email.RegisterEmailService(digContainer)
 	factory.RegisterModule(digContainer)
@@ -249,11 +262,6 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	context.RegisterContexts(digContainer)
 	handler.RegisterHandlers(digContainer)
 	listeners.RegisterListeners(digContainer)
-
-	// Register container itself
-	if err := digContainer.Provide(func() interfaces.Container { return containerImpl }); err != nil {
-		log.Fatalf("Failed to provide container: %v", err)
-	}
 
 	return containerImpl
 }

@@ -278,7 +278,6 @@ func (h *WebSocketHandler) HandleConversationSendMessage(client *types.WebSocket
 		"conversation": conversation,
 	}
 
-	// Dispatch event for any further processing
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationSendMessage, messagePayload)
 }
 

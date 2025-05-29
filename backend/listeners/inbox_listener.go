@@ -4,6 +4,8 @@ import (
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/types"
+
+	"go.uber.org/dig"
 )
 
 type InboxListener struct {
@@ -11,10 +13,17 @@ type InboxListener struct {
 	pubSub     interfaces.PubSub
 }
 
-func NewInboxListener(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub) *InboxListener {
+// InboxListenerParams contains dependencies for InboxListener
+type InboxListenerParams struct {
+	dig.In
+	Dispatcher interfaces.Dispatcher
+	PubSub     interfaces.PubSub
+}
+
+func NewInboxListener(params InboxListenerParams) *InboxListener {
 	listener := &InboxListener{
-		dispatcher: dispatcher,
-		pubSub:     pubSub,
+		dispatcher: params.Dispatcher,
+		pubSub:     params.PubSub,
 	}
 	listener.subscribe()
 	return listener

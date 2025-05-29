@@ -246,6 +246,21 @@
               "endTime": "End Time"
             }
           }
+        },
+        "widgetCustomization": {
+          "title": "Widget Customization",
+          "description": "Customize the appearance of your chat widget",
+          "form": {
+            "widgetColor": "Widget Color",
+            "installationCode": "Installation Code",
+            "widgetPosition": {
+              "label": "Widget Position",
+              "bottomRight": "Bottom Right",
+              "bottomLeft": "Bottom Left",
+              "topRight": "Top Right",
+              "topLeft": "Top Left"
+            }
+          }
         }
       }
     }

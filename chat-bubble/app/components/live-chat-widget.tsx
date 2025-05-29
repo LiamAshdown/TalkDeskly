@@ -25,6 +25,7 @@ import {
 } from "~/contexts/chat-state-context";
 import type { WebSocketMessage } from "~/lib/services/websocket/types";
 import { inboxService } from "~/lib/api/services/inbox";
+import { useConfig } from "~/stores/config-context";
 
 function LiveChatWidgetContent() {
   const { conversation, endConversation, conversationId } =
@@ -32,6 +33,7 @@ function LiveChatWidgetContent() {
   const { chatState, dispatch } = useChatStateContext();
   const { wsService } = useWebSocket();
   const contactId = useContactStore((state) => state.contactId);
+  const { config } = useConfig();
 
   const wsServiceConnected = useRef(false);
   useEffect(() => {
@@ -60,9 +62,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    const inboxId = "a5b9ca2e-9be9-4f33-afdd-7fd21b2d9a66"; // Your inbox ID
-
-    wsService.connect(contactId || "", inboxId);
+    wsService.connect(contactId, config.inboxId);
     wsServiceConnected.current = true;
 
     return () => {
@@ -95,7 +95,16 @@ function LiveChatWidgetContent() {
       <AnimatePresence>
         {!chatState.isOpen && (
           <motion.div
-            className="fixed bottom-4 right-4 z-50"
+            className={cn(
+              "fixed z-50",
+              config.position === "bottom-right"
+                ? "bottom-4 right-4"
+                : config.position === "bottom-left"
+                ? "bottom-4 left-4"
+                : config.position === "top-right"
+                ? "top-4 right-4"
+                : "top-4 left-4"
+            )}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
@@ -160,9 +169,25 @@ function LiveChatWidgetContent() {
               "fixed z-50 flex flex-col overflow-hidden rounded-lg border bg-background shadow-xl dark:bg-zinc-900 dark:border-zinc-700",
               chatState.isFullScreen
                 ? "inset-4 md:inset-6 lg:inset-8"
-                : "bottom-4 right-4 h-[600px] w-[380px]"
+                : "h-[600px] w-[380px]",
+              config.position === "bottom-right"
+                ? "bottom-4 right-4"
+                : config.position === "bottom-left"
+                ? "bottom-4 left-4"
+                : config.position === "top-right"
+                ? "top-4 right-4"
+                : "top-4 left-4"
             )}
-            style={{ transformOrigin: "bottom right" }}
+            style={{
+              transformOrigin:
+                config.position === "bottom-right"
+                  ? "bottom right"
+                  : config.position === "bottom-left"
+                  ? "bottom left"
+                  : config.position === "top-right"
+                  ? "top right"
+                  : "top left",
+            }}
             initial={{ opacity: 0, scale: 0.5, rotate: 15 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             exit={{ opacity: 0, scale: 0.5, rotate: -15 }}

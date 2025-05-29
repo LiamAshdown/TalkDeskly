@@ -34,4 +34,5 @@ type Container interface {
 	GetConversationHandler() ConversationHandler
 	GetCommandFactory() CommandFactory
 	GetNotificationService() NotificationService
+	GetPubSubService() PubSub
 }

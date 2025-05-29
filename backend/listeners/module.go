@@ -1,8 +1,6 @@
 package listeners
 
 import (
-	"live-chat-server/interfaces"
-	"live-chat-server/repositories"
 	"log"
 
 	"go.uber.org/dig"
@@ -11,23 +9,17 @@ import (
 // RegisterListeners registers all listeners in the DI container
 func RegisterListeners(container *dig.Container) {
 	// Register the contact listener
-	if err := container.Provide(func(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub) *ContactListener {
-		return NewContactListener(dispatcher, pubSub)
-	}); err != nil {
+	if err := container.Provide(NewContactListener); err != nil {
 		log.Fatalf("Failed to provide contact listener: %v", err)
 	}
 
 	// Register the conversation listener
-	if err := container.Provide(func(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub, conversationRepo repositories.ConversationRepository, logger interfaces.Logger) *ConversationListener {
-		return NewConversationListener(dispatcher, pubSub, conversationRepo, logger)
-	}); err != nil {
+	if err := container.Provide(NewConversationListener); err != nil {
 		log.Fatalf("Failed to provide conversation listener: %v", err)
 	}
 
 	// Register the inbox listener
-	if err := container.Provide(func(dispatcher interfaces.Dispatcher, pubSub interfaces.PubSub) *InboxListener {
-		return NewInboxListener(dispatcher, pubSub)
-	}); err != nil {
+	if err := container.Provide(NewInboxListener); err != nil {
 		log.Fatalf("Failed to provide inbox listener: %v", err)
 	}
 

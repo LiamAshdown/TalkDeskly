@@ -133,7 +133,7 @@ func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 		},
 		WidgetCustomization: types.WidgetCustomization{
 			PrimaryColor: "#0A2540",
-			Position:     "right",
+			Position:     "bottom-right",
 		},
 		PreChatForm: types.PreChatForm{
 			Enabled:     false,
