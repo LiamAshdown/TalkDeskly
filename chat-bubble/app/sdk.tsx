@@ -42,10 +42,11 @@ if (typeof window !== "undefined") {
   // Auto-initialize in development
   if (import.meta.env.DEV) {
     init({
-      inboxId: "0e83ddef-da18-4205-a3ed-58b1605d6293",
+      inboxId: "53fee7c7-8c0c-4e7b-84ca-c7f8f47760f1",
       position: "bottom-right",
-      primaryColor: "#3b82f6",
+      primaryColor: "#dc0462",
       zIndex: 9999,
+      baseUrl: "ws://localhost:6721/ws",
     });
   }
 }

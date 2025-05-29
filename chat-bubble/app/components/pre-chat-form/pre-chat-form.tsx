@@ -216,8 +216,8 @@ export function PreChatForm({ formData, onBack }: PreChatFormProps) {
         <div className="mt-auto pt-6">
           <Button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium"
             disabled={isSubmitting}
+            className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-md font-medium"
           >
             {isSubmitting ? "Starting..." : "Start Chat"}
           </Button>

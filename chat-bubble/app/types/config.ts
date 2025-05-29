@@ -3,4 +3,5 @@ export type Config = {
   position: "top-right" | "top-left" | "bottom-right" | "bottom-left";
   primaryColor: string;
   zIndex: number;
+  baseUrl?: string;
 };

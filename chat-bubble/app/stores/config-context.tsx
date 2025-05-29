@@ -25,13 +25,17 @@ export const ConfigProvider = ({
   children,
   initialConfig,
 }: ConfigProviderProps) => {
+  console.log(initialConfig);
   const [config, setConfig] = useState<Config>({
     inboxId: "",
     position: "bottom-right",
     primaryColor: "#000000",
     zIndex: 1000,
+    baseUrl: "https://talkdeskly.com",
     ...initialConfig,
   });
+
+  console.log(config);
 
   return (
     <ConfigContext.Provider value={{ config, setConfig }}>

@@ -111,7 +111,7 @@ func (r *inboxRepository) GetInboxByIDAndCompanyID(id string, companyID string) 
 
 func (r *inboxRepository) GetInboxesByCompanyID(companyID string) ([]models.Inbox, error) {
 	var inboxes []models.Inbox
-	if err := r.db.Preload("Users").Where("company_id = ?", companyID).Find(&inboxes).Error; err != nil {
+	if err := r.db.Preload("Users").Where("company_id = ?", companyID).Where("deleted_at IS NULL").Find(&inboxes).Error; err != nil {
 		return nil, err
 	}
 
@@ -194,53 +194,23 @@ func (r *inboxRepository) UpdateEmailConfig(email *models.InboxEmail, tx *gorm.D
 }
 
 func (r *inboxRepository) DeleteInbox(id string) error {
-	// Use transaction to delete both the inbox and its type-specific config
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		// First find the inbox to know its type
 		var inbox models.Inbox
 		if err := tx.First(&inbox, "id = ?", id).Error; err != nil {
 			return err
 		}
 
-		// Delete type-specific data based on type
-		switch inbox.Type {
-		case models.InboxTypeWebChat:
-			if err := tx.Where("inbox_id = ?", id).Delete(&models.InboxWebChat{}).Error; err != nil {
-				return err
-			}
-		case models.InboxTypeEmail:
-			if err := tx.Where("inbox_id = ?", id).Delete(&models.InboxEmail{}).Error; err != nil {
-				return err
-			}
-		}
-
-		// Delete the main inbox
 		return tx.Delete(&models.Inbox{}, "id = ?", id).Error
 	})
 }
 
 func (r *inboxRepository) DeleteInboxByIDAndCompanyID(id string, companyID string) error {
-	// Use transaction to delete both the inbox and its type-specific config
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		// First find the inbox to know its type
 		var inbox models.Inbox
 		if err := tx.First(&inbox, "id = ? AND company_id = ?", id, companyID).Error; err != nil {
 			return err
 		}
 
-		// Delete type-specific data based on type
-		switch inbox.Type {
-		case models.InboxTypeWebChat:
-			if err := tx.Where("inbox_id = ?", id).Delete(&models.InboxWebChat{}).Error; err != nil {
-				return err
-			}
-		case models.InboxTypeEmail:
-			if err := tx.Where("inbox_id = ?", id).Delete(&models.InboxEmail{}).Error; err != nil {
-				return err
-			}
-		}
-
-		// Delete the main inbox
 		return tx.Delete(&models.Inbox{}, "id = ? AND company_id = ?", id, companyID).Error
 	})
 }

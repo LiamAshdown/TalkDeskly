@@ -9,7 +9,7 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   // Create WebSocket service with only URL parameter
-  const wsService = new WebSocketService("ws://localhost:6721/ws");
+  const wsService = new WebSocketService();
 
   return (
     <WebSocketContext.Provider value={{ wsService }}>

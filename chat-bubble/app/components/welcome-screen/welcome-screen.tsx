@@ -62,7 +62,7 @@ export function WelcomeScreen({
           </div>
         ) : (
           <div className="flex items-center">
-            <div className="bg-blue-500 h-10 w-10 rounded-full flex items-center justify-center">
+            <div className="bg-primary h-10 w-10 rounded-full flex items-center justify-center">
               <MessageSquare className="h-5 w-5 text-white" />
             </div>
             <span className="font-medium text-sm ml-3">Talk Deskly</span>

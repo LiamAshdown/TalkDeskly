@@ -50,8 +50,10 @@ func (l *InboxListener) HandleInboxUpdated(event interfaces.Event) {
 }
 
 func (l *InboxListener) HandleInboxDeleted(event interfaces.Event) {
-	if inbox, ok := event.Payload.(*models.Inbox); ok {
+	if inboxID, ok := event.Payload.(string); ok {
 		// Broadcast to company channel
-		l.pubSub.Publish("company:"+inbox.CompanyID, types.EventTypeInboxDeleted, inbox.ToPayload())
+		l.pubSub.Publish("company:"+inboxID, types.EventTypeInboxDeleted, map[string]interface{}{
+			"inbox_id": inboxID,
+		})
 	}
 }

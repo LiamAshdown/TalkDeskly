@@ -13,6 +13,7 @@ import { MessageFactory } from "~/lib/services/websocket/message-factory";
 export interface ConnectionConfig {
   userId: string;
   inboxId: string;
+  url: string;
 }
 
 /**
@@ -23,8 +24,8 @@ export class WebSocketService {
   private subscriptionManager: SubscriptionManager;
   private eventDispatcher: EventDispatcher;
 
-  constructor(private url: string) {
-    this.connectionManager = new ConnectionManager(url);
+  constructor() {
+    this.connectionManager = new ConnectionManager();
     this.subscriptionManager = new SubscriptionManager();
     this.eventDispatcher = new EventDispatcher();
 
@@ -65,8 +66,8 @@ export class WebSocketService {
   }
 
   // Connection methods
-  public connect(userId: string, inboxId: string) {
-    this.connectionManager.connect({ userId, inboxId });
+  public connect(url: string, userId: string, inboxId: string) {
+    this.connectionManager.connect({ url, userId, inboxId });
   }
 
   public disconnect() {

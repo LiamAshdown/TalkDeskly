@@ -18,6 +18,7 @@ type ConversationRepository interface {
 	PopulateSender(message *models.Message) (*models.Message, error)
 	GetActiveAssignedConversationsForUser(userID string) ([]models.Conversation, error)
 	GetConversationsByContactID(contactID string, preloads ...string) ([]models.Conversation, error)
+	DeleteConversationsByInboxID(inboxID string) ([]string, error)
 }
 
 type conversationRepository struct {
@@ -319,4 +320,26 @@ func (r *conversationRepository) GetConversationsByContactID(contactID string, p
 	}
 
 	return conversations, nil
+}
+
+func (r *conversationRepository) DeleteConversationsByInboxID(inboxID string) ([]string, error) {
+	var conversations []models.Conversation
+	err := r.db.Where("inbox_id = ?", inboxID).Find(&conversations).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Bulk delete the conversations
+	err = r.db.Where("inbox_id = ?", inboxID).Delete(&models.Conversation{}).Error
+	if err != nil {
+		return nil, err
+	}
+
+	conversationIDs := make([]string, len(conversations))
+	for i, conversation := range conversations {
+		conversationIDs[i] = conversation.ID
+	}
+
+	return conversationIDs, nil
 }

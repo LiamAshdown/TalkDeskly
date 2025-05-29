@@ -26,6 +26,7 @@ import {
 import type { WebSocketMessage } from "~/lib/services/websocket/types";
 import { inboxService } from "~/lib/api/services/inbox";
 import { useConfig } from "~/stores/config-context";
+import { ThemeProvider } from "~/contexts/theme-provider";
 
 function LiveChatWidgetContent() {
   const { conversation, endConversation, conversationId } =
@@ -62,7 +63,7 @@ function LiveChatWidgetContent() {
 
     wsService.initializeHandlers();
 
-    wsService.connect(contactId, config.inboxId);
+    wsService.connect(config.baseUrl!, contactId, config.inboxId);
     wsServiceConnected.current = true;
 
     return () => {
@@ -82,6 +83,15 @@ function LiveChatWidgetContent() {
       dispatch({ type: "START_CONVERSATION" });
     }
   }, [chatState.isOpen]);
+
+  useEffect(() => {
+    // If the inboxId has changed, we need to close the conversation
+    if (conversationId && config.inboxId !== conversation?.inboxId) {
+      wsService.closeConversation(conversationId);
+      endConversation();
+      dispatch({ type: "END_CONVERSATION" });
+    }
+  }, [config.inboxId, conversation]);
 
   const confirmEndConversation = () => {
     wsService.closeConversation(conversation?.conversationId || "");
@@ -138,7 +148,7 @@ function LiveChatWidgetContent() {
             >
               <Button
                 onClick={() => dispatch({ type: "TOGGLE_CHAT", payload: true })}
-                className="h-18 w-18 rounded-full shadow-lg flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white overflow-hidden"
+                className="h-18 w-18 rounded-full shadow-lg flex items-center justify-center bg-primary hover:bg-primary-hover text-primary-foreground overflow-hidden"
               >
                 <MessageCircle className="transform scale-[1.8]" />
                 {/* {chatState.unreadCount > 0 && (
@@ -228,7 +238,7 @@ function LiveChatWidgetContent() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmEndConversation}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-primary hover:bg-primary-hover text-primary-foreground"
             >
               End Conversation
             </AlertDialogAction>
@@ -243,7 +253,9 @@ export function LiveChatWidget() {
   return (
     <ChatStateProvider>
       <TypingProvider>
-        <LiveChatWidgetContent />
+        <ThemeProvider>
+          <LiveChatWidgetContent />
+        </ThemeProvider>
       </TypingProvider>
     </ChatStateProvider>
   );

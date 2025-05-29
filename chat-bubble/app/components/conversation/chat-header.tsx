@@ -1,5 +1,11 @@
 import { Button } from "~/components/ui/button";
-import { X, Minimize2, Maximize2, RefreshCw } from "lucide-react";
+import {
+  X,
+  Minimize2,
+  Maximize2,
+  RefreshCw,
+  MessageSquare,
+} from "lucide-react";
 import { ChatAvatar } from "~/components/conversation/chat-bubble/chat-avatar";
 import { useChatStateContext } from "~/contexts/chat-state-context";
 
@@ -25,16 +31,11 @@ export function ChatHeader() {
   return (
     <div className="flex items-center justify-between border-b p-3">
       <div className="flex items-center gap-2">
-        <ChatAvatar
-          src="/placeholder.svg?height=32&width=32"
-          fallback="SA"
-          isConversationEnded={chatState.isConversationEnded}
-        />
-        <div>
-          <h3 className="text-sm font-medium">Customer Support</h3>
-          <p className="text-xs text-muted-foreground">
-            {chatState.isConversationEnded ? "Conversation ended" : "Online"}
-          </p>
+        <div className="flex items-center">
+          <div className="bg-primary h-10 w-10 rounded-full flex items-center justify-center">
+            <MessageSquare className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-medium text-sm ml-3">Talk Deskly</span>
         </div>
       </div>
       <div className="flex gap-1">

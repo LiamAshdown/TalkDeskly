@@ -85,7 +85,7 @@ function EditInboxContent() {
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-6">
         <div className="flex flex-col sm:flex-row items-center gap-2">
-          <AlertDialog>
+          {/* <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
                 variant="outline"
@@ -113,7 +113,7 @@ function EditInboxContent() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+          </AlertDialog> */}
           <Button
             onClick={saveInbox}
             disabled={isSaving || !canSave}

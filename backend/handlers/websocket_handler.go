@@ -250,9 +250,7 @@ func (h *WebSocketHandler) HandleConversationSendMessage(client *types.WebSocket
 		return
 	}
 
-	// Conversation is closed - don't send message
 	if conversation.IsClosed() {
-		client.SendError("Conversation is closed", "CONVERSATION_CLOSED")
 		return
 	}
 

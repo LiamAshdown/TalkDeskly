@@ -34,7 +34,7 @@ export function WelcomeScreenHello({
       <div className="mt-auto flex-grow flex items-end">
         <Button
           onClick={startConversation}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-between"
+          className="w-full bg-primary hover:bg-primary-hover text-primary-foreground flex items-center justify-between"
           disabled={!isConnected}
         >
           {!isConnected ? (

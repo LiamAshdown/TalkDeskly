@@ -88,6 +88,7 @@ func SetupRoutesWithDI(params DIParams) {
 	inboxGroup.Put("/:id", middleware.IsAdmin(), params.InboxHandler.HandleUpdateInbox)
 	inboxGroup.Get("/", params.InboxHandler.HandleListInboxes)
 	inboxGroup.Put("/:id/users", middleware.IsAdmin(), params.InboxHandler.HandleUpdateInboxUsers)
+	inboxGroup.Delete("/:id", middleware.IsAdmin(), params.InboxHandler.HandleDeleteInbox)
 
 	contactGroup := apiGroup.Group("/contacts", middleware.Auth(), middleware.RequireCompany())
 	contactGroup.Get("/", params.ContactHandler.HandleListContacts)

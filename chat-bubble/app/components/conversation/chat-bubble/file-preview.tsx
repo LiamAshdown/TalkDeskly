@@ -77,7 +77,7 @@ export function FilePreview({
       case "documents":
         return "bg-orange-500/10";
       case "images":
-        return "bg-blue-500/10";
+        return "bg-primary/10";
       case "videos":
         return "bg-purple-500/10";
       case "audio":

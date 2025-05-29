@@ -43,23 +43,26 @@ type UserResponse struct {
 }
 
 type InboxHandler struct {
-	repo            repositories.InboxRepository
-	userRepo        repositories.UserRepository
-	securityContext interfaces.SecurityContext
-	dispatcher      interfaces.Dispatcher
-	logger          interfaces.Logger
-	langContext     interfaces.LanguageContext
+	repo             repositories.InboxRepository
+	userRepo         repositories.UserRepository
+	securityContext  interfaces.SecurityContext
+	dispatcher       interfaces.Dispatcher
+	convoDispatcher  interfaces.Dispatcher
+	logger           interfaces.Logger
+	langContext      interfaces.LanguageContext
+	conversationRepo repositories.ConversationRepository
 }
 
-func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext) *InboxHandler {
+func NewInboxHandler(repo repositories.InboxRepository, userRepo repositories.UserRepository, securityContext interfaces.SecurityContext, dispatcher interfaces.Dispatcher, logger interfaces.Logger, langContext interfaces.LanguageContext, conversationRepo repositories.ConversationRepository) *InboxHandler {
 	handlerLogger := logger.Named("inbox_handler")
 	return &InboxHandler{
-		repo:            repo,
-		userRepo:        userRepo,
-		securityContext: securityContext,
-		dispatcher:      dispatcher,
-		logger:          handlerLogger,
-		langContext:     langContext,
+		repo:             repo,
+		userRepo:         userRepo,
+		securityContext:  securityContext,
+		dispatcher:       dispatcher,
+		logger:           handlerLogger,
+		langContext:      langContext,
+		conversationRepo: conversationRepo,
 	}
 }
 
@@ -293,6 +296,17 @@ func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
 
 	if err := h.repo.DeleteInboxByIDAndCompanyID(inboxID, *user.User.CompanyID); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_inbox"), err)
+	}
+
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxDeleted, inboxID)
+
+	conversationIDs, err := h.conversationRepo.DeleteConversationsByInboxID(inboxID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_conversations"), err)
+	}
+
+	for _, conversationID := range conversationIDs {
+		h.convoDispatcher.Dispatch(interfaces.EventTypeConversationDeleted, conversationID)
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_deleted"), nil)

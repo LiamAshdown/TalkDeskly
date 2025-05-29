@@ -3,7 +3,6 @@ import type { ConnectionConfig } from "./websocket";
 
 export class ConnectionManager {
   private ws: WebSocket | null = null;
-  private url: string;
   private config: ConnectionConfig | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -13,10 +12,6 @@ export class ConnectionManager {
   private onConnectCallback: (() => void) | null = null;
   private onDisconnectCallback: (() => void) | null = null;
   private onErrorCallback: ((error: Event) => void) | null = null;
-
-  constructor(url: string) {
-    this.url = url;
-  }
 
   // Set callbacks
   setCallbacks(
@@ -34,11 +29,11 @@ export class ConnectionManager {
   connect(config: ConnectionConfig): WebSocket | null {
     try {
       this.config = config;
-      const { userId, inboxId } = config;
+      const { userId, inboxId, url } = config;
 
-      const url = `${this.url}/contacts?contact_id=${userId}&inbox_id=${inboxId}`;
+      const wsUrl = `${url}/contacts?contact_id=${userId}&inbox_id=${inboxId}`;
 
-      this.ws = new WebSocket(url);
+      this.ws = new WebSocket(wsUrl);
       this.setupEventHandlers();
       this.reconnectAttempts = 0;
       return this.ws;

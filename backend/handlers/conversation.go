@@ -225,6 +225,10 @@ func (h *ConversationHandler) handleCloseConversation(id string) (*models.Conver
 		return nil, err
 	}
 
+	if conversation.IsClosed() {
+		return conversation, nil
+	}
+
 	conversation.Status = models.ConversationStatusClosed
 
 	if err := h.repo.UpdateConversation(conversation); err != nil {
