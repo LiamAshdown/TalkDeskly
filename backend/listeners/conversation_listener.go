@@ -1,7 +1,6 @@
 package listeners
 
 import (
-	"encoding/json"
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
@@ -16,7 +15,7 @@ type InternalMessagePayload struct {
 	ConversationID string
 	Content        string
 	Type           string
-	Metadata       json.RawMessage
+	Metadata       interface{}
 	Private        bool
 	Sender         struct {
 		ID   string
@@ -109,7 +108,7 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 			Content:        internalMessage.Content,
 			Type:           messageType,
 			SenderType:     models.SenderType(internalMessage.Sender.Type),
-			Metadata:       &metaData,
+			Metadata:       metaData,
 			Private:        internalMessage.Private,
 		}
 

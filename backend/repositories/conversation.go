@@ -19,6 +19,7 @@ type ConversationRepository interface {
 	GetActiveAssignedConversationsForUser(userID string) ([]models.Conversation, error)
 	GetConversationsByContactID(contactID string, preloads ...string) ([]models.Conversation, error)
 	DeleteConversationsByInboxID(inboxID string) ([]string, error)
+	GetMessageByID(id string) (*models.Message, error)
 }
 
 type conversationRepository struct {
@@ -180,7 +181,21 @@ func (r *conversationRepository) CreateMessage(message *models.Message) (*models
 	// Now update conversation's last message and last message at
 	r.db.Model(&models.Conversation{}).Where("id = ?", message.ConversationID).Update("last_message", message.Content).Update("last_message_at", message.CreatedAt)
 
+	// return the message with the conversation
+	message, err = r.GetMessageByID(message.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return message, nil
+}
+
+func (r *conversationRepository) GetMessageByID(id string) (*models.Message, error) {
+	var message models.Message
+	if err := r.db.First(&message, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &message, nil
 }
 
 func (r *conversationRepository) PopulateSender(message *models.Message) (*models.Message, error) {

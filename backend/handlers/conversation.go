@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"live-chat-server/interfaces"
 	"live-chat-server/listeners"
@@ -84,7 +83,7 @@ func (h *ConversationHandler) HandleGetConversation(c *fiber.Ctx) error {
 }
 
 // SendMessage is a centralized method for sending messages in a conversation
-func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata json.RawMessage, private bool) error {
+func (h *ConversationHandler) SendMessage(conversation *models.Conversation, senderID *string, senderType models.SenderType, content string, messageType models.MessageType, metadata interface{}, private bool) error {
 	// Create internal message payload
 	internalMessage := &listeners.InternalMessagePayload{
 		ConversationID: conversation.ID,
@@ -113,11 +112,11 @@ func (h *ConversationHandler) SendMessage(conversation *models.Conversation, sen
 }
 
 func (h *ConversationHandler) SendSystemMessage(conversation *models.Conversation, content string) error {
-	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, json.RawMessage{}, false)
+	return h.SendMessage(conversation, nil, models.SenderTypeSystem, content, models.MessageTypeText, nil, false)
 }
 
 func (h *ConversationHandler) SendMessageAttachment(conversation *models.Conversation, senderID *string, senderType models.SenderType, uploadResult *types.UploadResult) error {
-	return h.SendMessage(conversation, senderID, senderType, uploadResult.Path, models.MessageTypeFile, json.RawMessage{}, false)
+	return h.SendMessage(conversation, senderID, senderType, uploadResult.Path, models.MessageTypeFile, uploadResult, false)
 }
 
 func (h *ConversationHandler) HandleGetConversationMessages(c *fiber.Ctx) error {

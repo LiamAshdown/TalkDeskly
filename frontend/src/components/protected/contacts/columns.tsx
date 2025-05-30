@@ -73,7 +73,7 @@ export const createColumns = ({
                 <Edit className="h-4 w-4 mr-2" />
                 Edit
               </DropdownMenuItem>
-              <DeleteContactDialog
+              {/* <DeleteContactDialog
                 contact={contact}
                 onDelete={onDelete}
                 trigger={
@@ -82,7 +82,7 @@ export const createColumns = ({
                     Delete
                   </DropdownMenuItem>
                 }
-              />
+              /> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

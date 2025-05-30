@@ -25,12 +25,10 @@ export function WelcomeScreenHello({
         <p className="text-muted-foreground">{inboxData?.welcomeMessage}</p>
       </div>
 
-      <div className="bg-primary-foreground border dark:bg-zinc-800 rounded-lg p-5 mb-6 flex flex-col">
-        <WelcomeWorkingHours
-          isAvailable={isAvailable}
-          nextOpeningTime={nextOpeningTime}
-        />
-      </div>
+      <WelcomeWorkingHours
+        isAvailable={isAvailable}
+        nextOpeningTime={nextOpeningTime}
+      />
       <div className="mt-auto flex-grow flex items-end">
         <Button
           onClick={startConversation}

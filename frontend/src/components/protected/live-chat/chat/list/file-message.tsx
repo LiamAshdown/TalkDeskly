@@ -105,7 +105,7 @@ export default function FileMessage({ content, metadata }: FileMessageProps) {
             <p className="truncate">{metadata?.filename || content}</p>
             {fileExtension && (
               <Badge
-                variant="outline"
+                variant="secondary"
                 className="uppercase text-[9px] px-1 py-0"
               >
                 {fileExtension}
