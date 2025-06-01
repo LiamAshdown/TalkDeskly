@@ -5,6 +5,7 @@ go 1.24.1
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.48.1
+	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/chai2010/webp v1.1.1
 	github.com/disintegration/imaging v1.6.2
 	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
@@ -16,6 +17,7 @@ require (
 	github.com/hibiken/asynq v0.25.1
 	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/spf13/cobra v1.9.1
 	go.uber.org/dig v1.18.1
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.36.0
@@ -40,6 +42,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.3 // indirect
@@ -56,6 +59,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/savsgio/gotils v0.0.0-20230208104028-c358bd845dee // indirect
 	github.com/spf13/cast v1.7.0 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
