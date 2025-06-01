@@ -288,7 +288,6 @@ export function AutomationTab() {
                                     : config.endTime,
                               },
                             };
-                            console.log(newWorkingHours);
                             form.setValue("workingHours", newWorkingHours);
                           }}
                           disabled={!config.enabled}

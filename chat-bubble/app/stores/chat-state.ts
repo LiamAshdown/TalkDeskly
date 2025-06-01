@@ -13,6 +13,7 @@ export type ChatState = {
   inboxData: Inbox | null;
   isInboxLoading: boolean;
   isConnected: boolean;
+  connectionError: string | null;
 };
 
 export type ChatAction =
@@ -27,7 +28,8 @@ export type ChatAction =
   | { type: "NEW_MESSAGE"; hasNew: boolean }
   | { type: "SET_INBOX_DATA"; data: Inbox }
   | { type: "SET_INBOX_LOADING"; isLoading: boolean }
-  | { type: "SET_CONNECTED"; isConnected: boolean };
+  | { type: "SET_CONNECTED"; isConnected: boolean }
+  | { type: "SET_CONNECTION_ERROR"; error: string };
 
 export const initialChatState: ChatState = {
   isOpen: false,
@@ -40,6 +42,7 @@ export const initialChatState: ChatState = {
   inboxData: null,
   isInboxLoading: true,
   isConnected: false,
+  connectionError: null,
 };
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
@@ -84,6 +87,12 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, isInboxLoading: action.isLoading };
     case "SET_CONNECTED":
       return { ...state, isConnected: action.isConnected };
+    case "SET_CONNECTION_ERROR":
+      return {
+        ...state,
+        isConnected: action.error ? false : state.isConnected,
+        connectionError: action.error || null,
+      };
     default:
       return state;
   }

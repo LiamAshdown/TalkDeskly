@@ -25,46 +25,18 @@ interface ConversationsState {
   ) => void;
 }
 
-// Helper function to sort conversations by last message timestamp
-const sortConversationsByLastMessage = (
-  conversations: Conversation[]
-): Conversation[] => {
-  return [...conversations].sort((a, b) => {
-    // Primary sort: last_message_at (from the last message timestamp)
-    const aLastMessageTime =
-      a.messages.length > 0 ? a.messages[a.messages.length - 1].timestamp : "";
-    const bLastMessageTime =
-      b.messages.length > 0 ? b.messages[b.messages.length - 1].timestamp : "";
-
-    // If there's a difference in last message times, use that
-    const lastMessageCompare = bLastMessageTime.localeCompare(aLastMessageTime);
-    if (lastMessageCompare !== 0) return lastMessageCompare;
-
-    // Secondary sort: created_at (conversation creation time)
-    const aCreatedAt = a.createdAt || "";
-    const bCreatedAt = b.createdAt || "";
-    const createdAtCompare = bCreatedAt.localeCompare(aCreatedAt);
-    if (createdAtCompare !== 0) return createdAtCompare;
-
-    // Tertiary sort: status
-    const aStatus = a.status || "";
-    const bStatus = b.status || "";
-    return bStatus.localeCompare(aStatus);
-  });
-};
-
 export const useConversationsStore = create<ConversationsState>()(
   immer((set, get) => {
     return {
       conversations: [],
       setConversations: (conversations: Conversation[]) =>
         set({
-          conversations: sortConversationsByLastMessage(conversations),
+          conversations,
         }),
 
       fetchConversations: async () => {
         const response = await conversationService.getConversations();
-        set({ conversations: sortConversationsByLastMessage(response.data) });
+        set({ conversations: response.data });
       },
 
       fetchConversation: async (conversationId: string) => {
@@ -81,14 +53,9 @@ export const useConversationsStore = create<ConversationsState>()(
             // Update existing conversation
             state.conversations[existingIndex] = response.data;
           } else {
-            // Add new conversation
-            state.conversations.push(response.data);
+            // Add new conversation at the top
+            state.conversations.unshift(response.data);
           }
-
-          // Sort conversations by last message
-          state.conversations = sortConversationsByLastMessage(
-            state.conversations
-          );
         });
       },
 
@@ -109,9 +76,8 @@ export const useConversationsStore = create<ConversationsState>()(
             ],
           };
 
-          // Sort conversations by last message
           return {
-            conversations: sortConversationsByLastMessage(updatedConversations),
+            conversations: updatedConversations,
           };
         });
       },
@@ -131,10 +97,6 @@ export const useConversationsStore = create<ConversationsState>()(
           );
           if (conversation) {
             conversation.messages.push(payload);
-            // Sort conversations by last message
-            state.conversations = sortConversationsByLastMessage(
-              state.conversations
-            );
           } else {
             // Doesn't exist, fetch it
             get().fetchConversation(payload.conversationId);
@@ -149,9 +111,6 @@ export const useConversationsStore = create<ConversationsState>()(
           );
           if (index !== -1) {
             state.conversations[index] = conversation;
-            state.conversations = sortConversationsByLastMessage(
-              state.conversations
-            );
           }
         });
       },
@@ -170,10 +129,6 @@ export const useConversationsStore = create<ConversationsState>()(
                   ? payload.messages
                   : state.conversations[conversationIndex].messages,
             };
-
-            state.conversations = sortConversationsByLastMessage(
-              state.conversations
-            );
           }
         });
       },
@@ -192,11 +147,6 @@ export const useConversationsStore = create<ConversationsState>()(
               ...state.conversations[conversationIndex],
               messages: messages,
             };
-
-            // Sort conversations after updating messages
-            state.conversations = sortConversationsByLastMessage(
-              state.conversations
-            );
           }
         });
       },

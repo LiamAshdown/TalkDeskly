@@ -89,6 +89,10 @@ func (h *WebSocketHandler) HandleContactWebSocket(c *websocket.Conn) {
 
 	if inboxID == "" {
 		h.logger.Error("Inbox ID is required", "contact_id", contactID)
+		c.WriteJSON(types.WebSocketMessage{
+			Event:   types.EventTypeError,
+			Payload: map[string]string{"message": "Inbox ID is required. Have you correctly configured the widget?", "code": "SERVER_ERROR"},
+		})
 		c.Close()
 		return
 	}
@@ -96,6 +100,10 @@ func (h *WebSocketHandler) HandleContactWebSocket(c *websocket.Conn) {
 	inbox, err := h.inboxRepo.GetInboxByID(inboxID)
 	if err != nil {
 		h.logger.Error("Failed to get inbox", "error", err, "inbox_id", inboxID)
+		c.WriteJSON(types.WebSocketMessage{
+			Event:   types.EventTypeError,
+			Payload: map[string]string{"message": "Failed to get inbox. Have you correctly configured the widget?", "code": "SERVER_ERROR"},
+		})
 		c.Close()
 		return
 	}

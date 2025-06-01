@@ -1,11 +1,13 @@
 package main
 
 import (
+	"live-chat-server/cmd"
 	"live-chat-server/config"
 	"live-chat-server/container"
 	"live-chat-server/i18n"
 	"live-chat-server/models"
 	"live-chat-server/router"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -13,6 +15,17 @@ import (
 )
 
 func main() {
+	// If CLI arguments are provided, run the CLI
+	if len(os.Args) > 1 {
+		cmd.Execute()
+		return
+	}
+
+	// Otherwise, start the web server
+	startWebServer()
+}
+
+func startWebServer() {
 	_ = godotenv.Load()
 	config.Load()
 
@@ -25,16 +38,12 @@ func main() {
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
-	// Initialize dependency container and provide Fiber app
 	c := container.NewContainer(models.DB, app)
 
-	// Apply i18n middleware to detect language from request headers
 	app.Use(i18n.Middleware(c.GetI18n()))
 
-	// Start the job server
 	container.StartJobServer(c)
 
-	// Use the new DI router instead of the old one
 	if err := c.GetDig().Invoke(router.SetupRoutesWithDI); err != nil {
 		panic(err)
 	}

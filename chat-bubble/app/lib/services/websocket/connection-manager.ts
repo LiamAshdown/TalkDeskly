@@ -35,7 +35,6 @@ export class ConnectionManager {
 
       this.ws = new WebSocket(wsUrl);
       this.setupEventHandlers();
-      this.reconnectAttempts = 0;
       return this.ws;
     } catch (error) {
       console.error("WebSocket connection error:", error);
@@ -95,6 +94,9 @@ export class ConnectionManager {
       this.ws.close();
       this.ws = null;
     }
+
+    // To prevent immediate reconnect
+    this.reconnectAttempts = this.maxReconnectAttempts;
   }
 
   isConnected(): boolean {

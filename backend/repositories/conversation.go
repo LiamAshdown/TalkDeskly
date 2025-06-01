@@ -4,7 +4,6 @@ import (
 	"live-chat-server/models"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type ConversationRepository interface {
@@ -90,11 +89,16 @@ func (r *conversationRepository) GetConversationsForUser(userID string, preloads
 
 	query := r.db.Where("inbox_id IN ?", inboxIDs).Where("company_id = ?", user.CompanyID)
 	query = r.ApplyPreloads(query, preloads...)
-	query.Order(clause.OrderBy{Columns: []clause.OrderByColumn{
-		{Column: clause.Column{Name: "last_message_at"}, Desc: true},
-		{Column: clause.Column{Name: "created_at"}, Desc: true},
-		{Column: clause.Column{Name: "status"}, Desc: true},
-	}})
+
+	// Custom ordering to prioritize pending and active conversations
+	query = query.Order("CASE " +
+		"WHEN status = 'pending' THEN 1 " +
+		"WHEN status = 'active' THEN 2 " +
+		"WHEN status = 'resolved' THEN 3 " +
+		"WHEN status = 'closed' THEN 4 " +
+		"ELSE 5 END").
+		Order("last_message_at DESC").
+		Order("created_at DESC")
 
 	err = query.Find(&conversations).Error
 	if err != nil {

@@ -27,7 +27,8 @@ export type EventType =
   | "unsubscribe"
   | "subscribed"
   | "unsubscribed"
-  | "inbox_get_details";
+  | "inbox_get_details"
+  | "connection_error";
 
 export interface WebSocketMessage {
   event: EventType;

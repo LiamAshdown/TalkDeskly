@@ -63,6 +63,15 @@ export class WebSocketService {
         console.log(`Successfully unsubscribed from topic: ${payload.topic}`);
       }
     );
+
+    this.eventDispatcher.registerHandler(
+      "connection_error",
+      (message: WebSocketMessage) => {
+        console.log(`Connection error: ${message.payload}`);
+
+        this.disconnect();
+      }
+    );
   }
 
   // Connection methods

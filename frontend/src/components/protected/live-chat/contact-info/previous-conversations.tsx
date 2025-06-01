@@ -71,7 +71,10 @@ export function PreviousConversations({
                 to={`/portal/conversations/${conv.conversationId}`}
                 className="p-0 h-auto text-sm hover:underline"
               >
-                {conv.inbox.name} - {format(conv.lastMessageAt, "MM/dd/yyyy")}
+                {conv.inbox.name} -{" "}
+                {conv.lastMessageAt
+                  ? format(conv.lastMessageAt, "MM/dd/yyyy")
+                  : "N/A"}
               </Link>
             </li>
           ))

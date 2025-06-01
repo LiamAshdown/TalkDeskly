@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { ChatWindow } from "~/components/conversation/chat-window";
 import { WelcomeScreen } from "~/components/welcome-screen/welcome-screen";
+import { ConnectionError } from "~/components/connection-error";
 import { useWebSocket } from "~/contexts/websocket-context";
 import {
   AlertDialog,
@@ -37,11 +38,31 @@ function LiveChatWidgetContent() {
   const { config } = useConfig();
 
   const wsServiceConnected = useRef(false);
+
+  const handleRetryConnection = () => {
+    // Clear the error first
+    dispatch({ type: "SET_CONNECTION_ERROR", error: "" });
+
+    // Reconnect
+    wsService.disconnect();
+    wsServiceConnected.current = false;
+
+    // Reset connection state
+    dispatch({ type: "SET_CONNECTED", isConnected: false });
+
+    // Attempt to reconnect
+    wsService.connect(config.baseUrl!, contactId, config.inboxId);
+    wsServiceConnected.current = true;
+  };
+
   useEffect(() => {
     wsService.registerHandler(
       "connection_established",
       async (message: WebSocketMessage) => {
         wsService.setUserId(message.payload.userId);
+
+        // Clear any existing connection error
+        dispatch({ type: "SET_CONNECTION_ERROR", error: "" });
 
         dispatch({ type: "SET_INBOX_LOADING", isLoading: true });
         try {
@@ -54,6 +75,15 @@ function LiveChatWidgetContent() {
         } finally {
           dispatch({ type: "SET_INBOX_LOADING", isLoading: false });
         }
+      }
+    );
+    wsService.registerHandler(
+      "connection_error",
+      (message: WebSocketMessage) => {
+        dispatch({
+          type: "SET_CONNECTION_ERROR",
+          error: message.payload.message,
+        });
       }
     );
 
@@ -148,9 +178,26 @@ function LiveChatWidgetContent() {
             >
               <Button
                 onClick={() => dispatch({ type: "TOGGLE_CHAT", payload: true })}
-                className="h-18 w-18 rounded-full shadow-lg flex items-center justify-center bg-primary hover:bg-primary-hover text-primary-foreground overflow-hidden"
+                className={cn(
+                  "h-18 w-18 rounded-full shadow-lg flex items-center justify-center text-primary-foreground overflow-hidden",
+                  chatState.connectionError
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-primary hover:bg-primary-hover"
+                )}
               >
                 <MessageCircle className="transform scale-[1.8]" />
+                {chatState.connectionError && (
+                  <motion.div
+                    className="absolute -right-1 -top-1 flex h-4 w-4 rounded-full bg-red-500 border-2 border-white"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 500,
+                      damping: 15,
+                    }}
+                  />
+                )}
                 {/* {chatState.unreadCount > 0 && (
                   <motion.span
                     className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white"
@@ -207,7 +254,12 @@ function LiveChatWidgetContent() {
               damping: 30,
             }}
           >
-            {!chatState.conversationStarted ? (
+            {chatState.connectionError ? (
+              <ConnectionError
+                error={chatState.connectionError}
+                onRetry={handleRetryConnection}
+              />
+            ) : !chatState.conversationStarted ? (
               <WelcomeScreen
                 isConnected={chatState.isConnected}
                 isLoading={chatState.isInboxLoading}

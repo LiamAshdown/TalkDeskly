@@ -69,13 +69,13 @@ export default function ChatPortal({
           <TabsList className="bg-gray-100 dark:bg-gray-800">
             <TabsTrigger
               value="customer"
-              className="data-[state=active]:bg-blue-600"
+              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
             >
               Customer
             </TabsTrigger>
             <TabsTrigger
               value="private"
-              className="data-[state=active]:bg-orange-600"
+              className="data-[state=active]:bg-orange-600 data-[state=active]:text-white"
             >
               Private Notes
             </TabsTrigger>
