@@ -34,6 +34,22 @@ type DIParams struct {
 func SetupRoutesWithDI(params DIParams) {
 	app := params.App
 
+	// Health check endpoints
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":  "ok",
+			"message": "TalkDeskly Backend is running",
+			"service": "talkdeskly-backend",
+		})
+	})
+
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":  "healthy",
+			"service": "talkdeskly-backend",
+		})
+	})
+
 	// Static file route
 	app.Static("/uploads", disk.GetBasePath())
 

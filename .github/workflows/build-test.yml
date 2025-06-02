@@ -48,7 +48,7 @@ jobs:
           timeout 120 bash -c 'until curl -f http://localhost:8025 2>/dev/null; do sleep 2; done'
 
           echo "Waiting for backend to be ready..."
-          timeout 120 bash -c 'until curl -f http://localhost:8080 2>/dev/null || curl -f http://localhost:8080/health 2>/dev/null; do sleep 3; done'
+          timeout 120 bash -c 'until curl -f http://localhost:8080/health 2>/dev/null; do sleep 3; done'
 
           echo "Waiting for frontend to be ready..."
           timeout 120 bash -c 'until curl -f http://localhost:3001 2>/dev/null; do sleep 3; done'
@@ -65,7 +65,7 @@ jobs:
 
           # Check if services are responding
           echo "Testing backend..."
-          curl -f http://localhost:8080 -w "Backend: %{http_code}\n" -o /dev/null -s || echo "Backend: Not responding"
+          curl -f http://localhost:8080/health -w "Backend: %{http_code}\n" -o /dev/null -s || echo "Backend: Not responding"
 
           echo "Testing frontend..."
           curl -f http://localhost:3001 -w "Frontend: %{http_code}\n" -o /dev/null -s || echo "Frontend: Not responding"
