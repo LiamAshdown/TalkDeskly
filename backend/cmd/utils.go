@@ -79,9 +79,9 @@ func showConfig() {
 
 	// Additional config items
 	fmt.Println("\n📧 Email Configuration:")
-	fmt.Printf("SMTP Host: %s\n", getEnvOrDefault("SMTP_HOST", "not set"))
-	fmt.Printf("SMTP Port: %s\n", getEnvOrDefault("SMTP_PORT", "not set"))
-	fmt.Printf("SMTP Username: %s\n", getEnvOrDefault("SMTP_USERNAME", "not set"))
+	fmt.Printf("SMTP Host: %s\n", getEnvOrDefault("EMAIL_HOST", "not set"))
+	fmt.Printf("SMTP Port: %s\n", getEnvOrDefault("EMAIL_PORT", "not set"))
+	fmt.Printf("SMTP Username: %s\n", getEnvOrDefault("EMAIL_USERNAME", "not set"))
 
 	fmt.Println("\n☁️  Storage Configuration:")
 	fmt.Printf("Storage Type: %s\n", getEnvOrDefault("STORAGE_TYPE", "local"))
@@ -104,10 +104,10 @@ func checkEnvironment() {
 
 	// Optional but recommended variables
 	optionalVars := []string{
-		"SMTP_HOST",
-		"SMTP_PORT",
-		"SMTP_USERNAME",
-		"SMTP_PASSWORD",
+		"EMAIL_HOST",
+		"EMAIL_PORT",
+		"EMAIL_USERNAME",
+		"EMAIL_PASSWORD",
 		"AWS_ACCESS_KEY_ID",
 		"AWS_SECRET_ACCESS_KEY",
 		"S3_BUCKET",

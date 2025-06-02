@@ -24,9 +24,9 @@ jobs:
           JWT_SECRET=test-secret-key
           BASE_URL=http://localhost:8080
           REDIS_URL=redis:6379
-          SMTP_HOST=mailhog
-          SMTP_PORT=1025
-          SMTP_FROM=noreply@talkdeskly.com
+          EMAIL_HOST=mailhog
+          EMAIL_PORT=1025
+          EMAIL_FROM=noreply@talkdeskly.com
           VITE_API_URL=http://localhost:8080/api
           VITE_WS_URL=ws://localhost:8080/ws
           EOF
