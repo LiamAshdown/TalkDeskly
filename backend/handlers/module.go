@@ -65,4 +65,12 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewNotificationHandler); err != nil {
 		log.Fatalf("Failed to provide notification handler: %v", err)
 	}
+
+	if err := container.Provide(NewSuperAdminHandler); err != nil {
+		log.Fatalf("Failed to provide superadmin handler: %v", err)
+	}
+
+	if err := container.Provide(NewHealthHandler); err != nil {
+		log.Fatalf("Failed to provide health handler: %v", err)
+	}
 }

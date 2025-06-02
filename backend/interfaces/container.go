@@ -35,4 +35,5 @@ type Container interface {
 	GetCommandFactory() CommandFactory
 	GetNotificationService() NotificationService
 	GetPubSubService() PubSub
+	GetHealthService() HealthService
 }

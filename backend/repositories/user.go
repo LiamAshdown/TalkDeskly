@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"live-chat-server/models"
 
 	"gorm.io/gorm"
@@ -14,6 +15,12 @@ type UserRepository interface {
 	UpdateUser(user *models.User) error
 	DeleteUser(id string) error
 	GetNotifications(userID string) ([]models.UserNotification, error)
+
+	// SuperAdmin methods
+	GetAllUsers(page, limit int, search string) ([]models.User, int64, error)
+	GetAllUsersCount() (int64, error)
+	GetActiveUsersCount() (int64, error)
+	GetRecentSignupsCount(days int) (int64, error)
 }
 
 type userRepository struct {
@@ -79,4 +86,61 @@ func (r *userRepository) GetNotifications(userID string) ([]models.UserNotificat
 	}
 
 	return notifications, nil
+}
+
+// SuperAdmin methods implementation
+
+func (r *userRepository) GetAllUsers(page, limit int, search string) ([]models.User, int64, error) {
+	var users []models.User
+	var total int64
+
+	query := r.db.Preload("Company").Preload("NotificationSettings")
+
+	if search != "" {
+		query = query.Where("first_name ILIKE ? OR last_name ILIKE ? OR email ILIKE ?",
+			"%"+search+"%", "%"+search+"%", "%"+search+"%")
+	}
+
+	// Get total count
+	if err := query.Model(&models.User{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	offset := (page - 1) * limit
+	if err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, nil
+}
+
+func (r *userRepository) GetAllUsersCount() (int64, error) {
+	var count int64
+	if err := r.db.Model(&models.User{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *userRepository) GetActiveUsersCount() (int64, error) {
+	var count int64
+	// Consider users active if they've logged in within the last 30 days
+	// This would require a last_login_at field in the User model
+	// For now, return total user count as a placeholder
+	if err := r.db.Model(&models.User{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *userRepository) GetRecentSignupsCount(days int) (int64, error) {
+	var count int64
+	intervalClause := fmt.Sprintf("created_at >= NOW() - INTERVAL '%d days'", days)
+	if err := r.db.Model(&models.User{}).
+		Where(intervalClause).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }

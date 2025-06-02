@@ -18,6 +18,10 @@ type CompanyRepository interface {
 	GetCompanyInviteByToken(token string) (*models.CompanyInvite, error)
 	GetCompanyInviteByEmail(email string) (*models.CompanyInvite, error)
 	GetCompanyInviteByID(id string) (*models.CompanyInvite, error)
+
+	// SuperAdmin methods
+	GetAllCompanies(page, limit int, search string) ([]models.Company, int64, error)
+	GetAllCompaniesCount() (int64, error)
 }
 
 type companyRepository struct {
@@ -99,4 +103,36 @@ func (r *companyRepository) GetCompanyInviteByID(id string) (*models.CompanyInvi
 	}
 
 	return &invite, nil
+}
+
+func (r *companyRepository) GetAllCompanies(page, limit int, search string) ([]models.Company, int64, error) {
+	var companies []models.Company
+	var total int64
+
+	query := r.db.Model(&models.Company{})
+
+	if search != "" {
+		query = query.Where("name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+
+	// Get total count
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	offset := (page - 1) * limit
+	if err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&companies).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return companies, total, nil
+}
+
+func (r *companyRepository) GetAllCompaniesCount() (int64, error) {
+	var total int64
+	if err := r.db.Model(&models.Company{}).Count(&total).Error; err != nil {
+		return 0, err
+	}
+	return total, nil
 }

@@ -218,6 +218,15 @@ func (c *DIContainer) GetPubSubService() interfaces.PubSub {
 	return service
 }
 
+// GetHealthService retrieves the health service
+func (c *DIContainer) GetHealthService() interfaces.HealthService {
+	var service interfaces.HealthService
+	c.dig.Invoke(func(s interfaces.HealthService) {
+		service = s
+	})
+	return service
+}
+
 // NewContainer creates a new container with DI
 func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	digContainer := dig.New()

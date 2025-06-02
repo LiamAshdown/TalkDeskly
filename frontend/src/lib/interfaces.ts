@@ -275,3 +275,47 @@ export interface NotificationListResponse {
   page: number;
   limit: number;
 }
+
+export interface SuperAdminStats {
+  // Basic metrics
+  totalUsers: number;
+  totalCompanies: number;
+  activeUsers: number;
+  recentSignups: number;
+  systemHealth: "healthy" | "warning" | "critical";
+
+  // Growth metrics
+  userGrowthRate: number;
+  last24hSignups: number;
+  last30dSignups: number;
+
+  // Analytics data
+  userGrowthData: Array<{ date: number; users: number }>;
+  companyGrowthData: Array<{ date: number; companies: number }>;
+  roleDistribution: Array<{ role: string; count: number; percentage: number }>;
+  topCompanies: Array<{ name: string; userCount: number; activity: number }>;
+  performanceMetrics: Array<{
+    metric: string;
+    value: string;
+    status: string;
+    trend: string;
+  }>;
+  weeklyActivity: Array<{ day: string; users: number }>;
+
+  // Quick stats
+  conversionRate: number;
+  avgSessionDuration: string;
+  bounceRate: number;
+  retentionRate: number;
+}
+
+export interface SuperAdminUser extends User {
+  company: Company;
+  lastLoginAt?: string;
+}
+
+export interface SuperAdminCompany extends Company {
+  userCount: number;
+  activeUserCount: number;
+  lastActiveAt?: string;
+}

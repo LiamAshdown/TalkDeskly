@@ -10,6 +10,7 @@ interface AuthState {
   updateUser: (user: AuthResponse["user"]) => void;
   setToken: (token: string | null) => void;
   isAdmin: () => boolean;
+  isSuperAdmin: () => boolean;
   hasRole: (role: string | string[]) => boolean;
   logout: () => void;
 }
@@ -37,7 +38,12 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         }),
       isAdmin: () => {
-        return get().user?.role === "admin";
+        return (
+          get().user?.role === "admin" || get().user?.role === "superadmin"
+        );
+      },
+      isSuperAdmin: () => {
+        return get().user?.role === "superadmin";
       },
       hasRole: (role: string | string[]) => {
         const roles = Array.isArray(role) ? role : [role];

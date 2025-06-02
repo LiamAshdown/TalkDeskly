@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ export function AppSidebar() {
   const { theme, sidebarCollapsed, toggleTheme, toggleSidebar } =
     useMiscStore();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, isSuperAdmin } = useAuthStore();
   const { t } = useTranslation();
 
   // Add class to document on initial load
@@ -166,6 +167,14 @@ export function AppSidebar() {
                   <span>{t("sidebar.notifications")}</span>
                 </Link>
               </DropdownMenuItem>
+              {isSuperAdmin() && (
+                <DropdownMenuItem asChild>
+                  <Link to="/superadmin" className="flex items-center">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>{t("sidebar.superAdmin")}</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50">
                 <LogOut className="mr-2 h-4 w-4" />

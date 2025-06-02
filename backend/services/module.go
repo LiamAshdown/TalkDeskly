@@ -35,4 +35,9 @@ func RegisterServices(container *dig.Container) {
 	if err := container.Provide(NewNotificationService); err != nil {
 		panic(err)
 	}
+
+	// Register health service
+	if err := container.Provide(NewHealthService); err != nil {
+		log.Fatalf("Failed to provide health service: %v", err)
+	}
 }

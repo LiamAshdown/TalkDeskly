@@ -21,31 +21,31 @@ const settingsNavItems: SettingsNavItem[] = [
     title: "Account",
     href: "account",
     icon: User,
-    roles: ["admin", "agent"],
+    roles: ["admin", "agent", "superadmin"],
   },
   {
     title: "Inboxes",
     href: "inboxes",
     icon: Inbox,
-    roles: ["admin"],
+    roles: ["admin", "superadmin"],
   },
   {
     title: "Team Members",
     href: "team",
     icon: Users,
-    roles: ["admin"],
+    roles: ["admin", "superadmin"],
   },
   {
     title: "Canned Responses",
     href: "canned-responses",
     icon: FileText,
-    roles: ["agent", "admin"],
+    roles: ["agent", "admin", "superadmin"],
   },
   {
     title: "Company",
     href: "company",
     icon: Building,
-    roles: ["admin"],
+    roles: ["admin", "superadmin"],
   },
 ];
 

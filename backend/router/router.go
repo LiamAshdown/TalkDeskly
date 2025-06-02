@@ -28,27 +28,17 @@ type DIParams struct {
 	UserHandler           *handler.UserHandler
 	CannedResponseHandler *handler.CannedResponseHandler
 	NotificationHandler   *handler.NotificationHandler
+	SuperAdminHandler     *handler.SuperAdminHandler
+	HealthHandler         *handler.HealthHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
 func SetupRoutesWithDI(params DIParams) {
 	app := params.App
 
-	// Health check endpoints
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "ok",
-			"message": "TalkDeskly Backend is running",
-			"service": "talkdeskly-backend",
-		})
-	})
-
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"status":  "healthy",
-			"service": "talkdeskly-backend",
-		})
-	})
+	// Public health endpoints (no authentication required)
+	app.Get("/health", params.HealthHandler.GetHealth)
+	app.Get("/health/detailed", params.HealthHandler.GetHealthDetailed)
 
 	// Static file route
 	app.Static("/uploads", disk.GetBasePath())
@@ -170,4 +160,33 @@ func SetupRoutesWithDI(params DIParams) {
 	cannedResponseGroup.Post("/", params.CannedResponseHandler.HandleCreateCannedResponse)
 	cannedResponseGroup.Put("/:id", params.CannedResponseHandler.HandleUpdateCannedResponse)
 	cannedResponseGroup.Delete("/:id", params.CannedResponseHandler.HandleDeleteCannedResponse)
+
+	// SuperAdmin routes
+	superAdminGroup := apiGroup.Group("/superadmin", middleware.Auth(), middleware.IsSuperAdmin())
+
+	// Dashboard/Statistics
+	superAdminGroup.Get("/stats", params.SuperAdminHandler.GetStats)
+
+	// System Health
+	superAdminGroup.Get("/system/health", params.SuperAdminHandler.GetSystemHealth)
+	superAdminGroup.Get("/system/logs", params.SuperAdminHandler.GetSystemLogs)
+
+	// Configuration management
+	superAdminGroup.Get("/config", params.SuperAdminHandler.GetConfig)
+	superAdminGroup.Put("/config", params.SuperAdminHandler.UpdateConfig)
+
+	// User management
+	superAdminGroup.Get("/users", params.SuperAdminHandler.GetAllUsers)
+	superAdminGroup.Get("/users/:id", params.SuperAdminHandler.GetUser)
+	superAdminGroup.Post("/users", params.SuperAdminHandler.CreateUser)
+	superAdminGroup.Put("/users/:id", params.SuperAdminHandler.UpdateUser)
+	superAdminGroup.Delete("/users/:id", params.SuperAdminHandler.DeleteUser)
+
+	// Company management
+	superAdminGroup.Get("/companies", params.SuperAdminHandler.GetAllCompanies)
+	superAdminGroup.Get("/companies/:id", params.SuperAdminHandler.GetCompany)
+	superAdminGroup.Post("/companies", params.SuperAdminHandler.CreateCompany)
+	superAdminGroup.Put("/companies/:id", params.SuperAdminHandler.UpdateCompany)
+	superAdminGroup.Delete("/companies/:id", params.SuperAdminHandler.DeleteCompany)
+	superAdminGroup.Get("/companies/:id/users", params.SuperAdminHandler.GetCompanyUsers)
 }

@@ -19,6 +19,19 @@ import InvitePage from "./components/auth/invite";
 import { AuthLayout } from "@/components/layouts/auth-layout";
 import CannedResponsesPage from "./pages/(protected)/settings/canned-responses/page";
 
+// SuperAdmin imports
+import SuperAdminLayout from "@/pages/(superadmin)/layout";
+import SuperAdminDashboard from "@/pages/(superadmin)/dashboard/page";
+import SuperAdminUsersPage from "@/pages/(superadmin)/users/page";
+import NewUserPage from "@/pages/(superadmin)/users/new";
+import EditUserPage from "@/pages/(superadmin)/users/edit";
+import SuperAdminCompaniesPage from "@/pages/(superadmin)/companies/page";
+import NewCompanyPage from "@/pages/(superadmin)/companies/new";
+import EditCompanyPage from "@/pages/(superadmin)/companies/edit";
+import CompanyUsersPage from "@/pages/(superadmin)/companies/users";
+import ConfigPage from "@/pages/(superadmin)/config/page";
+import SuperAdminSystemPage from "@/pages/(superadmin)/system/page";
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -55,6 +68,63 @@ export const router = createBrowserRouter([
             path: "invite/:token/",
             element: <InvitePage />,
             id: "invite",
+          },
+        ],
+      },
+      {
+        path: "superadmin",
+        element: <SuperAdminLayout />,
+        id: "superadmin",
+        children: [
+          {
+            path: "",
+            element: <SuperAdminDashboard />,
+            id: "superadmin-dashboard",
+          },
+          {
+            path: "users",
+            element: <SuperAdminUsersPage />,
+            id: "superadmin-users",
+          },
+          {
+            path: "users/new",
+            element: <NewUserPage />,
+            id: "superadmin-new-user",
+          },
+          {
+            path: "users/:id",
+            element: <EditUserPage />,
+            id: "superadmin-edit-user",
+          },
+          {
+            path: "companies",
+            element: <SuperAdminCompaniesPage />,
+            id: "superadmin-companies",
+          },
+          {
+            path: "companies/new",
+            element: <NewCompanyPage />,
+            id: "superadmin-new-company",
+          },
+          {
+            path: "companies/:id",
+            element: <EditCompanyPage />,
+            id: "superadmin-edit-company",
+          },
+          {
+            path: "companies/:id/users",
+            element: <CompanyUsersPage />,
+            id: "superadmin-company-users",
+          },
+          {
+            path: "config",
+            element: <ConfigPage />,
+            id: "superadmin-config",
+          },
+          {
+            path: "system",
+            element: <SuperAdminSystemPage />,
+            id: "superadmin-system",
           },
         ],
       },

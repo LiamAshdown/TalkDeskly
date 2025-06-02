@@ -123,8 +123,19 @@ func Auth() fiber.Handler {
 func IsAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		user := GetAuthUser(c)
-		if user.User.Role != string(models.RoleAdmin) {
+		if user.User.Role != string(models.RoleAdmin) && user.User.Role != string(models.RoleSuperAdmin) {
 			return utils.ErrorResponse(c, fiber.StatusForbidden, "forbidden", nil)
+		}
+		return c.Next()
+	}
+}
+
+// IsSuperAdmin middleware ensures the authenticated user has superadmin role
+func IsSuperAdmin() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		user := GetAuthUser(c)
+		if user == nil || user.User.Role != string(models.RoleSuperAdmin) {
+			return utils.ErrorResponse(c, fiber.StatusForbidden, "superadmin_access_required", nil)
 		}
 		return c.Next()
 	}
