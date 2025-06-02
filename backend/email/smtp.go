@@ -24,12 +24,13 @@ func NewSMTPSender(config interfaces.EmailConfig, logger interfaces.Logger) inte
 
 // Connect establishes connection to the SMTP server
 func (s *SMTPSender) Connect() error {
+	s.logger.Info("Attempting to connect to SMTP server at %s:%d", s.config.Host, s.config.Port)
 	s.dialer = gomail.NewDialer(s.config.Host, s.config.Port, s.config.Username, s.config.Password)
 
 	// Test the connection
 	closer, err := s.dialer.Dial()
 	if err != nil {
-		s.logger.Error("Failed to connect to SMTP server: %v", err)
+		s.logger.Error("Failed to connect to SMTP server at %s:%d: %v", s.config.Host, s.config.Port, err)
 		return fmt.Errorf("failed to connect to SMTP server: %w", err)
 	}
 
