@@ -10,14 +10,14 @@ import { ChatAvatar } from "~/components/conversation/chat-bubble/chat-avatar";
 import { useChatStateContext } from "~/contexts/chat-state-context";
 
 export function ChatHeader() {
-  const { chatState, dispatch } = useChatStateContext();
+  const chatState = useChatStateContext();
 
   const toggleFullScreen = () => {
-    dispatch({ type: "TOGGLE_FULLSCREEN" });
+    chatState.toggleFullscreen();
   };
 
   const handleEndConversation = () => {
-    dispatch({ type: "OPEN_END_DIALOG" });
+    chatState.openEndDialog();
   };
 
   const startNewConversation = () => {
@@ -25,7 +25,7 @@ export function ChatHeader() {
   };
 
   const resetChat = () => {
-    dispatch({ type: "RESET_CHAT" });
+    chatState.resetChat();
   };
 
   return (

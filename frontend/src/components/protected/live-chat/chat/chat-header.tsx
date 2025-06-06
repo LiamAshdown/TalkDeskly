@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/lib/interfaces";
+import { formatDate } from "date-fns";
 
 interface ChatHeaderProps {
   conversation: Conversation;
@@ -42,7 +43,7 @@ export default function ChatHeader({
             <p className="text-xs text-muted-foreground">
               {conversation?.status === "active"
                 ? "Online"
-                : "Last seen " + conversation?.updatedAt}
+                : "Last seen " + formatDate(conversation?.updatedAt, "MMM d, yyyy")}
             </p>
           </div>
         </div>

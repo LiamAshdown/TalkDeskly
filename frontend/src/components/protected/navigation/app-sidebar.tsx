@@ -30,18 +30,27 @@ import { cn } from "@/lib/utils";
 import NavItem from "@/components/protected/navigation/nav-item";
 import { useMiscStore } from "@/stores/misc";
 import { useAuthStore } from "@/stores/auth";
+import { authService } from "@/lib/api/services/auth";
+import { useNavigate } from "react-router-dom";
 
 export function AppSidebar() {
   const { theme, sidebarCollapsed, toggleTheme, toggleSidebar } =
     useMiscStore();
   const location = useLocation();
-  const { user, isSuperAdmin } = useAuthStore();
+  const { user, isSuperAdmin, isAdmin, logout } = useAuthStore();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // Add class to document on initial load
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, []);
+
+  const handleLogout = () => {
+    authService.logout();
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="relative">
@@ -98,7 +107,7 @@ export function AppSidebar() {
               label={t("sidebar.settings")}
               active={location.pathname.startsWith("/settings")}
               collapsed={sidebarCollapsed}
-              href="settings/inboxes"
+              href={isAdmin() ? "settings/inboxes" : "settings/account"}
             />
             <NavItem
               icon={theme === "dark" ? <Sun /> : <Moon />}
@@ -176,7 +185,10 @@ export function AppSidebar() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50">
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+                onClick={handleLogout}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>{t("sidebar.logOut")}</span>
               </DropdownMenuItem>

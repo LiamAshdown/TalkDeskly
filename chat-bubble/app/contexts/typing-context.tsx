@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import { useWebSocket } from "./websocket-context";
-import { useConversationStore } from "~/stores/conversation";
+import { useChatStateContext } from "./chat-state-context";
 
 interface TypingContextType {
   isTyping: boolean;
@@ -16,18 +16,18 @@ export function TypingProvider({ children }: { children: ReactNode }) {
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const { wsService } = useWebSocket();
-  const { conversation } = useConversationStore();
+  const chatState = useChatStateContext();
 
   const handleSetMessage = (message: string) => {
     setNewMessage(message);
 
-    if (conversation) {
+    if (chatState.conversation) {
       if (message.length > 0 && !isTyping) {
         setIsTyping(true);
-        wsService.startTyping(conversation.conversationId);
+        wsService.startTyping(chatState.conversation.conversationId);
       } else if (message.length === 0 && isTyping) {
         setIsTyping(false);
-        wsService.stopTyping(conversation.conversationId);
+        wsService.stopTyping(chatState.conversation.conversationId);
       }
     }
   };
@@ -35,10 +35,10 @@ export function TypingProvider({ children }: { children: ReactNode }) {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newMessage.trim() || !conversation) return;
+    if (!newMessage.trim() || !chatState.conversation) return;
 
-    wsService.sendMessage(conversation.conversationId, newMessage);
-    wsService.stopTyping(conversation.conversationId);
+    wsService.sendMessage(chatState.conversation.conversationId, newMessage);
+    wsService.stopTyping(chatState.conversation.conversationId);
     setNewMessage("");
   };
 

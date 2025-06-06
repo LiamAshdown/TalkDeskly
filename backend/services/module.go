@@ -2,6 +2,7 @@ package services
 
 import (
 	"live-chat-server/interfaces"
+	"live-chat-server/repositories"
 	"live-chat-server/storage"
 	"log"
 
@@ -39,5 +40,12 @@ func RegisterServices(container *dig.Container) {
 	// Register health service
 	if err := container.Provide(NewHealthService); err != nil {
 		log.Fatalf("Failed to provide health service: %v", err)
+	}
+
+	// Register audit service
+	if err := container.Provide(func(auditRepo repositories.AuditRepository, logger interfaces.Logger) AuditService {
+		return NewAuditService(auditRepo, logger)
+	}); err != nil {
+		log.Fatalf("Failed to provide audit service: %v", err)
 	}
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
+	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
@@ -81,7 +82,7 @@ func (h *InboxHandler) HandleGetInbox(c *fiber.Ctx) error {
 func (h *InboxHandler) HandleListInboxes(c *fiber.Ctx) error {
 	user := h.securityContext.GetAuthenticatedUser(c)
 
-	inboxes, err := h.repo.GetInboxesByCompanyID(*user.User.CompanyID)
+	inboxes, err := h.repo.GetInboxesForUser(user.User.ID)
 	if err != nil {
 		h.logger.Error("Failed to list inboxes", "error", err)
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_list_inboxes"), err)
@@ -166,7 +167,10 @@ func (h *InboxHandler) HandleCreateInbox(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err.Error())
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeInboxCreated, reloadedInbox)
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxCreated, &listeners.InboxPayload{
+		Inbox: reloadedInbox,
+		User:  user.User,
+	})
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "inbox_created"), reloadedInbox.ToResponse())
 }
@@ -282,9 +286,9 @@ func (h *InboxHandler) HandleUpdateInbox(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &types.InboxUpdatedPayload{
-		Inbox:          updatedInbox,
-		RemovedUserIDs: []string{},
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &listeners.InboxPayload{
+		Inbox: updatedInbox,
+		User:  user.User,
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_updated"), updatedInbox.ToResponse())
@@ -294,11 +298,19 @@ func (h *InboxHandler) HandleDeleteInbox(c *fiber.Ctx) error {
 	inboxID := c.Params("id")
 	user := h.securityContext.GetAuthenticatedUser(c)
 
+	inbox, err := h.repo.GetInboxByIDAndCompanyID(inboxID, *user.User.CompanyID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "inbox_not_found"), err)
+	}
+
 	if err := h.repo.DeleteInboxByIDAndCompanyID(inboxID, *user.User.CompanyID); err != nil {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_inbox"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeInboxDeleted, inboxID)
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxDeleted, &listeners.InboxPayload{
+		Inbox: inbox,
+		User:  user.User,
+	})
 
 	conversationIDs, err := h.conversationRepo.DeleteConversationsByInboxID(inboxID)
 	if err != nil {
@@ -351,9 +363,10 @@ func (h *InboxHandler) HandleUpdateInboxUsers(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_reload_inbox"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, map[string]interface{}{
-		"inbox":            updatedInbox.ToResponse(),
-		"removed_user_ids": removedUserIDs,
+	h.dispatcher.Dispatch(interfaces.EventTypeInboxUpdated, &listeners.InboxUpdatedPayload{
+		Inbox:          updatedInbox,
+		RemovedUserIDs: &removedUserIDs,
+		User:           user.User,
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "inbox_users_updated"), updatedInbox.ToResponse())

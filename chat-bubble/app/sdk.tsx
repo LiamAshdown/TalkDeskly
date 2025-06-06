@@ -42,7 +42,7 @@ if (typeof window !== "undefined") {
   // Auto-initialize in development
   if (import.meta.env.DEV) {
     init({
-      inboxId: "38b76778-6952-4801-a17b-d9d78fe9f6fa",
+      inboxId: "c0377c01-c2dc-4e79-80ee-98c914d22cd4",
       position: "bottom-right",
       primaryColor: "#dc0462",
       zIndex: 9999,

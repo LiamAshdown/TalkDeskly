@@ -2,6 +2,7 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
+	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/types"
@@ -94,7 +95,10 @@ func (h *ContactHandler) HandleCreateContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_create_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactCreated, &contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactCreated, &listeners.ContactCreatedPayload{
+		Contact: &contact,
+		User:    user.User,
+	})
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_created"), contact.ToResponse())
 }
@@ -126,7 +130,10 @@ func (h *ContactHandler) HandleUpdateContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_update_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactUpdated, contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactUpdated, &listeners.ContactUpdatedPayload{
+		Contact: contact,
+		User:    user.User,
+	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_updated"), contact.ToResponse())
 }
@@ -144,7 +151,10 @@ func (h *ContactHandler) HandleDeleteContact(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_delete_contact"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, &contact)
+	h.dispatcher.Dispatch(interfaces.EventTypeContactDeleted, &listeners.ContactDeletedPayload{
+		Contact: contact,
+		User:    user.User,
+	})
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "contact_deleted"), nil)
 }
@@ -177,9 +187,10 @@ func (h *ContactHandler) HandleCreateContactNote(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusNotFound, h.langContext.T(c, "contact_not_found"), err)
 	}
 
-	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, map[string]interface{}{
-		"note":    contactNote,
-		"contact": contact,
+	h.dispatcher.Dispatch(interfaces.EventTypeContactNoteCreated, &listeners.ContactNoteCreatedPayload{
+		Contact: contact,
+		User:    user.User,
+		Note:    &contactNote,
 	})
 
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "contact_note_created"), contactNote.ToResponse())

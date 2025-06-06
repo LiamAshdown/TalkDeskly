@@ -1,9 +1,9 @@
+import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { X, MessageSquare, ChevronLeft } from "lucide-react";
 import { useWebSocket } from "~/contexts/websocket-context";
 import { useChatStateContext } from "~/contexts/chat-state-context";
 import { PreChatForm } from "../pre-chat-form/pre-chat-form";
-import { useState } from "react";
 import {
   isWithinWorkingHours,
   getNextOpeningTime,
@@ -20,30 +20,30 @@ export function WelcomeScreen({
   isConnected = false,
   isLoading = false,
 }: WelcomeScreenProps) {
-  const {
-    chatState: { inboxData },
-    dispatch,
-  } = useChatStateContext();
+  const chatState = useChatStateContext();
   const { wsService } = useWebSocket();
   const [showPreChatForm, setShowPreChatForm] = useState(false);
 
   const resetChat = () => {
-    dispatch({ type: "RESET_CHAT" });
+    chatState.resetChat();
   };
 
   const startConversation = () => {
     // Check if pre-chat form is enabled
-    if (inboxData?.preChatForm && inboxData.preChatForm.enabled) {
+    if (
+      chatState.inboxData?.preChatForm &&
+      chatState.inboxData.preChatForm.enabled
+    ) {
       setShowPreChatForm(true);
     } else {
       // If no pre-chat form, start conversation directly
-      dispatch({ type: "START_CONVERSATION" });
+      chatState.startConversation();
       wsService.sendCreateConversation();
     }
   };
 
-  const isAvailable = isWithinWorkingHours(inboxData?.workingHours);
-  const nextOpeningTime = getNextOpeningTime(inboxData?.workingHours);
+  const isAvailable = isWithinWorkingHours(chatState.inboxData?.workingHours);
+  const nextOpeningTime = getNextOpeningTime(chatState.inboxData?.workingHours);
 
   return (
     <div className="flex flex-col h-full bg-background dark:bg-zinc-900">
@@ -88,7 +88,7 @@ export function WelcomeScreen({
           <>
             {!showPreChatForm ? (
               <WelcomeScreenHello
-                inboxData={inboxData!}
+                inboxData={chatState.inboxData!}
                 isAvailable={isAvailable}
                 nextOpeningTime={nextOpeningTime}
                 isConnected={isConnected}
@@ -96,7 +96,7 @@ export function WelcomeScreen({
               />
             ) : (
               <PreChatForm
-                formData={inboxData!.preChatForm!}
+                formData={chatState.inboxData!.preChatForm!}
                 onBack={() => setShowPreChatForm(false)}
               />
             )}

@@ -20,6 +20,7 @@ type InboxRepository interface {
 	DeleteInbox(id string) error
 	DeleteInboxByIDAndCompanyID(id string, companyID string) error
 	GetUsersForInbox(inboxID string) ([]models.User, error)
+	GetInboxesForUser(userID string) ([]models.Inbox, error)
 }
 
 type inboxRepository struct {
@@ -213,4 +214,15 @@ func (r *inboxRepository) DeleteInboxByIDAndCompanyID(id string, companyID strin
 
 		return tx.Delete(&models.Inbox{}, "id = ? AND company_id = ?", id, companyID).Error
 	})
+}
+
+func (r *inboxRepository) GetInboxesForUser(userID string) ([]models.Inbox, error) {
+	var inboxes []models.Inbox
+
+	// Query inboxes that are associated with the user through the inbox_users join table
+	err := r.db.Joins("JOIN inbox_users ON inbox_users.inbox_id = inboxes.id").
+		Where("inbox_users.user_id = ?", userID).
+		Find(&inboxes).Error
+
+	return inboxes, err
 }

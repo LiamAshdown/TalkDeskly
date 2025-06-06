@@ -1,4 +1,4 @@
-import { useConversationStore } from "~/stores/conversation";
+import { useChatStore } from "~/stores/chat-state";
 import type {
   ConversationSendMessagePayload,
   ConversationStartPayload,
@@ -28,21 +28,22 @@ export class ConversationHandler implements IWebSocketHandler {
 
   private handleConversationStart(message: WebSocketMessage): void {
     const payload = message.payload as ConversationStartPayload;
-    useConversationStore.getState().setConversation(payload);
+    useChatStore.getState().setConversation(payload);
   }
 
   private handleConversationEnd(message: WebSocketMessage): void {
     // Handle conversation end
     console.log("Conversation ended:", message);
+    useChatStore.getState().endConversation();
   }
 
   private handleConversationSendMessage(message: WebSocketMessage): void {
     const payload = message.payload as ConversationSendMessagePayload;
-    useConversationStore.getState().addMessage(payload as Message);
+    useChatStore.getState().addMessage(payload as Message);
   }
 
   private handleConversationGetById(message: WebSocketMessage): void {
     const payload = message.payload as ConversationUpdatePayload;
-    useConversationStore.getState().setConversation(payload);
+    useChatStore.getState().setConversation(payload);
   }
 }

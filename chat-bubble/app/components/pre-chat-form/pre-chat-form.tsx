@@ -13,7 +13,6 @@ import {
 } from "~/components/ui/select";
 import { useChatStateContext } from "~/contexts/chat-state-context";
 import { useWebSocket } from "~/contexts/websocket-context";
-import { useContactStore } from "~/stores/contact-store";
 import type { PreChatForm, PreChatFormField } from "~/types/inbox";
 
 interface PreChatFormProps {
@@ -22,140 +21,65 @@ interface PreChatFormProps {
 }
 
 export function PreChatForm({ formData, onBack }: PreChatFormProps) {
-  const { dispatch } = useChatStateContext();
+  const chatState = useChatStateContext();
   const { wsService } = useWebSocket();
-  const { contactId } = useContactStore();
-
   const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInputChange = (fieldId: string, value: string) => {
-    setFormValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
-
-    // Clear error when user types
-    if (formErrors[fieldId]) {
-      setFormErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldId];
-        return newErrors;
-      });
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-
-    formData.fields.forEach((field) => {
-      if (
-        field.required &&
-        (!formValues[field.id] || formValues[field.id].trim() === "")
-      ) {
-        errors[field.id] = "This field is required";
-      }
-
-      if (field.type === "email" && formValues[field.id]) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formValues[field.id])) {
-          errors[field.id] = "Please enter a valid email";
-        }
-      }
-    });
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Prepare form data to send to backend
-      const formSubmission = {
-        formData: formValues,
-        contactId,
-      };
-
-      // Start conversation with form data
-      await wsService.startConversation(formSubmission);
-
-      // Update chat state
-      dispatch({ type: "START_CONVERSATION" });
+      // Start the conversation with form data
+      chatState.startConversation();
+      wsService.startConversation({ formData: formValues });
     } catch (error) {
-      console.error("Failed to start conversation:", error);
+      console.error("Failed to submit pre-chat form:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Render the appropriate input field based on type
+  const handleInputChange = (fieldId: string, value: string) => {
+    setFormValues((prev) => ({ ...prev, [fieldId]: value }));
+  };
+
   const renderField = (field: PreChatFormField) => {
+    const isRequired = field.required;
+    const commonProps = {
+      required: isRequired,
+      value: formValues[field.id] || "",
+      onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => handleInputChange(field.id, e.target.value),
+    };
+
     switch (field.type) {
       case "text":
-        return (
-          <Input
-            id={field.id}
-            placeholder={field.placeholder}
-            value={formValues[field.id] || ""}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={formErrors[field.id] ? "border-red-500" : ""}
-          />
-        );
-
       case "email":
-        return (
-          <Input
-            id={field.id}
-            type="email"
-            placeholder={field.placeholder}
-            value={formValues[field.id] || ""}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={formErrors[field.id] ? "border-red-500" : ""}
-          />
-        );
-
       case "phone":
         return (
           <Input
-            id={field.id}
-            type="tel"
+            type={field.type}
             placeholder={field.placeholder}
-            value={formValues[field.id] || ""}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={formErrors[field.id] ? "border-red-500" : ""}
+            {...commonProps}
           />
         );
 
       case "textarea":
         return (
-          <Textarea
-            id={field.id}
-            placeholder={field.placeholder}
-            value={formValues[field.id] || ""}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={formErrors[field.id] ? "border-red-500" : ""}
-            rows={4}
-          />
+          <Textarea placeholder={field.placeholder} rows={3} {...commonProps} />
         );
 
       case "select":
         return (
           <Select
+            required={isRequired}
             value={formValues[field.id] || ""}
             onValueChange={(value) => handleInputChange(field.id, value)}
           >
-            <SelectTrigger
-              className={formErrors[field.id] ? "border-red-500" : ""}
-            >
+            <SelectTrigger>
               <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -169,57 +93,48 @@ export function PreChatForm({ formData, onBack }: PreChatFormProps) {
         );
 
       default:
-        return (
-          <Input
-            id={field.id}
-            placeholder={field.placeholder}
-            value={formValues[field.id] || ""}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={formErrors[field.id] ? "border-red-500" : ""}
-          />
-        );
+        return null;
     }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Form header with title & description */}
-      <div className="mb-6">
-        <h3 className="text-xl font-medium mb-2">{formData.title}</h3>
-        <p className="text-muted-foreground text-sm">{formData.description}</p>
+    <div className="flex flex-col h-full p-6">
+      <div className="flex items-center mb-6">
+        {onBack && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 mr-2"
+            onClick={onBack}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
+        <h2 className="text-lg font-semibold">
+          {formData.title || "Let's get started"}
+        </h2>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col flex-1"
-        autoComplete="off"
-      >
-        <div className="space-y-5 overflow-y-auto">
+      {formData.description && (
+        <p className="text-muted-foreground mb-6">{formData.description}</p>
+      )}
+
+      <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+        <div className="space-y-4 flex-1">
           {formData.fields.map((field) => (
             <div key={field.id} className="space-y-2">
-              <Label htmlFor={field.id} className="font-medium">
+              <Label htmlFor={field.id}>
                 {field.label}
-                {field.required && (
-                  <span className="text-destructive ml-1">*</span>
-                )}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
               </Label>
-              <div className="mt-1">{renderField(field)}</div>
-              {formErrors[field.id] && (
-                <p className="text-destructive text-xs">
-                  {formErrors[field.id]}
-                </p>
-              )}
+              {renderField(field)}
             </div>
           ))}
         </div>
 
-        <div className="mt-auto pt-6">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary hover:bg-primary-hover text-primary-foreground rounded-md font-medium"
-          >
-            {isSubmitting ? "Starting..." : "Start Chat"}
+        <div className="mt-6 pt-4 border-t">
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Starting conversation..." : "Start Conversation"}
           </Button>
         </div>
       </form>

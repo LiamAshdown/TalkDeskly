@@ -2,6 +2,7 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
+	"live-chat-server/listeners"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
 	"live-chat-server/utils"
@@ -31,9 +32,18 @@ type UserHandler struct {
 	logger          interfaces.Logger
 	i18n            interfaces.I18n
 	langContext     interfaces.LanguageContext
+	dispatcher      interfaces.Dispatcher
 }
 
-func NewUserHandler(userRepo repositories.UserRepository, companyRepo repositories.CompanyRepository, securityContext interfaces.SecurityContext, logger interfaces.Logger, i18n interfaces.I18n, langContext interfaces.LanguageContext) *UserHandler {
+func NewUserHandler(
+	userRepo repositories.UserRepository,
+	companyRepo repositories.CompanyRepository,
+	securityContext interfaces.SecurityContext,
+	logger interfaces.Logger,
+	i18n interfaces.I18n,
+	langContext interfaces.LanguageContext,
+	dispatcher interfaces.Dispatcher,
+) *UserHandler {
 	// Create a named logger for the user handler
 	handlerLogger := logger.Named("user_handler")
 
@@ -44,6 +54,7 @@ func NewUserHandler(userRepo repositories.UserRepository, companyRepo repositori
 		logger:          handlerLogger,
 		i18n:            i18n,
 		langContext:     langContext,
+		dispatcher:      dispatcher,
 	}
 }
 
@@ -142,6 +153,26 @@ func (h *UserHandler) CreateCompanyUser(c *fiber.Ctx) error {
 		"email":   createdUser.Email,
 	})
 
+	// Dispatch user created event - the UserListener will handle audit logging
+	go func() {
+		if user.User.CompanyID != nil {
+			auditMetadata := map[string]interface{}{
+				"email":      createdUser.Email,
+				"first_name": createdUser.FirstName,
+				"last_name":  createdUser.LastName,
+				"role":       createdUser.Role,
+			}
+
+			payload := &listeners.UserCreatedPayload{
+				User:     createdUser,
+				ActorID:  user.User.ID,
+				Metadata: auditMetadata,
+			}
+
+			h.dispatcher.Dispatch(interfaces.EventTypeUserCreated, payload)
+		}
+	}()
+
 	return utils.SuccessResponse(c, fiber.StatusCreated, h.langContext.T(c, "user_created"), createdUser.ToResponse())
 }
 
@@ -188,6 +219,12 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 		}
 	}
 
+	// Capture the original values before updating
+	originalEmail := userToUpdate.Email
+	originalFirstName := userToUpdate.FirstName
+	originalLastName := userToUpdate.LastName
+	originalRole := userToUpdate.Role
+
 	userToUpdate.FirstName = input.FirstName
 	userToUpdate.LastName = input.LastName
 	userToUpdate.Email = input.Email
@@ -204,6 +241,40 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
 	h.logger.Info("User updated", fiber.Map{
 		"user_id": userToUpdate.ID,
 	})
+
+	// Dispatch user updated event - the UserListener will handle audit logging
+	go func() {
+		if user.User.CompanyID != nil {
+			changes := map[string]interface{}{
+				"email_changed":      input.Email != originalEmail,
+				"first_name_changed": input.FirstName != originalFirstName,
+				"last_name_changed":  input.LastName != originalLastName,
+				"role_changed":       input.Role != originalRole,
+			}
+
+			auditMetadata := map[string]interface{}{
+				"email":      userToUpdate.Email,
+				"first_name": userToUpdate.FirstName,
+				"last_name":  userToUpdate.LastName,
+				"role":       userToUpdate.Role,
+				"original": map[string]interface{}{
+					"email":      originalEmail,
+					"first_name": originalFirstName,
+					"last_name":  originalLastName,
+					"role":       originalRole,
+				},
+			}
+
+			payload := &listeners.UserUpdatedPayload{
+				User:     userToUpdate,
+				ActorID:  user.User.ID,
+				Changes:  changes,
+				Metadata: auditMetadata,
+			}
+
+			h.dispatcher.Dispatch(interfaces.EventTypeUserUpdated, payload)
+		}
+	}()
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "user_updated"), userToUpdate.ToResponse())
 }

@@ -1,8 +1,12 @@
-import { useReducer } from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { produce } from "immer";
 import type { Inbox } from "~/types/inbox";
+import type { Conversation, Message } from "~/types/conversation";
 
-// Chat state reducer types
+// Chat state types
 export type ChatState = {
+  // UI State
   isOpen: boolean;
   isFullScreen: boolean;
   isConversationEnded: boolean;
@@ -10,28 +14,52 @@ export type ChatState = {
   conversationStarted: boolean;
   unreadCount: number;
   hasNewMessage: boolean;
-  inboxData: Inbox | null;
-  isInboxLoading: boolean;
+
+  // Connection State
   isConnected: boolean;
   connectionError: string | null;
+
+  // Inbox State
+  inboxData: Inbox | null;
+  isInboxLoading: boolean;
+
+  // Conversation State
+  conversation: Conversation | null;
+  conversationId: string | null;
 };
 
-export type ChatAction =
-  | { type: "TOGGLE_CHAT"; payload?: boolean }
-  | { type: "TOGGLE_FULLSCREEN" }
-  | { type: "OPEN_END_DIALOG" }
-  | { type: "CLOSE_END_DIALOG" }
-  | { type: "RESET_CHAT" }
-  | { type: "START_CONVERSATION" }
-  | { type: "END_CONVERSATION" }
-  | { type: "UPDATE_UNREAD"; count: number }
-  | { type: "NEW_MESSAGE"; hasNew: boolean }
-  | { type: "SET_INBOX_DATA"; data: Inbox }
-  | { type: "SET_INBOX_LOADING"; isLoading: boolean }
-  | { type: "SET_CONNECTED"; isConnected: boolean }
-  | { type: "SET_CONNECTION_ERROR"; error: string };
+export interface ChatActions {
+  // UI Actions
+  toggleChat: (isOpen?: boolean) => void;
+  toggleFullscreen: () => void;
+  openEndDialog: () => void;
+  closeEndDialog: () => void;
+  resetChat: () => void;
+  startConversation: () => void;
+  endConversation: () => void;
+  updateUnread: (count: number) => void;
+  setNewMessage: (hasNew: boolean) => void;
+
+  // Connection Actions
+  setConnected: (isConnected: boolean) => void;
+  setConnectionError: (error: string) => void;
+
+  // Inbox Actions
+  setInboxData: (data: Inbox) => void;
+  setInboxLoading: (isLoading: boolean) => void;
+
+  // Conversation Actions
+  setConversation: (conversation: Conversation) => void;
+  setConversationId: (conversationId: string) => void;
+  setConversationStatus: (status: string) => void;
+  setConversationMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
+}
+
+export type ChatStore = ChatState & ChatActions;
 
 export const initialChatState: ChatState = {
+  // UI State
   isOpen: false,
   isFullScreen: false,
   isConversationEnded: false,
@@ -39,66 +67,183 @@ export const initialChatState: ChatState = {
   conversationStarted: false,
   unreadCount: 1,
   hasNewMessage: true,
-  inboxData: null,
-  isInboxLoading: true,
+
+  // Connection State
   isConnected: false,
   connectionError: null,
+
+  // Inbox State
+  inboxData: null,
+  isInboxLoading: true,
+
+  // Conversation State
+  conversation: null,
+  conversationId: null,
 };
 
-export function chatReducer(state: ChatState, action: ChatAction): ChatState {
-  switch (action.type) {
-    case "TOGGLE_CHAT":
-      return {
-        ...state,
-        isOpen: action.payload !== undefined ? action.payload : !state.isOpen,
-        unreadCount: action.payload ? 0 : state.unreadCount,
-        hasNewMessage: action.payload ? false : state.hasNewMessage,
-      };
-    case "TOGGLE_FULLSCREEN":
-      return { ...state, isFullScreen: !state.isFullScreen };
-    case "OPEN_END_DIALOG":
-      return { ...state, showEndDialog: true };
-    case "CLOSE_END_DIALOG":
-      return { ...state, showEndDialog: false };
-    case "START_CONVERSATION":
-      return { ...state, conversationStarted: true };
-    case "END_CONVERSATION":
-      return {
-        ...state,
-        showEndDialog: false,
-        isOpen: false,
-        conversationStarted: false,
-        isConversationEnded: false,
-      };
-    case "RESET_CHAT":
-      return {
-        ...state,
-        isOpen: false,
-        conversationStarted: false,
-        isConversationEnded: false,
-      };
-    case "UPDATE_UNREAD":
-      return { ...state, unreadCount: action.count };
-    case "NEW_MESSAGE":
-      return { ...state, hasNewMessage: action.hasNew };
-    case "SET_INBOX_DATA":
-      return { ...state, inboxData: action.data };
-    case "SET_INBOX_LOADING":
-      return { ...state, isInboxLoading: action.isLoading };
-    case "SET_CONNECTED":
-      return { ...state, isConnected: action.isConnected };
-    case "SET_CONNECTION_ERROR":
-      return {
-        ...state,
-        isConnected: action.error ? false : state.isConnected,
-        connectionError: action.error || null,
-      };
-    default:
-      return state;
-  }
-}
+export const useChatStore = create<ChatStore>()(
+  persist(
+    (set) => ({
+      ...initialChatState,
 
-// Custom hook to use the chat state
-export function useChatState() {
-  return useReducer(chatReducer, initialChatState);
-}
+      // UI Actions
+      toggleChat: (isOpen?: boolean) =>
+        set(
+          produce((state: ChatStore) => {
+            state.isOpen = isOpen !== undefined ? isOpen : !state.isOpen;
+            if (isOpen) {
+              state.unreadCount = 0;
+              state.hasNewMessage = false;
+            }
+          })
+        ),
+
+      toggleFullscreen: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.isFullScreen = !state.isFullScreen;
+          })
+        ),
+
+      openEndDialog: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.showEndDialog = true;
+          })
+        ),
+
+      closeEndDialog: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.showEndDialog = false;
+          })
+        ),
+
+      resetChat: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.isOpen = false;
+            state.conversationStarted = false;
+            state.isConversationEnded = false;
+            state.conversation = null;
+            state.conversationId = null;
+          })
+        ),
+
+      startConversation: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.conversationStarted = true;
+          })
+        ),
+
+      endConversation: () =>
+        set(
+          produce((state: ChatStore) => {
+            state.showEndDialog = false;
+            state.isOpen = false;
+            state.conversationStarted = false;
+            state.isConversationEnded = false;
+            state.conversation = null;
+            state.conversationId = null;
+          })
+        ),
+
+      updateUnread: (count: number) =>
+        set(
+          produce((state: ChatStore) => {
+            state.unreadCount = count;
+          })
+        ),
+
+      setNewMessage: (hasNew: boolean) =>
+        set(
+          produce((state: ChatStore) => {
+            state.hasNewMessage = hasNew;
+          })
+        ),
+
+      // Connection Actions
+      setConnected: (isConnected: boolean) =>
+        set(
+          produce((state: ChatStore) => {
+            state.isConnected = isConnected;
+          })
+        ),
+
+      setConnectionError: (error: string) =>
+        set(
+          produce((state: ChatStore) => {
+            state.connectionError = error || null;
+            if (error) {
+              state.isConnected = false;
+            }
+          })
+        ),
+
+      // Inbox Actions
+      setInboxData: (data: Inbox) =>
+        set(
+          produce((state: ChatStore) => {
+            state.inboxData = data;
+          })
+        ),
+
+      setInboxLoading: (isLoading: boolean) =>
+        set(
+          produce((state: ChatStore) => {
+            state.isInboxLoading = isLoading;
+          })
+        ),
+
+      // Conversation Actions
+      setConversation: (conversation: Conversation) =>
+        set(
+          produce((state: ChatStore) => {
+            state.conversation = conversation;
+            state.conversationId = conversation.conversationId;
+          })
+        ),
+
+      setConversationId: (conversationId: string) =>
+        set(
+          produce((state: ChatStore) => {
+            state.conversationId = conversationId;
+          })
+        ),
+
+      setConversationStatus: (status: string) =>
+        set(
+          produce((state: ChatStore) => {
+            if (state.conversation) {
+              state.conversation.status = status;
+            }
+          })
+        ),
+
+      setConversationMessages: (messages: Message[]) =>
+        set(
+          produce((state: ChatStore) => {
+            if (state.conversation) {
+              state.conversation.messages = messages;
+            }
+          })
+        ),
+
+      addMessage: (message: Message) =>
+        set(
+          produce((state: ChatStore) => {
+            if (state.conversation) {
+              state.conversation.messages.push(message);
+            }
+          })
+        ),
+    }),
+    {
+      name: "chat-storage",
+      partialize: (state) => ({
+        conversationId: state.conversationId,
+      }),
+    }
+  )
+);

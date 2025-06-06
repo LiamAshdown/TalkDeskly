@@ -28,7 +28,28 @@ func ConnectDatabase(dsn string) {
 		&CompanyInvite{},
 		&CannedResponse{},
 		&UserNotification{},
+		&AuditLog{},
 	)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func RunMigrations() {
+	err := DB.AutoMigrate(
+		&User{},
+		&Company{},
+		&Conversation{},
+		&Contact{},
+		&Inbox{},
+		&Message{},
+		&CannedResponse{},
+		&NotificationSettings{},
+		&UserNotification{},
+		&ContactNote{},
+		&AuditLog{},
+	)
+
 	if err != nil {
 		panic(err)
 	}

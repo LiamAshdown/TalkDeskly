@@ -184,6 +184,18 @@ func (h *ConversationHandler) HandleAssignConversation(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, err.Error(), nil)
 	}
 
+	agent, err := h.userRepo.GetUserByID(payload.AssignedToID)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_get_agent"), err)
+	}
+
+	// This could be inside the assign conversation command
+	// But need to abstract the send message logic outside of this method
+	h.SendSystemMessage(
+		conversation.(*models.Conversation),
+		fmt.Sprintf("Agent %s has been assigned to this conversation.", agent.GetFullName()),
+	)
+
 	h.dispatcher.Dispatch(interfaces.EventTypeConversationAssign, conversation)
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_assigned"), conversation.(*models.Conversation).ToPayload())

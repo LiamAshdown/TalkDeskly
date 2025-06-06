@@ -1,6 +1,7 @@
 package listeners
 
 import (
+	"fmt"
 	"live-chat-server/interfaces"
 	"live-chat-server/models"
 	"live-chat-server/repositories"
@@ -31,6 +32,7 @@ type ConversationListener struct {
 	logger              interfaces.Logger
 	notificationService interfaces.NotificationService
 	commandFactory      interfaces.CommandFactory
+	auditService        interfaces.AuditService
 }
 
 // ConversationListenerParams contains dependencies for ConversationListener
@@ -43,6 +45,7 @@ type ConversationListenerParams struct {
 	Logger              interfaces.Logger
 	NotificationService interfaces.NotificationService
 	CommandFactory      interfaces.CommandFactory
+	AuditService        interfaces.AuditService
 }
 
 func NewConversationListener(params ConversationListenerParams) *ConversationListener {
@@ -54,6 +57,7 @@ func NewConversationListener(params ConversationListenerParams) *ConversationLis
 		logger:              params.Logger,
 		notificationService: params.NotificationService,
 		commandFactory:      params.CommandFactory,
+		auditService:        params.AuditService,
 	}
 	listener.subscribe()
 	return listener
@@ -142,6 +146,17 @@ func (l *ConversationListener) HandleConversationSendMessage(event interfaces.Ev
 		}
 
 		l.commandFactory.NewHandleMessageNotificationCommand(conversation, populatedMessage).Handle()
+
+		if populatedMessage.SenderType == models.SenderTypeAgent {
+			l.auditService.LogUserAction(
+				*populatedMessage.SenderID,
+				string(models.AuditActionMessageSend),
+				"message",
+				populatedMessage.ID,
+				fmt.Sprintf("Sent message: %s", populatedMessage.Content),
+				nil,
+			)
+		}
 
 		// If the message is private, then only broadcast the message to agent conversation
 		if internalMessage.Private {

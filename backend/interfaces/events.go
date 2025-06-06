@@ -28,6 +28,19 @@ const (
 	EventTypeInboxCreated EventType = "inbox_created"
 	EventTypeInboxDeleted EventType = "inbox_deleted"
 
+	// User events
+	EventTypeUserCreated   EventType = "user_created"
+	EventTypeUserUpdated   EventType = "user_updated"
+	EventTypeUserDeleted   EventType = "user_deleted"
+	EventTypeUserLogin     EventType = "user_login"
+	EventTypeUserLogout    EventType = "user_logout"
+	EventTypeUserLoginFail EventType = "user_login_fail"
+
+	// Auth events
+	EventTypeAuthLogin     EventType = "auth_login"
+	EventTypeAuthLogout    EventType = "auth_logout"
+	EventTypeAuthLoginFail EventType = "auth_login_fail"
+
 	// Error events
 	EventTypeError EventType = "connection_error"
 )

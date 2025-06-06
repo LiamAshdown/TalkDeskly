@@ -47,6 +47,7 @@ func SetupRoutesWithDI(params DIParams) {
 
 	authGroup := apiGroup.Group("/auth")
 	authGroup.Post("/login", params.AuthHandler.Login)
+	authGroup.Post("/logout", middleware.Auth(), params.AuthHandler.Logout)
 
 	wsGroup := app.Group("/ws")
 

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"live-chat-server/interfaces"
+	"live-chat-server/listeners"
 	"live-chat-server/repositories"
 	"live-chat-server/utils"
 
@@ -13,14 +14,16 @@ type AuthHandler struct {
 	userRepo        repositories.UserRepository
 	logger          interfaces.Logger
 	langContext     interfaces.LanguageContext
+	dispatcher      interfaces.Dispatcher
 }
 
-func NewAuthHandler(securityContext interfaces.SecurityContext, userRepo repositories.UserRepository, logger interfaces.Logger, langContext interfaces.LanguageContext) *AuthHandler {
+func NewAuthHandler(securityContext interfaces.SecurityContext, userRepo repositories.UserRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, dispatcher interfaces.Dispatcher) *AuthHandler {
 	return &AuthHandler{
 		securityContext: securityContext,
 		userRepo:        userRepo,
 		logger:          logger,
 		langContext:     langContext,
+		dispatcher:      dispatcher,
 	}
 }
 
@@ -48,8 +51,22 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, h.langContext.T(c, "failed_to_generate_token"), err)
 	}
 
+	h.dispatcher.Dispatch(interfaces.EventTypeAuthLogin, &listeners.AuthLoginPayload{
+		UserID: user.ID,
+	})
+
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "login_success"), fiber.Map{
 		"token": token,
 		"user":  user.ToResponse(),
 	})
+}
+
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	user := h.securityContext.GetAuthenticatedUser(c)
+
+	h.dispatcher.Dispatch(interfaces.EventTypeAuthLogout, &listeners.AuthLogoutPayload{
+		UserID: user.User.ID,
+	})
+
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "logout_success"), nil)
 }

@@ -17,7 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
-import { useConversationStore } from "~/stores/conversation";
 import { useContactStore } from "~/stores/contact-store";
 import { TypingProvider } from "~/contexts/typing-context";
 import {
@@ -30,9 +29,7 @@ import { useConfig } from "~/stores/config-context";
 import { ThemeProvider } from "~/contexts/theme-provider";
 
 function LiveChatWidgetContent() {
-  const { conversation, endConversation, conversationId } =
-    useConversationStore();
-  const { chatState, dispatch } = useChatStateContext();
+  const chatState = useChatStateContext();
   const { wsService } = useWebSocket();
   const contactId = useContactStore((state) => state.contactId);
   const { config } = useConfig();
@@ -41,14 +38,14 @@ function LiveChatWidgetContent() {
 
   const handleRetryConnection = () => {
     // Clear the error first
-    dispatch({ type: "SET_CONNECTION_ERROR", error: "" });
+    chatState.setConnectionError("");
 
     // Reconnect
     wsService.disconnect();
     wsServiceConnected.current = false;
 
     // Reset connection state
-    dispatch({ type: "SET_CONNECTED", isConnected: false });
+    chatState.setConnected(false);
 
     // Attempt to reconnect
     wsService.connect(config.baseUrl!, contactId, config.inboxId);
@@ -62,28 +59,26 @@ function LiveChatWidgetContent() {
         wsService.setUserId(message.payload.userId);
 
         // Clear any existing connection error
-        dispatch({ type: "SET_CONNECTION_ERROR", error: "" });
+        chatState.setConnectionError("");
 
-        dispatch({ type: "SET_INBOX_LOADING", isLoading: true });
+        chatState.setInboxLoading(true);
         try {
           const response = await inboxService.getInbox(wsService.getInboxId()!);
-          dispatch({ type: "SET_INBOX_DATA", data: response.data });
+          chatState.setInboxData(response.data);
 
-          dispatch({ type: "SET_CONNECTED", isConnected: true });
+          chatState.setConnected(true);
         } catch (error) {
           console.error("Failed to load inbox data:", error);
         } finally {
-          dispatch({ type: "SET_INBOX_LOADING", isLoading: false });
+          chatState.setInboxLoading(false);
         }
       }
     );
+
     wsService.registerHandler(
       "connection_error",
       (message: WebSocketMessage) => {
-        dispatch({
-          type: "SET_CONNECTION_ERROR",
-          error: message.payload.message,
-        });
+        chatState.setConnectionError(message.payload.message);
       }
     );
 
@@ -104,29 +99,31 @@ function LiveChatWidgetContent() {
   // Reset unread count when chat is opened
   useEffect(() => {
     if (chatState.isOpen) {
-      dispatch({ type: "UPDATE_UNREAD", count: 0 });
-      dispatch({ type: "NEW_MESSAGE", hasNew: false });
+      chatState.updateUnread(0);
+      chatState.setNewMessage(false);
     }
 
-    if (conversationId) {
-      wsService.getConversationById(conversationId);
-      dispatch({ type: "START_CONVERSATION" });
+    if (chatState.conversationId) {
+      wsService.getConversationById(chatState.conversationId);
+      chatState.startConversation();
     }
   }, [chatState.isOpen]);
 
   useEffect(() => {
     // If the inboxId has changed, we need to close the conversation
-    if (conversationId && config.inboxId !== conversation?.inboxId) {
-      wsService.closeConversation(conversationId);
-      endConversation();
-      dispatch({ type: "END_CONVERSATION" });
+    if (
+      chatState.conversation &&
+      config.inboxId !== chatState.conversation?.inboxId
+    ) {
+      wsService.closeConversation(chatState.conversation.conversationId);
+
+      chatState.endConversation();
     }
-  }, [config.inboxId, conversation]);
+  }, [config.inboxId, chatState.conversation]);
 
   const confirmEndConversation = () => {
-    wsService.closeConversation(conversation?.conversationId || "");
-    endConversation();
-    dispatch({ type: "END_CONVERSATION" });
+    wsService.closeConversation(chatState.conversation?.conversationId || "");
+    chatState.endConversation();
   };
 
   return (
@@ -177,7 +174,7 @@ function LiveChatWidgetContent() {
               }}
             >
               <Button
-                onClick={() => dispatch({ type: "TOGGLE_CHAT", payload: true })}
+                onClick={() => chatState.toggleChat(true)}
                 className={cn(
                   "h-18 w-18 rounded-full shadow-lg flex items-center justify-center text-primary-foreground overflow-hidden",
                   chatState.connectionError
@@ -275,7 +272,7 @@ function LiveChatWidgetContent() {
       <AlertDialog
         open={chatState.showEndDialog}
         onOpenChange={(open) =>
-          dispatch({ type: open ? "OPEN_END_DIALOG" : "CLOSE_END_DIALOG" })
+          open ? chatState.openEndDialog() : chatState.closeEndDialog()
         }
       >
         <AlertDialogContent className="dark:bg-zinc-800 border-0">

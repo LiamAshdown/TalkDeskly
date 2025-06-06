@@ -1,24 +1,17 @@
-import { createContext, useContext, useReducer } from "react";
-import type { ReactNode, Dispatch } from "react";
-import {
-  chatReducer,
-  initialChatState,
-  type ChatState,
-  type ChatAction,
-} from "~/stores/chat-state";
+import { createContext, useContext } from "react";
+import type { ReactNode } from "react";
+import { useChatStore } from "~/stores/chat-state";
+import type { ChatStore } from "~/stores/chat-state";
 
-interface ChatStateContextType {
-  chatState: ChatState;
-  dispatch: Dispatch<ChatAction>;
-}
+interface ChatStateContextType extends ChatStore {}
 
 const ChatStateContext = createContext<ChatStateContextType | null>(null);
 
 export function ChatStateProvider({ children }: { children: ReactNode }) {
-  const [chatState, dispatch] = useReducer(chatReducer, initialChatState);
+  const store = useChatStore();
 
   return (
-    <ChatStateContext.Provider value={{ chatState, dispatch }}>
+    <ChatStateContext.Provider value={store}>
       {children}
     </ChatStateContext.Provider>
   );
@@ -33,3 +26,6 @@ export function useChatStateContext() {
   }
   return context;
 }
+
+// Export the store directly for use outside React context (like websocket handlers)
+export { useChatStore };
