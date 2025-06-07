@@ -11,7 +11,7 @@ import i18n from "@/lib/i18n";
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:6721/api",
+  baseURL: import.meta.env.DEV ? "http://localhost:6721/api" : "/api",
   headers: {
     "Content-Type": "application/json",
   },

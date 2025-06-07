@@ -5,7 +5,7 @@ import {
 } from "~/lib/utils/string-transforms";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:6721/api",
+  baseURL: import.meta.env.DEV ? "http://localhost:6721/api" : "/api",
   headers: {
     "Content-Type": "application/json",
   },
