@@ -48,8 +48,10 @@ import {
 } from "recharts";
 import { superAdminService } from "@/lib/api/services/superadmin";
 import { SuperAdminStats } from "@/lib/interfaces";
+import { useTranslation } from "react-i18next";
 
 export default function SuperAdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<SuperAdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export default function SuperAdminDashboard() {
         const data = await superAdminService.getStats();
         setStats(data);
       } catch (err) {
-        setError("Failed to load dashboard statistics");
+        setError(t("superadmin.dashboard.errors.loadFailed"));
         console.error("Failed to fetch superadmin stats:", err);
       } finally {
         setLoading(false);
@@ -135,7 +137,9 @@ export default function SuperAdminDashboard() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center gap-2 text-red-800 dark:text-red-400">
             <AlertCircle className="h-5 w-5" />
-            <span className="font-medium">Error</span>
+            <span className="font-medium">
+              {t("superadmin.dashboard.errors.error")}
+            </span>
           </div>
           <p className="text-red-700 dark:text-red-300 mt-1">{error}</p>
         </div>
@@ -149,10 +153,10 @@ export default function SuperAdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Analytics Dashboard
+            {t("superadmin.dashboard.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Comprehensive insights into your TalkDeskly platform
+            {t("superadmin.dashboard.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -169,7 +173,7 @@ export default function SuperAdminDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Total Users
+              {t("superadmin.dashboard.metrics.totalUsers")}
             </CardTitle>
             <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
@@ -184,7 +188,9 @@ export default function SuperAdminDashboard() {
                 <div className="flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
                   <span className="text-xs text-green-600 dark:text-green-400">
-                    +{stats?.userGrowthRate.toFixed(1)}% this week
+                    {t("superadmin.dashboard.metrics.userGrowthRate", {
+                      rate: stats?.userGrowthRate.toFixed(1),
+                    })}
                   </span>
                 </div>
               </>
@@ -196,7 +202,7 @@ export default function SuperAdminDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Companies
+              {t("superadmin.dashboard.metrics.companies")}
             </CardTitle>
             <Building className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
@@ -220,7 +226,7 @@ export default function SuperAdminDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Active Users
+              {t("superadmin.dashboard.metrics.activeUsers")}
             </CardTitle>
             <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>

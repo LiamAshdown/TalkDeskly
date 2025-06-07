@@ -57,4 +57,10 @@ func RegisterRepositories(container *dig.Container) {
 	}); err != nil {
 		log.Fatalf("Failed to provide audit repository: %v", err)
 	}
+
+	if err := container.Provide(func(db *gorm.DB) AnalyticsRepository {
+		return NewAnalyticsRepository(db)
+	}); err != nil {
+		log.Fatalf("Failed to provide analytics repository: %v", err)
+	}
 }

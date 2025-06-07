@@ -54,6 +54,7 @@ export interface UpdateConfigRequest {
   defaultLanguage?: string;
   supportedLanguages?: string[];
   applicationName?: string;
+  enableRegistration?: string;
 }
 
 export interface SystemConfig {
@@ -73,6 +74,7 @@ export interface SystemConfig {
   defaultLanguage: string;
   supportedLanguages: string[];
   applicationName: string;
+  enableRegistration: string;
 }
 
 export interface SystemMetric {

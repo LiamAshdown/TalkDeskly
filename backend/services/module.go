@@ -48,4 +48,11 @@ func RegisterServices(container *dig.Container) {
 	}); err != nil {
 		log.Fatalf("Failed to provide audit service: %v", err)
 	}
+
+	// Register analytics service
+	if err := container.Provide(func(analyticsRepo repositories.AnalyticsRepository) AnalyticsService {
+		return NewAnalyticsService(analyticsRepo)
+	}); err != nil {
+		log.Fatalf("Failed to provide analytics service: %v", err)
+	}
 }

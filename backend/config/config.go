@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -24,7 +26,7 @@ const (
 	DefaultLanguage           = "en"
 	DefaultSupportedLanguages = "en"
 	DefaultApplicationName    = "TalkDeskly"
-	ConfigFileName            = "config.json"
+	ConfigFileName            = "storage/config.json"
 )
 
 // Config represents the application configuration structure
@@ -56,7 +58,9 @@ type Config struct {
 	SupportedLanguages []string
 
 	// Application Configuration
-	ApplicationName string
+	ApplicationName    string
+	EnableRegistration string
+	Version            string
 }
 
 // JSONConfig represents the JSON configuration file structure
@@ -89,7 +93,9 @@ type JSONConfig struct {
 	SupportedLanguages *string `json:"supported_languages,omitempty"`
 
 	// Application Configuration
-	ApplicationName *string `json:"application_name,omitempty"`
+	ApplicationName    *string `json:"application_name,omitempty"`
+	EnableRegistration *string `json:"enable_registration,omitempty"`
+	Version            *string `json:"version,omitempty"`
 }
 
 // Global configuration instance
@@ -155,7 +161,9 @@ func loadFromEnv() Config {
 		SupportedLanguages: getSupportedLanguages(getEnv("SUPPORTED_LANGUAGES", DefaultSupportedLanguages)),
 
 		// Application Configuration
-		ApplicationName: getEnv("APPLICATION_NAME", DefaultApplicationName),
+		ApplicationName:    getEnv("APPLICATION_NAME", DefaultApplicationName),
+		EnableRegistration: getEnv("ENABLE_REGISTRATION", "false"),
+		Version:            getVersionWithFallback(),
 	}
 }
 
@@ -243,6 +251,14 @@ func mergeJSONConfig(base Config, jsonConfig *JSONConfig) Config {
 	// Application Configuration
 	if jsonConfig.ApplicationName != nil {
 		base.ApplicationName = *jsonConfig.ApplicationName
+	}
+
+	if jsonConfig.EnableRegistration != nil {
+		base.EnableRegistration = *jsonConfig.EnableRegistration
+	}
+
+	if jsonConfig.Version != nil {
+		base.Version = *jsonConfig.Version
 	}
 
 	return base
@@ -335,6 +351,20 @@ func SetApplicationName(name string) error {
 	return setConfigValue("application_name", name)
 }
 
+// SetEnableRegistration updates the enable registration in JSON config and reloads
+func SetEnableRegistration(enable string) error {
+	return setConfigValue("enable_registration", enable)
+}
+
+// SetVersion updates the version in JSON config and reloads
+func SetVersion(version string) error {
+	return setConfigValue("version", version)
+}
+
+func IsRegistrationEnabled() bool {
+	return App.EnableRegistration == "true"
+}
+
 // SaveCurrentConfig saves the current in-memory configuration to JSON file
 func SaveCurrentConfig() error {
 	return saveConfigToJSON(App)
@@ -386,6 +416,10 @@ func setConfigValue(key, value string) error {
 		jsonConfig.SupportedLanguages = &value
 	case "application_name":
 		jsonConfig.ApplicationName = &value
+	case "enable_registration":
+		jsonConfig.EnableRegistration = &value
+	case "version":
+		jsonConfig.Version = &value
 	default:
 		return os.ErrInvalid
 	}
@@ -403,22 +437,24 @@ func setConfigValue(key, value string) error {
 // saveConfigToJSON converts the current Config to JSONConfig and saves it
 func saveConfigToJSON(config Config) error {
 	jsonConfig := &JSONConfig{
-		Port:            &config.Port,
-		BaseURL:         &config.BaseURL,
-		FrontendURL:     &config.FrontendURL,
-		Environment:     &config.Environment,
-		LogLevel:        &config.LogLevel,
-		DatabaseDSN:     &config.DatabaseDSN,
-		RedisAddr:       &config.RedisAddr,
-		JwtSecret:       &config.JwtSecret,
-		EmailProvider:   &config.EmailProvider,
-		EmailHost:       &config.EmailHost,
-		EmailPort:       &config.EmailPort,
-		EmailUsername:   &config.EmailUsername,
-		EmailPassword:   &config.EmailPassword,
-		EmailFrom:       &config.EmailFrom,
-		DefaultLanguage: &config.DefaultLanguage,
-		ApplicationName: &config.ApplicationName,
+		Port:               &config.Port,
+		BaseURL:            &config.BaseURL,
+		FrontendURL:        &config.FrontendURL,
+		Environment:        &config.Environment,
+		LogLevel:           &config.LogLevel,
+		DatabaseDSN:        &config.DatabaseDSN,
+		RedisAddr:          &config.RedisAddr,
+		JwtSecret:          &config.JwtSecret,
+		EmailProvider:      &config.EmailProvider,
+		EmailHost:          &config.EmailHost,
+		EmailPort:          &config.EmailPort,
+		EmailUsername:      &config.EmailUsername,
+		EmailPassword:      &config.EmailPassword,
+		EmailFrom:          &config.EmailFrom,
+		DefaultLanguage:    &config.DefaultLanguage,
+		ApplicationName:    &config.ApplicationName,
+		EnableRegistration: &config.EnableRegistration,
+		Version:            &config.Version,
 	}
 
 	// Convert supported languages back to comma-separated string
@@ -430,6 +466,11 @@ func saveConfigToJSON(config Config) error {
 
 // saveJSONConfigToFile writes JSONConfig to the config file
 func saveJSONConfigToFile(jsonConfig *JSONConfig) error {
+	// Ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(ConfigFileName), 0755); err != nil {
+		return err
+	}
+
 	file, err := os.Create(ConfigFileName)
 	if err != nil {
 		return err
@@ -468,4 +509,30 @@ func getRedisAddr(url string) string {
 // getSupportedLanguages parses comma-separated language list
 func getSupportedLanguages(languages string) []string {
 	return strings.Split(languages, ",")
+}
+
+// getVersionFromFile reads the version from version.txt file
+// Returns empty string if file doesn't exist or can't be read
+func getVersionFromFile() string {
+	content, err := ioutil.ReadFile("version.txt")
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(content))
+}
+
+// getVersionWithFallback reads version with priority: version.txt -> env var -> default
+func getVersionWithFallback() string {
+	// First try to read from version.txt file
+	if version := getVersionFromFile(); version != "" {
+		return version
+	}
+
+	// Fallback to environment variable
+	if version := getEnv("VERSION", ""); version != "" {
+		return version
+	}
+
+	// Final fallback to default
+	return "0.0.1"
 }

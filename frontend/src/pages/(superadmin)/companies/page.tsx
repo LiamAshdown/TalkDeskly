@@ -39,8 +39,10 @@ import { superAdminService } from "@/lib/api/services/superadmin";
 import { SuperAdminCompany } from "@/lib/interfaces";
 import { useToast } from "@/lib/hooks/use-toast";
 import { ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 
 export default function SuperAdminCompaniesPage() {
+  const { t } = useTranslation();
   const [allCompanies, setAllCompanies] = useState<SuperAdminCompany[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<
     SuperAdminCompany[]
@@ -82,8 +84,8 @@ export default function SuperAdminCompaniesPage() {
       console.error("Failed to fetch companies:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load companies. Please try again.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.companies.toast.loadError"),
       });
     } finally {
       setLoading(false);
@@ -102,8 +104,8 @@ export default function SuperAdminCompaniesPage() {
       await superAdminService.deleteCompany(companyToDelete.id);
       await fetchCompanies();
       toast({
-        title: "Success",
-        description: "Company deleted successfully.",
+        title: t("superadmin.common.success"),
+        description: t("superadmin.companies.toast.deleteSuccess"),
       });
     } catch (error) {
       // Do nothing
@@ -142,7 +144,7 @@ export default function SuperAdminCompaniesPage() {
   const companyColumns: ColumnDef<SuperAdminCompany>[] = [
     {
       accessorKey: "company",
-      header: "Company",
+      header: t("superadmin.companies.columns.name"),
       cell: ({ row }) => {
         const company = row.original;
         return (
@@ -190,7 +192,7 @@ export default function SuperAdminCompaniesPage() {
     },
     {
       accessorKey: "users",
-      header: "Users",
+      header: t("superadmin.companies.columns.users"),
       cell: ({ row }) => {
         const company = row.original;
         return (
@@ -222,7 +224,7 @@ export default function SuperAdminCompaniesPage() {
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: t("superadmin.companies.columns.created"),
       cell: ({ row }) => {
         const company = row.original;
         return (
@@ -234,7 +236,7 @@ export default function SuperAdminCompaniesPage() {
     },
     {
       id: "actions",
-      header: "",
+      header: t("superadmin.companies.columns.actions"),
       size: 50,
       cell: ({ row }) => {
         const company = row.original;
@@ -249,13 +251,13 @@ export default function SuperAdminCompaniesPage() {
               <DropdownMenuItem asChild>
                 <Link to={`/superadmin/companies/${company.id}`}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  {t("superadmin.companies.actions.edit")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to={`/superadmin/companies/${company.id}/users`}>
                   <Users className="h-4 w-4 mr-2" />
-                  View Users
+                  {t("superadmin.companies.actions.viewUsers")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -267,7 +269,7 @@ export default function SuperAdminCompaniesPage() {
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t("superadmin.companies.actions.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -281,9 +283,11 @@ export default function SuperAdminCompaniesPage() {
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t("superadmin.companies.title")}
+            </h1>
             <p className="text-gray-600 mt-1">
-              Manage all organizations in the system
+              {t("superadmin.companies.description")}
             </p>
           </div>
           <Skeleton className="h-10 w-28" />
@@ -319,15 +323,17 @@ export default function SuperAdminCompaniesPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Companies</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {t("superadmin.companies.title")}
+          </h1>
           <p className="text-gray-600 mt-1">
-            Manage all organizations in the system
+            {t("superadmin.companies.description")}
           </p>
         </div>
         <Link to="/superadmin/companies/new">
           <Button className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Add Company
+            {t("superadmin.companies.addCompany")}
           </Button>
         </Link>
       </div>
@@ -336,21 +342,22 @@ export default function SuperAdminCompaniesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 mb-4">
             <Building className="h-5 w-5" />
-            All Companies
+            {t("superadmin.companies.title")}
           </CardTitle>
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search companies..."
+                placeholder={t("superadmin.companies.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
               />
             </div>
             <div className="text-sm text-gray-600">
-              {filteredCompanies.length} compan
-              {filteredCompanies.length !== 1 ? "ies" : "y"}{" "}
+              {t("superadmin.companies.totalCompanies", {
+                count: filteredCompanies.length,
+              })}{" "}
               {searchTerm && `of ${allCompanies.length} total`}
             </div>
           </div>

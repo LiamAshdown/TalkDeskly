@@ -14,7 +14,7 @@ export function Complete({ inbox }: CompleteProps) {
 (function(d,t) {
   var BASE_URL="${window.location.origin}";
   var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-  g.src=BASE_URL+"/packs/js/sdk.js";
+  g.src=BASE_URL+"/sdk/sdk.iife.js";
   g.defer = true;
   g.async = true;
   s.parentNode.insertBefore(g,s);

@@ -10,6 +10,7 @@ import (
 type UserRepository interface {
 	GetUserByID(id string) (*models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
+	GetSuperAdminUser() (*models.User, error)
 	GetUsersByCompanyID(companyID string) ([]models.User, error)
 	CreateUser(user *models.User) (*models.User, error)
 	UpdateUser(user *models.User) error
@@ -47,6 +48,15 @@ func (r *userRepository) GetUsersByCompanyID(companyID string) ([]models.User, e
 	}
 
 	return users, nil
+}
+
+func (r *userRepository) GetSuperAdminUser() (*models.User, error) {
+	var user models.User
+	if err := r.db.Preload("Company").Preload("NotificationSettings").First(&user, "role = ?", string(models.RoleSuperAdmin)).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {

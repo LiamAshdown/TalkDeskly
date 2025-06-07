@@ -107,5 +107,7 @@
   "notification_subject_mention": "You have been mentioned in a message",
   "notification_content_new_message": "You have a new message",
   "notification_content_new_conversation": "You have a new conversation",
-  "notification_content_mention": "You have been mentioned in a message"
+  "notification_content_mention": "You have been mentioned in a message",
+
+  "registration_disabled": "Registration is disabled. Please contact your administrator to create an account."
 }

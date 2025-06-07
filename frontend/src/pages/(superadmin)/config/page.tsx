@@ -19,8 +19,11 @@ import {
   SystemConfig,
   UpdateConfigRequest,
 } from "@/lib/api/services/superadmin";
+import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
 export default function ConfigPage() {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<SystemConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,13 +55,14 @@ export default function ConfigPage() {
         defaultLanguage: data.defaultLanguage,
         supportedLanguages: data.supportedLanguages,
         applicationName: data.applicationName,
+        enableRegistration: data.enableRegistration,
       });
     } catch (error) {
       console.error("Failed to fetch config:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load configuration. Please try again.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.config.toast.loadError"),
       });
     } finally {
       setLoading(false);
@@ -90,8 +94,8 @@ export default function ConfigPage() {
 
       await superAdminService.updateConfig(updateData);
       toast({
-        title: "Success",
-        description: "Configuration updated successfully.",
+        title: t("superadmin.common.success"),
+        description: t("superadmin.config.toast.updateSuccess"),
       });
       // Refresh the config to show updated values
       await fetchConfig();
@@ -99,8 +103,8 @@ export default function ConfigPage() {
       console.error("Failed to update config:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to update configuration. Please try again.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.config.toast.updateError"),
       });
     } finally {
       setSaving(false);
@@ -114,10 +118,10 @@ export default function ConfigPage() {
           <Settings className="h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              System Configuration
+              {t("superadmin.config.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Configure system-wide settings
+              {t("superadmin.config.description")}
             </p>
           </div>
         </div>
@@ -151,12 +155,14 @@ export default function ConfigPage() {
         <Card>
           <CardContent className="p-12 text-center">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Configuration not found
+              {t("superadmin.config.notFound.title")}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Unable to load system configuration.
+              {t("superadmin.config.notFound.description")}
             </p>
-            <Button onClick={fetchConfig}>Retry</Button>
+            <Button onClick={fetchConfig}>
+              {t("superadmin.config.notFound.retry")}
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -171,10 +177,10 @@ export default function ConfigPage() {
           <Settings className="h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              System Configuration
+              {t("superadmin.config.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Configure system-wide settings and behavior
+              {t("superadmin.config.description")}
             </p>
           </div>
         </div>
@@ -184,7 +190,9 @@ export default function ConfigPage() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          {saving ? "Saving..." : "Save Changes"}
+          {saving
+            ? t("superadmin.config.savingChanges")
+            : t("superadmin.config.saveChanges")}
         </Button>
       </div>
 
@@ -194,22 +202,26 @@ export default function ConfigPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Server className="h-5 w-5" />
-              Server Configuration
+              {t("superadmin.config.server.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="port">Server Port</Label>
+                <Label htmlFor="port">
+                  {t("superadmin.config.server.port")}
+                </Label>
                 <Input
                   id="port"
                   value={formData.port || ""}
                   onChange={(e) => handleInputChange("port", e.target.value)}
-                  placeholder="3000"
+                  placeholder={t("superadmin.config.server.portPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="environment">Environment</Label>
+                <Label htmlFor="environment">
+                  {t("superadmin.config.server.environment")}
+                </Label>
                 <Select
                   value={formData.environment || ""}
                   onValueChange={(value) =>
@@ -217,12 +229,20 @@ export default function ConfigPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select environment" />
+                    <SelectValue
+                      placeholder={t("superadmin.config.server.environment")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="development">Development</SelectItem>
-                    <SelectItem value="staging">Staging</SelectItem>
-                    <SelectItem value="production">Production</SelectItem>
+                    <SelectItem value="development">
+                      {t("superadmin.config.server.environments.development")}
+                    </SelectItem>
+                    <SelectItem value="staging">
+                      {t("superadmin.config.server.environments.staging")}
+                    </SelectItem>
+                    <SelectItem value="production">
+                      {t("superadmin.config.server.environments.production")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -230,41 +250,59 @@ export default function ConfigPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="baseUrl">Base URL</Label>
+                <Label htmlFor="baseUrl">
+                  {t("superadmin.config.server.baseUrl")}
+                </Label>
                 <Input
                   id="baseUrl"
                   value={formData.baseUrl || ""}
                   onChange={(e) => handleInputChange("baseUrl", e.target.value)}
-                  placeholder="http://localhost:3000"
+                  placeholder={t("superadmin.config.server.baseUrlPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="frontendUrl">Frontend URL</Label>
+                <Label htmlFor="frontendUrl">
+                  {t("superadmin.config.server.frontendUrl")}
+                </Label>
                 <Input
                   id="frontendUrl"
                   value={formData.frontendUrl || ""}
                   onChange={(e) =>
                     handleInputChange("frontendUrl", e.target.value)
                   }
-                  placeholder="http://localhost:3001"
+                  placeholder={t(
+                    "superadmin.config.server.frontendUrlPlaceholder"
+                  )}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="logLevel">Log Level</Label>
+              <Label htmlFor="logLevel">
+                {t("superadmin.config.server.logLevel")}
+              </Label>
               <Select
                 value={formData.logLevel || ""}
                 onValueChange={(value) => handleInputChange("logLevel", value)}
               >
                 <SelectTrigger className="max-w-xs">
-                  <SelectValue placeholder="Select log level" />
+                  <SelectValue
+                    placeholder={t("superadmin.config.server.logLevel")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="debug">Debug</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warn">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="debug">
+                    {t("superadmin.config.server.logLevels.debug")}
+                  </SelectItem>
+                  <SelectItem value="info">
+                    {t("superadmin.config.server.logLevels.info")}
+                  </SelectItem>
+                  <SelectItem value="warn">
+                    {t("superadmin.config.server.logLevels.warn")}
+                  </SelectItem>
+                  <SelectItem value="error">
+                    {t("superadmin.config.server.logLevels.error")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -276,13 +314,15 @@ export default function ConfigPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Database & Security Status
+              {t("superadmin.config.database.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Database Connection</span>
+                <span className="text-sm font-medium">
+                  {t("superadmin.config.database.connection")}
+                </span>
                 <Badge
                   variant={config.databaseConfigured ? "default" : "secondary"}
                   className={
@@ -291,11 +331,15 @@ export default function ConfigPage() {
                       : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                   }
                 >
-                  {config.databaseConfigured ? "Configured" : "Not Configured"}
+                  {config.databaseConfigured
+                    ? t("superadmin.config.database.configured")
+                    : t("superadmin.config.database.notConfigured")}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Redis Connection</span>
+                <span className="text-sm font-medium">
+                  {t("superadmin.config.database.redis")}
+                </span>
                 <Badge
                   variant={config.redisConfigured ? "default" : "secondary"}
                   className={
@@ -304,13 +348,14 @@ export default function ConfigPage() {
                       : "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
                   }
                 >
-                  {config.redisConfigured ? "Configured" : "Not Configured"}
+                  {config.redisConfigured
+                    ? t("superadmin.config.database.configured")
+                    : t("superadmin.config.database.notConfigured")}
                 </Badge>
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-              Database and security configurations are managed via environment
-              variables for security reasons.
+              {t("superadmin.config.database.description")}
             </p>
           </CardContent>
         </Card>
@@ -320,13 +365,15 @@ export default function ConfigPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Email Configuration
+              {t("superadmin.config.email.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emailProvider">Email Provider</Label>
+                <Label htmlFor="emailProvider">
+                  {t("superadmin.config.email.provider")}
+                </Label>
                 <Select
                   value={formData.emailProvider || ""}
                   onValueChange={(value) =>
@@ -334,16 +381,24 @@ export default function ConfigPage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select provider" />
+                    <SelectValue
+                      placeholder={t("superadmin.config.email.provider")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gomail">GoMail</SelectItem>
-                    <SelectItem value="smtp">SMTP</SelectItem>
+                    <SelectItem value="gomail">
+                      {t("superadmin.config.email.providers.gomail")}
+                    </SelectItem>
+                    <SelectItem value="smtp">
+                      {t("superadmin.config.email.providers.smtp")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="emailFrom">From Address</Label>
+                <Label htmlFor="emailFrom">
+                  {t("superadmin.config.email.from")}
+                </Label>
                 <Input
                   id="emailFrom"
                   type="email"
@@ -351,50 +406,58 @@ export default function ConfigPage() {
                   onChange={(e) =>
                     handleInputChange("emailFrom", e.target.value)
                   }
-                  placeholder="noreply@example.com"
+                  placeholder={t("superadmin.config.email.fromPlaceholder")}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emailHost">SMTP Host</Label>
+                <Label htmlFor="emailHost">
+                  {t("superadmin.config.email.host")}
+                </Label>
                 <Input
                   id="emailHost"
                   value={formData.emailHost || ""}
                   onChange={(e) =>
                     handleInputChange("emailHost", e.target.value)
                   }
-                  placeholder="smtp.gmail.com"
+                  placeholder={t("superadmin.config.email.hostPlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="emailPort">SMTP Port</Label>
+                <Label htmlFor="emailPort">
+                  {t("superadmin.config.email.port")}
+                </Label>
                 <Input
                   id="emailPort"
                   value={formData.emailPort || ""}
                   onChange={(e) =>
                     handleInputChange("emailPort", e.target.value)
                   }
-                  placeholder="587"
+                  placeholder={t("superadmin.config.email.portPlaceholder")}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emailUsername">SMTP Username</Label>
+                <Label htmlFor="emailUsername">
+                  {t("superadmin.config.email.username")}
+                </Label>
                 <Input
                   id="emailUsername"
                   value={formData.emailUsername || ""}
                   onChange={(e) =>
                     handleInputChange("emailUsername", e.target.value)
                   }
-                  placeholder="username@gmail.com"
+                  placeholder={t("superadmin.config.email.usernamePlaceholder")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="emailPassword">SMTP Password</Label>
+                <Label htmlFor="emailPassword">
+                  {t("superadmin.config.email.password")}
+                </Label>
                 <Input
                   id="emailPassword"
                   type="password"
@@ -402,7 +465,7 @@ export default function ConfigPage() {
                   onChange={(e) =>
                     handleInputChange("emailPassword", e.target.value)
                   }
-                  placeholder="Enter new password to change"
+                  placeholder={t("superadmin.config.email.passwordPlaceholder")}
                 />
               </div>
             </div>
@@ -414,48 +477,81 @@ export default function ConfigPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              Application Settings
+              {t("superadmin.config.application.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="applicationName">Application Name</Label>
+              <Label htmlFor="applicationName">
+                {t("superadmin.config.application.name")}
+              </Label>
               <Input
                 id="applicationName"
                 value={formData.applicationName || ""}
                 onChange={(e) =>
                   handleInputChange("applicationName", e.target.value)
                 }
-                placeholder="TalkDeskly"
+                placeholder={t("superadmin.config.application.namePlaceholder")}
               />
             </div>
 
             <Separator />
 
             <div className="space-y-2">
-              <Label htmlFor="defaultLanguage">Default Language</Label>
+              <Label htmlFor="defaultLanguage">
+                {t("superadmin.config.application.defaultLanguage")}
+              </Label>
               <Input
                 id="defaultLanguage"
                 value={formData.defaultLanguage || ""}
                 onChange={(e) =>
                   handleInputChange("defaultLanguage", e.target.value)
                 }
-                placeholder="en"
+                placeholder={t(
+                  "superadmin.config.application.defaultLanguagePlaceholder"
+                )}
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="supportedLanguages">
-                Supported Languages (comma-separated)
+                {t("superadmin.config.application.supportedLanguages")}
               </Label>
               <Input
                 id="supportedLanguages"
                 value={formData.supportedLanguages?.join(", ") || ""}
                 onChange={(e) => handleLanguagesChange(e.target.value)}
-                placeholder="en, es, fr, de"
+                placeholder={t(
+                  "superadmin.config.application.supportedLanguagesPlaceholder"
+                )}
               />
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Enter language codes separated by commas (e.g., en, es, fr)
+                {t(
+                  "superadmin.config.application.supportedLanguagesDescription"
+                )}
+              </p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="enableRegistration">
+                  {t("superadmin.config.application.enableRegistration")}
+                </Label>
+                <Switch
+                  id="enableRegistration"
+                  checked={formData.enableRegistration === "true"}
+                  onCheckedChange={(checked) =>
+                    handleInputChange(
+                      "enableRegistration",
+                      checked ? "true" : "false"
+                    )
+                  }
+                />
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t("superadmin.config.application.registrationDescription")}
               </p>
             </div>
           </CardContent>
@@ -470,7 +566,9 @@ export default function ConfigPage() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          {saving ? "Saving Changes..." : "Save All Changes"}
+          {saving
+            ? t("superadmin.config.savingChanges")
+            : t("superadmin.config.saveAllChanges")}
         </Button>
       </div>
     </div>

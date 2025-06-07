@@ -20,58 +20,60 @@ import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/context/use-is-mobile";
 import { useAuthStore } from "@/stores/auth";
 import { ThemeToggle } from "@/components/superadmin/theme-toggle";
+import { useTranslation } from "react-i18next";
 
 interface SuperAdminNavItem {
-  title: string;
+  titleKey: string;
   href: string;
   icon: React.ElementType;
-  description: string;
+  descriptionKey: string;
 }
 
-const superAdminNavItems: SuperAdminNavItem[] = [
-  {
-    title: "Back to Portal",
-    href: "/portal",
-    icon: ArrowLeft,
-    description: "Return to main application",
-  },
-  {
-    title: "Dashboard",
-    href: "",
-    icon: BarChart3,
-    description: "System overview and statistics",
-  },
-  {
-    title: "Users",
-    href: "users",
-    icon: Users,
-    description: "Manage all system users",
-  },
-  {
-    title: "Companies",
-    href: "companies",
-    icon: Building,
-    description: "Manage all companies",
-  },
-  {
-    title: "Configuration",
-    href: "config",
-    icon: Settings,
-    description: "System configuration settings",
-  },
-  {
-    title: "System Health",
-    href: "system",
-    icon: Activity,
-    description: "Monitor system performance",
-  },
-];
-
 function SuperAdminLayout() {
+  const { t } = useTranslation();
   const pathname = useLocation().pathname;
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isSuperAdmin } = useAuthStore();
+
+  const superAdminNavItems: SuperAdminNavItem[] = [
+    {
+      titleKey: "superadmin.navigation.backToPortal",
+      href: "/portal",
+      icon: ArrowLeft,
+      descriptionKey: "superadmin.navigation.backToPortalDescription",
+    },
+    {
+      titleKey: "superadmin.navigation.dashboard",
+      href: "",
+      icon: BarChart3,
+      descriptionKey: "superadmin.navigation.dashboardDescription",
+    },
+    {
+      titleKey: "superadmin.navigation.users",
+      href: "users",
+      icon: Users,
+      descriptionKey: "superadmin.navigation.usersDescription",
+    },
+    {
+      titleKey: "superadmin.navigation.companies",
+      href: "companies",
+      icon: Building,
+      descriptionKey: "superadmin.navigation.companiesDescription",
+    },
+    {
+      titleKey: "superadmin.navigation.configuration",
+      href: "config",
+      icon: Settings,
+      descriptionKey: "superadmin.navigation.configurationDescription",
+    },
+    {
+      titleKey: "superadmin.navigation.systemHealth",
+      href: "system",
+      icon: Activity,
+      descriptionKey: "superadmin.navigation.systemHealthDescription",
+    },
+  ];
 
   // Redirect if not superadmin
   if (!isSuperAdmin()) {
@@ -122,9 +124,9 @@ function SuperAdminLayout() {
                   )}
                 />
                 <div className="flex flex-col">
-                  <span className="font-medium">{item.title}</span>
+                  <span className="font-medium">{t(item.titleKey)}</span>
                   <span className="text-xs text-muted-foreground mt-0.5">
-                    {item.description}
+                    {t(item.descriptionKey)}
                   </span>
                 </div>
               </Link>
@@ -144,7 +146,7 @@ function SuperAdminLayout() {
         <div className="flex items-center gap-2">
           <Shield className="h-6 w-6 text-red-600" />
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-            SuperAdmin
+            {t("superadmin.title")}
           </h1>
         </div>
         <div className="flex items-center gap-2">
@@ -160,11 +162,11 @@ function SuperAdminLayout() {
                 <div className="flex items-center gap-2 mb-6">
                   <Shield className="h-6 w-6 text-red-600" />
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    SuperAdmin
+                    {t("superadmin.title")}
                   </h1>
                 </div>
                 <p className="text-sm text-muted-foreground mb-6">
-                  System administration and management
+                  {t("superadmin.systemManagement")}
                 </p>
                 <SuperAdminNav />
               </div>
@@ -185,10 +187,10 @@ function SuperAdminLayout() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    SuperAdmin
+                    {t("superadmin.title")}
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    System Management
+                    {t("superadmin.systemManagement")}
                   </p>
                 </div>
               </div>

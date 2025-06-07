@@ -8,8 +8,8 @@ export default defineConfig({
     lib: {
       entry: "app/sdk.tsx", // Entry point that exposes window.talkDeskly
       name: "talkDeskly",
-      fileName: "talkdeskly-sdk",
-      formats: ["umd"],
+      fileName: "sdk",
+      formats: ["iife"],
     },
     rollupOptions: {
       external: ["react", "react-dom"],

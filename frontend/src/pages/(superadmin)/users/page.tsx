@@ -38,8 +38,10 @@ import { SuperAdminUser } from "@/lib/interfaces";
 import { useToast } from "@/lib/hooks/use-toast";
 import { UserRoleBadge } from "@/components/ui/user-role-badge";
 import { ColumnDef } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
 
 export default function SuperAdminUsersPage() {
+  const { t } = useTranslation();
   const [allUsers, setAllUsers] = useState<SuperAdminUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<SuperAdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,8 +82,8 @@ export default function SuperAdminUsersPage() {
       console.error("Failed to fetch users:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load users. Please try again.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.users.toast.loadError"),
       });
     } finally {
       setLoading(false);
@@ -100,8 +102,8 @@ export default function SuperAdminUsersPage() {
       await superAdminService.deleteUser(userToDelete.id);
       await fetchUsers();
       toast({
-        title: "Success",
-        description: "User deleted successfully.",
+        title: t("superadmin.common.success"),
+        description: t("superadmin.users.toast.deleteSuccess"),
       });
     } catch (error) {
       // Do nothing
@@ -116,7 +118,7 @@ export default function SuperAdminUsersPage() {
   const userColumns: ColumnDef<SuperAdminUser>[] = [
     {
       accessorKey: "user",
-      header: "User",
+      header: t("superadmin.users.columns.name"),
       cell: ({ row }) => {
         const user = row.original;
         return (
@@ -145,7 +147,7 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "company",
-      header: "Company",
+      header: t("superadmin.users.columns.company"),
       cell: ({ row }) => {
         const user = row.original;
         return (
@@ -160,7 +162,7 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "role",
-      header: "Role",
+      header: t("superadmin.users.columns.role"),
       cell: ({ row }) => {
         const user = row.original;
         return <UserRoleBadge role={user.role} size="sm" />;
@@ -168,7 +170,7 @@ export default function SuperAdminUsersPage() {
     },
     {
       accessorKey: "lastLoginAt",
-      header: "Last Login",
+      header: t("superadmin.users.columns.lastActive"),
       cell: ({ row }) => {
         const user = row.original;
         return (
@@ -194,7 +196,7 @@ export default function SuperAdminUsersPage() {
     },
     {
       id: "actions",
-      header: "",
+      header: t("superadmin.users.columns.actions"),
       size: 50,
       cell: ({ row }) => {
         const user = row.original;
@@ -209,7 +211,7 @@ export default function SuperAdminUsersPage() {
               <DropdownMenuItem asChild>
                 <Link to={`/superadmin/users/${user.id}`}>
                   <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  {t("superadmin.users.actions.edit")}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -221,7 +223,7 @@ export default function SuperAdminUsersPage() {
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t("superadmin.users.actions.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -236,10 +238,10 @@ export default function SuperAdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Users
+              {t("superadmin.users.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Manage all user accounts across the system
+              {t("superadmin.users.description")}
             </p>
           </div>
           <Skeleton className="h-10 w-24" />
@@ -277,16 +279,16 @@ export default function SuperAdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Users
+            {t("superadmin.users.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage all user accounts across the system
+            {t("superadmin.users.description")}
           </p>
         </div>
         <Link to="/superadmin/users/new">
           <Button className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Add User
+            {t("superadmin.users.addUser")}
           </Button>
         </Link>
       </div>
@@ -295,20 +297,22 @@ export default function SuperAdminUsersPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 mb-4">
             <Users className="h-5 w-5" />
-            All Users
+            {t("superadmin.users.title")}
           </CardTitle>
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search users..."
+                placeholder={t("superadmin.users.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="pl-10"
               />
             </div>
             <div className="text-sm text-gray-600">
-              {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""}{" "}
+              {t("superadmin.users.totalUsers", {
+                count: filteredUsers.length,
+              })}{" "}
               {searchTerm && `of ${allUsers.length} total`}
             </div>
           </div>
@@ -327,7 +331,7 @@ export default function SuperAdminUsersPage() {
               </p>
               {!searchTerm && (
                 <Link to="/superadmin/users/new">
-                  <Button>Add First User</Button>
+                  <Button>{t("superadmin.users.addUser")}</Button>
                 </Link>
               )}
             </div>
@@ -349,12 +353,11 @@ export default function SuperAdminUsersPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-600" />
-              Delete User
+              {t("superadmin.users.confirmDelete.title")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete {userToDelete?.firstName}{" "}
-              {userToDelete?.lastName}? This action cannot be undone and will
-              permanently remove the user and all associated data.
+              {t("superadmin.users.confirmDelete.description")}{" "}
+              {userToDelete?.firstName} {userToDelete?.lastName}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -363,14 +366,16 @@ export default function SuperAdminUsersPage() {
               onClick={() => setDeleteDialogOpen(false)}
               disabled={deleting}
             >
-              Cancel
+              {t("superadmin.users.confirmDelete.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteUser}
               disabled={deleting}
             >
-              {deleting ? "Deleting..." : "Delete User"}
+              {deleting
+                ? t("superadmin.common.saving")
+                : t("superadmin.users.confirmDelete.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

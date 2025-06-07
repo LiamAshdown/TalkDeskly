@@ -30,6 +30,7 @@ type DIParams struct {
 	NotificationHandler   *handler.NotificationHandler
 	SuperAdminHandler     *handler.SuperAdminHandler
 	HealthHandler         *handler.HealthHandler
+	AnalyticsHandler      *handler.AnalyticsHandler
 }
 
 // SetupRoutesWithDI sets up the routes using the dependencies provided by Dig
@@ -40,8 +41,14 @@ func SetupRoutesWithDI(params DIParams) {
 	app.Get("/health", params.HealthHandler.GetHealth)
 	app.Get("/health/detailed", params.HealthHandler.GetHealthDetailed)
 
-	// Static file route
+	// Static file routes
 	app.Static("/uploads", disk.GetBasePath())
+
+	// Serve chat-bubble SDK
+	app.Static("/sdk", "./public/sdk")
+
+	// Serve frontend app on root path
+	app.Static("/", "./public/app")
 
 	apiGroup := app.Group("/api")
 
@@ -162,6 +169,14 @@ func SetupRoutesWithDI(params DIParams) {
 	cannedResponseGroup.Put("/:id", params.CannedResponseHandler.HandleUpdateCannedResponse)
 	cannedResponseGroup.Delete("/:id", params.CannedResponseHandler.HandleDeleteCannedResponse)
 
+	// Analytics routes (Admin only)
+	analyticsGroup := apiGroup.Group("/analytics", middleware.Auth(), middleware.RequireCompany(), middleware.IsAdmin())
+	analyticsGroup.Get("/dashboard", params.AnalyticsHandler.HandleGetAnalyticsDashboard)
+	analyticsGroup.Get("/conversations", params.AnalyticsHandler.HandleGetConversationStats)
+	analyticsGroup.Get("/agents", params.AnalyticsHandler.HandleGetAgentStats)
+	analyticsGroup.Get("/messages", params.AnalyticsHandler.HandleGetMessageStats)
+	analyticsGroup.Get("/status", params.AnalyticsHandler.HandleGetStatusStats)
+
 	// SuperAdmin routes
 	superAdminGroup := apiGroup.Group("/superadmin", middleware.Auth(), middleware.IsSuperAdmin())
 
@@ -190,4 +205,9 @@ func SetupRoutesWithDI(params DIParams) {
 	superAdminGroup.Put("/companies/:id", params.SuperAdminHandler.UpdateCompany)
 	superAdminGroup.Delete("/companies/:id", params.SuperAdminHandler.DeleteCompany)
 	superAdminGroup.Get("/companies/:id/users", params.SuperAdminHandler.GetCompanyUsers)
+
+	// Handle React Router routes on root path
+	app.Get("/*", func(c *fiber.Ctx) error {
+		return c.SendFile("./public/app/index.html")
+	})
 }

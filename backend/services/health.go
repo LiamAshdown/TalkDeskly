@@ -67,7 +67,11 @@ func (h *HealthService) GetSystemHealth() (*interfaces.HealthReport, error) {
 	)
 
 	// Get version info (could be enhanced with build info)
-	version := fmt.Sprintf("1.0.0 (Go %s)", runtime.Version())
+	appVersion := config.App.Version
+	if appVersion == "" {
+		appVersion = "0.0.1"
+	}
+	version := fmt.Sprintf("%s (Go %s)", appVersion, runtime.Version())
 
 	return &interfaces.HealthReport{
 		OverallStatus: overallStatus,

@@ -38,8 +38,10 @@ import {
   LogEntry,
   SystemMetric,
 } from "@/lib/api/services/superadmin";
+import { useTranslation } from "react-i18next";
 
 export default function SuperAdminSystemPage() {
+  const { t } = useTranslation();
   const [healthData, setHealthData] = useState<SystemHealthResponse | null>(
     null
   );
@@ -68,8 +70,8 @@ export default function SuperAdminSystemPage() {
       console.error("Failed to fetch system health:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load system health data.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.system.toast.loadError"),
       });
     } finally {
       setHealthLoading(false);
@@ -91,8 +93,8 @@ export default function SuperAdminSystemPage() {
       console.error("Failed to fetch logs:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to load system logs.",
+        title: t("superadmin.common.error"),
+        description: t("superadmin.system.toast.loadError"),
       });
     } finally {
       setLogsLoading(false);
@@ -197,7 +199,7 @@ export default function SuperAdminSystemPage() {
   const logColumns: ColumnDef<LogEntry>[] = [
     {
       accessorKey: "level",
-      header: "Level",
+      header: t("superadmin.system.logs.level"),
       size: 120,
       cell: ({ row }) => {
         const level = row.getValue("level") as string;
@@ -213,7 +215,7 @@ export default function SuperAdminSystemPage() {
     },
     {
       accessorKey: "timestamp",
-      header: "Timestamp",
+      header: t("superadmin.system.logs.timestamp"),
       size: 180,
       cell: ({ row }) => {
         const timestamp = row.getValue("timestamp") as string;
@@ -226,7 +228,7 @@ export default function SuperAdminSystemPage() {
     },
     {
       accessorKey: "context",
-      header: "Context",
+      header: t("superadmin.system.logs.context"),
       size: 120,
       cell: ({ row }) => {
         const context = row.getValue("context") as string;
@@ -238,10 +240,10 @@ export default function SuperAdminSystemPage() {
       },
     },
     {
-      accessorKey: "message",
-      header: "Message",
+      accessorKey: "msg",
+      header: t("superadmin.system.logs.message"),
       cell: ({ row }) => {
-        const message = row.getValue("message") as string;
+        const message = row.getValue("msg") as string;
         return <div className="text-sm">{message}</div>;
       },
     },
@@ -256,10 +258,10 @@ export default function SuperAdminSystemPage() {
           <Activity className="h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              System Health
+              {t("superadmin.system.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Monitor system performance and health metrics
+              {t("superadmin.system.description")}
             </p>
           </div>
         </div>
@@ -302,10 +304,10 @@ export default function SuperAdminSystemPage() {
           <Activity className="h-8 w-8" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              System Health
+              {t("superadmin.system.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Monitor system performance and health metrics
+              {t("superadmin.system.description")}
             </p>
           </div>
         </div>
@@ -319,7 +321,7 @@ export default function SuperAdminSystemPage() {
             <RefreshCw
               className={`h-4 w-4 mr-2 ${healthLoading ? "animate-spin" : ""}`}
             />
-            Refresh
+            {t("superadmin.system.refresh")}
           </Button>
         </div>
       </div>
@@ -330,7 +332,7 @@ export default function SuperAdminSystemPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {getStatusIcon(healthData.overallStatus)}
-              System Status
+              {t("superadmin.system.systemStatus")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -343,17 +345,21 @@ export default function SuperAdminSystemPage() {
                   <div className="flex items-center gap-1">
                     {getStatusIcon(healthData.overallStatus)}
                     <span className="capitalize font-medium">
-                      {healthData.overallStatus}
+                      {t(
+                        `superadmin.system.health.${healthData.overallStatus}`
+                      )}
                     </span>
                   </div>
                 </Badge>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  Version: {healthData.version} • {healthData.uptime}
+                  {t("superadmin.system.version")}: {healthData.version} •{" "}
+                  {healthData.uptime}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Last updated: {formatTimestamp(new Date().toISOString())}
+                  {t("superadmin.system.lastUpdated")}:{" "}
+                  {formatTimestamp(new Date().toISOString())}
                 </p>
               </div>
             </div>
@@ -386,7 +392,9 @@ export default function SuperAdminSystemPage() {
                   >
                     <div className="flex items-center gap-1">
                       {getStatusIcon(metric.status)}
-                      <span className="capitalize">{metric.status}</span>
+                      <span className="capitalize">
+                        {t(`superadmin.system.health.${metric.status}`)}
+                      </span>
                     </div>
                   </Badge>
                 </div>
@@ -400,11 +408,11 @@ export default function SuperAdminSystemPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>System Logs</CardTitle>
+            <CardTitle>{t("superadmin.system.logs.title")}</CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {t("superadmin.system.logs.export")}
               </Button>
             </div>
           </div>
@@ -413,11 +421,13 @@ export default function SuperAdminSystemPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="search">Search logs</Label>
+              <Label htmlFor="search">
+                {t("superadmin.system.logs.search")}
+              </Label>
               <div className="flex gap-2 mt-1">
                 <Input
                   id="search"
-                  placeholder="Search in messages or context..."
+                  placeholder={t("superadmin.system.logs.searchPlaceholder")}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -428,24 +438,38 @@ export default function SuperAdminSystemPage() {
               </div>
             </div>
             <div className="w-full sm:w-48">
-              <Label htmlFor="level">Log Level</Label>
+              <Label htmlFor="level">
+                {t("superadmin.system.logs.logLevel")}
+              </Label>
               <Select value={logLevel} onValueChange={setLogLevel}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All levels" />
+                  <SelectValue
+                    placeholder={t("superadmin.system.logs.allLevels")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All levels</SelectItem>
-                  <SelectItem value="debug">Debug</SelectItem>
-                  <SelectItem value="info">Info</SelectItem>
-                  <SelectItem value="warn">Warning</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="all">
+                    {t("superadmin.system.logs.levels.all")}
+                  </SelectItem>
+                  <SelectItem value="debug">
+                    {t("superadmin.system.logs.levels.debug")}
+                  </SelectItem>
+                  <SelectItem value="info">
+                    {t("superadmin.system.logs.levels.info")}
+                  </SelectItem>
+                  <SelectItem value="warn">
+                    {t("superadmin.system.logs.levels.warn")}
+                  </SelectItem>
+                  <SelectItem value="error">
+                    {t("superadmin.system.logs.levels.error")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-end">
               <Button variant="outline" onClick={clearFilters} size="sm">
                 <Filter className="h-4 w-4 mr-2" />
-                Clear
+                {t("superadmin.system.logs.clear")}
               </Button>
             </div>
           </div>
@@ -456,10 +480,10 @@ export default function SuperAdminSystemPage() {
               <div className="flex flex-col items-center justify-center py-12">
                 <Clock className="h-12 w-12 text-gray-400 mb-4" />
                 <p className="text-gray-500 text-lg font-medium">
-                  No logs found
+                  {t("superadmin.system.logs.noLogsFound")}
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Try adjusting your search filters
+                  {t("superadmin.system.logs.noLogsDescription")}
                 </p>
               </div>
             </div>

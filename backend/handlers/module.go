@@ -73,4 +73,8 @@ func RegisterHandlers(container *dig.Container) {
 	if err := container.Provide(NewHealthHandler); err != nil {
 		log.Fatalf("Failed to provide health handler: %v", err)
 	}
+
+	if err := container.Provide(NewAnalyticsHandler); err != nil {
+		log.Fatalf("Failed to provide analytics handler: %v", err)
+	}
 }

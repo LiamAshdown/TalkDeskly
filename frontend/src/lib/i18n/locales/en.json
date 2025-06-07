@@ -456,5 +456,387 @@
       "hoursAgo": "{{count}}h ago",
       "daysAgo": "{{count}}d ago"
     }
+  },
+  "superadmin": {
+    "title": "SuperAdmin",
+    "systemManagement": "System Management",
+    "navigation": {
+      "backToPortal": "Back to Portal",
+      "backToPortalDescription": "Return to main application",
+      "dashboard": "Dashboard",
+      "dashboardDescription": "System overview and statistics",
+      "users": "Users",
+      "usersDescription": "Manage all system users",
+      "companies": "Companies",
+      "companiesDescription": "Manage all companies",
+      "configuration": "Configuration",
+      "configurationDescription": "System configuration settings",
+      "systemHealth": "System Health",
+      "systemHealthDescription": "Monitor system performance"
+    },
+    "dashboard": {
+      "title": "Analytics Dashboard",
+      "description": "Comprehensive insights into your TalkDeskly platform",
+      "metrics": {
+        "totalUsers": "Total Users",
+        "companies": "Companies",
+        "activeUsers": "Active Users",
+        "totalConversations": "Total Conversations",
+        "userGrowthRate": "+{{rate}}% this week",
+        "companyGrowthRate": "+{{rate}}% this month",
+        "activeUsersDescription": "{{count}} users active in the last 24 hours",
+        "conversationGrowthRate": "+{{rate}}% this month",
+        "averageResponseTime": "Avg Response Time",
+        "responseTimeValue": "{{time}} minutes",
+        "responseTimeImprovement": "{{percent}}% faster than last week",
+        "customerSatisfaction": "Customer Satisfaction",
+        "satisfactionScore": "{{score}}/5",
+        "satisfactionTrend": "+{{percent}}% from last month"
+      },
+      "charts": {
+        "userGrowth": "User Growth",
+        "companyGrowth": "Company Growth",
+        "conversationVolume": "Conversation Volume",
+        "systemHealth": "System Health",
+        "userDistribution": "User Distribution by Role",
+        "companySize": "Company Size Distribution"
+      },
+      "systemHealth": {
+        "title": "System Health",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "disk": "Disk Usage",
+        "database": "Database",
+        "redis": "Redis",
+        "healthy": "Healthy",
+        "warning": "Warning",
+        "critical": "Critical",
+        "uptime": "System Uptime",
+        "uptimeValue": "{{days}} days, {{hours}} hours"
+      },
+      "recentActivity": {
+        "title": "Recent Activity",
+        "userRegistered": "New user registered",
+        "companyCreated": "New company created",
+        "conversationStarted": "Conversation started",
+        "userUpdated": "User profile updated",
+        "systemConfigChanged": "System configuration changed"
+      },
+      "errors": {
+        "loadFailed": "Failed to load dashboard statistics",
+        "error": "Error"
+      }
+    },
+    "users": {
+      "title": "Users",
+      "description": "Manage all system users across all companies",
+      "searchPlaceholder": "Search users...",
+      "addUser": "Add User",
+      "editUser": "Edit User",
+      "createUser": "Create User",
+      "userDetails": "User Details",
+      "totalUsers": "{{count}} users",
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "company": "Company",
+        "status": "Status",
+        "lastActive": "Last Active",
+        "actions": "Actions"
+      },
+      "roles": {
+        "superadmin": "Super Admin",
+        "admin": "Admin",
+        "agent": "Agent",
+        "superadminDescription": "Full system access with ability to manage all users, companies, and system settings across the entire platform.",
+        "adminDescription": "Company-level administrator who can manage users, settings, and conversations within their organization.",
+        "agentDescription": "Support agent who can handle customer conversations and access basic features within their company."
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "suspended": "Suspended"
+      },
+      "form": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "password": "Password",
+        "role": "Role",
+        "company": "Company",
+        "status": "Status",
+        "firstNamePlaceholder": "John",
+        "lastNamePlaceholder": "Doe",
+        "emailPlaceholder": "john.doe@example.com",
+        "passwordPlaceholder": "••••••••",
+        "selectRole": "Select role",
+        "selectCompany": "Select company",
+        "selectStatus": "Select status"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "suspend": "Suspend",
+        "activate": "Activate"
+      },
+      "validation": {
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email",
+        "passwordRequired": "Password is required",
+        "passwordMinLength": "Password must be at least 6 characters",
+        "roleRequired": "Role is required"
+      },
+      "toast": {
+        "createSuccess": "User created successfully",
+        "updateSuccess": "User updated successfully",
+        "deleteSuccess": "User deleted successfully",
+        "createError": "Failed to create user",
+        "updateError": "Failed to update user",
+        "deleteError": "Failed to delete user",
+        "loadError": "Failed to load users"
+      },
+      "confirmDelete": {
+        "title": "Delete User",
+        "description": "Are you sure you want to delete this user? This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "companies": {
+      "title": "Companies",
+      "description": "Manage all companies and their configurations",
+      "searchPlaceholder": "Search companies...",
+      "addCompany": "Add Company",
+      "editCompany": "Edit Company",
+      "createCompany": "Create Company",
+      "companyDetails": "Company Details",
+      "totalCompanies": "{{count}} companies",
+      "viewUsers": "View Users",
+      "columns": {
+        "name": "Name",
+        "email": "Email",
+        "website": "Website",
+        "users": "Users",
+        "status": "Status",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "form": {
+        "name": "Company Name",
+        "email": "Company Email",
+        "website": "Website",
+        "phone": "Phone Number",
+        "address": "Address",
+        "namePlaceholder": "Acme Corp",
+        "emailPlaceholder": "contact@acme.com",
+        "websitePlaceholder": "https://acme.com",
+        "phonePlaceholder": "+1 (555) 123-4567",
+        "addressPlaceholder": "123 Main St, City, State 12345"
+      },
+      "users": {
+        "title": "Company Users",
+        "description": "Manage users for {{companyName}}",
+        "addUser": "Add User to Company",
+        "noUsers": "No users found for this company"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "viewUsers": "View Users"
+      },
+      "validation": {
+        "nameRequired": "Company name is required",
+        "emailRequired": "Company email is required",
+        "emailInvalid": "Please enter a valid email",
+        "websiteInvalid": "Please enter a valid website URL"
+      },
+      "toast": {
+        "createSuccess": "Company created successfully",
+        "updateSuccess": "Company updated successfully",
+        "deleteSuccess": "Company deleted successfully",
+        "createError": "Failed to create company",
+        "updateError": "Failed to update company",
+        "deleteError": "Failed to delete company",
+        "loadError": "Failed to load companies"
+      },
+      "confirmDelete": {
+        "title": "Delete Company",
+        "description": "Are you sure you want to delete this company? This will also delete all associated users and data. This action cannot be undone.",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "config": {
+      "title": "System Configuration",
+      "description": "Configure system-wide settings and behavior",
+      "saveChanges": "Save Changes",
+      "saveAllChanges": "Save All Changes",
+      "saving": "Saving...",
+      "savingChanges": "Saving Changes...",
+      "server": {
+        "title": "Server Configuration",
+        "port": "Server Port",
+        "environment": "Environment",
+        "baseUrl": "Base URL",
+        "frontendUrl": "Frontend URL",
+        "logLevel": "Log Level",
+        "portPlaceholder": "3000",
+        "baseUrlPlaceholder": "http://localhost:3000",
+        "frontendUrlPlaceholder": "http://localhost:3001",
+        "environments": {
+          "development": "Development",
+          "staging": "Staging",
+          "production": "Production"
+        },
+        "logLevels": {
+          "debug": "Debug",
+          "info": "Info",
+          "warn": "Warning",
+          "error": "Error"
+        }
+      },
+      "database": {
+        "title": "Database & Security Status",
+        "connection": "Database Connection",
+        "redis": "Redis Connection",
+        "configured": "Configured",
+        "notConfigured": "Not Configured",
+        "description": "Database and security configurations are managed via environment variables for security reasons."
+      },
+      "email": {
+        "title": "Email Configuration",
+        "provider": "Email Provider",
+        "from": "From Address",
+        "host": "SMTP Host",
+        "port": "SMTP Port",
+        "username": "SMTP Username",
+        "password": "SMTP Password",
+        "fromPlaceholder": "noreply@example.com",
+        "hostPlaceholder": "smtp.gmail.com",
+        "portPlaceholder": "587",
+        "usernamePlaceholder": "username@gmail.com",
+        "passwordPlaceholder": "Enter new password to change",
+        "providers": {
+          "gomail": "GoMail",
+          "smtp": "SMTP"
+        }
+      },
+      "application": {
+        "title": "Application Settings",
+        "name": "Application Name",
+        "defaultLanguage": "Default Language",
+        "supportedLanguages": "Supported Languages (comma-separated)",
+        "enableRegistration": "Enable Registration",
+        "namePlaceholder": "TalkDeskly",
+        "defaultLanguagePlaceholder": "en",
+        "supportedLanguagesPlaceholder": "en, es, fr, de",
+        "supportedLanguagesDescription": "Enter language codes separated by commas (e.g., en, es, fr)",
+        "registrationDescription": "Enable or disable user registration. This is ideal when you don't want people signing up to create their own accounts and company."
+      },
+      "toast": {
+        "updateSuccess": "Configuration updated successfully",
+        "updateError": "Failed to update configuration. Please try again.",
+        "loadError": "Failed to load configuration. Please try again."
+      },
+      "notFound": {
+        "title": "Configuration not found",
+        "description": "Unable to load system configuration.",
+        "retry": "Retry"
+      }
+    },
+    "system": {
+      "title": "System Health",
+      "description": "Monitor system performance and health metrics",
+      "refresh": "Refresh",
+      "systemStatus": "System Status",
+      "version": "Version",
+      "lastUpdated": "Last updated",
+      "overview": {
+        "title": "System Overview",
+        "uptime": "System Uptime",
+        "version": "System Version",
+        "environment": "Environment",
+        "lastRestart": "Last Restart"
+      },
+      "performance": {
+        "title": "Performance Metrics",
+        "cpu": "CPU Usage",
+        "memory": "Memory Usage",
+        "disk": "Disk Usage",
+        "network": "Network I/O",
+        "responseTime": "Average Response Time"
+      },
+      "services": {
+        "title": "Service Status",
+        "database": "Database",
+        "redis": "Redis",
+        "email": "Email Service",
+        "storage": "File Storage",
+        "websocket": "WebSocket"
+      },
+      "logs": {
+        "title": "System Logs",
+        "recent": "Recent Logs",
+        "level": "Level",
+        "message": "Message",
+        "timestamp": "Timestamp",
+        "context": "Context",
+        "viewAll": "View All Logs",
+        "export": "Export",
+        "search": "Search logs",
+        "searchPlaceholder": "Search in messages or context...",
+        "logLevel": "Log Level",
+        "allLevels": "All levels",
+        "clear": "Clear",
+        "noLogsFound": "No logs found",
+        "noLogsDescription": "Try adjusting your search filters",
+        "levels": {
+          "all": "All levels",
+          "debug": "Debug",
+          "info": "Info",
+          "warn": "Warning",
+          "error": "Error"
+        }
+      },
+      "health": {
+        "healthy": "Healthy",
+        "warning": "Warning",
+        "critical": "Critical",
+        "unknown": "Unknown"
+      },
+      "toast": {
+        "loadError": "Failed to load system health data"
+      }
+    },
+    "common": {
+      "loading": "Loading...",
+      "error": "Error",
+      "success": "Success",
+      "cancel": "Cancel",
+      "save": "Save",
+      "edit": "Edit",
+      "delete": "Delete",
+      "view": "View",
+      "create": "Create",
+      "update": "Update",
+      "actions": "Actions",
+      "status": "Status",
+      "search": "Search",
+      "filter": "Filter",
+      "refresh": "Refresh",
+      "export": "Export",
+      "import": "Import",
+      "settings": "Settings",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous",
+      "confirm": "Confirm",
+      "tryAgain": "Try Again"
+    }
   }
 }

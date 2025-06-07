@@ -2,7 +2,15 @@ import type React from "react";
 import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { User, Inbox, Users, Building, Menu, FileText } from "lucide-react";
+import {
+  User,
+  Inbox,
+  Users,
+  Building,
+  Menu,
+  FileText,
+  BarChart3,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -40,6 +48,12 @@ const settingsNavItems: SettingsNavItem[] = [
     href: "canned-responses",
     icon: FileText,
     roles: ["agent", "admin", "superadmin"],
+  },
+  {
+    title: "Analytics",
+    href: "analytics",
+    icon: BarChart3,
+    roles: ["admin", "superadmin"],
   },
   {
     title: "Company",

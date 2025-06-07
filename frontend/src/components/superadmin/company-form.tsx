@@ -10,6 +10,7 @@ import {
   UpdateCompanyRequest,
 } from "@/lib/api/services/superadmin";
 import { SuperAdminCompany } from "@/lib/interfaces";
+import { useTranslation } from "react-i18next";
 
 interface CompanyFormProps {
   company?: SuperAdminCompany;
@@ -28,6 +29,7 @@ export default function CompanyForm({
   title,
   submitLabel,
 }: CompanyFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: company?.name || "",
     email: company?.email || "",
@@ -45,13 +47,17 @@ export default function CompanyForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = "Company name is required";
+      newErrors.name = t("superadmin.companies.validation.nameRequired");
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("superadmin.companies.validation.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = t("superadmin.companies.validation.emailInvalid");
+    }
+
+    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
+      newErrors.website = t("superadmin.companies.validation.websiteInvalid");
     }
 
     setErrors(newErrors);
@@ -87,12 +93,12 @@ export default function CompanyForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Company Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Company Name</Label>
+            <Label htmlFor="name">{t("superadmin.companies.form.name")}</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
-              placeholder="Acme Corp"
+              placeholder={t("superadmin.companies.form.namePlaceholder")}
               className={errors.name ? "border-red-500" : ""}
             />
             {errors.name && (
@@ -105,13 +111,15 @@ export default function CompanyForm({
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">
+              {t("superadmin.companies.form.email")}
+            </Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
-              placeholder="contact@company.com"
+              placeholder={t("superadmin.companies.form.emailPlaceholder")}
               className={errors.email ? "border-red-500" : ""}
             />
             {errors.email && (
@@ -124,42 +132,63 @@ export default function CompanyForm({
 
           {/* Website */}
           <div className="space-y-2">
-            <Label htmlFor="website">Website (Optional)</Label>
+            <Label htmlFor="website">
+              {t("superadmin.companies.form.website")}
+            </Label>
             <Input
               id="website"
+              type="url"
               value={formData.website}
               onChange={(e) => handleInputChange("website", e.target.value)}
-              placeholder="https://company.com"
+              placeholder={t("superadmin.companies.form.websitePlaceholder")}
+              className={errors.website ? "border-red-500" : ""}
             />
+            {errors.website && (
+              <p className="text-sm text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.website}
+              </p>
+            )}
           </div>
 
           {/* Phone */}
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone (Optional)</Label>
+            <Label htmlFor="phone">
+              {t("superadmin.companies.form.phone")}
+            </Label>
             <Input
               id="phone"
+              type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange("phone", e.target.value)}
-              placeholder="+1 (555) 123-4567"
+              placeholder={t("superadmin.companies.form.phonePlaceholder")}
             />
           </div>
 
           {/* Address */}
           <div className="space-y-2">
-            <Label htmlFor="address">Address (Optional)</Label>
-            <Textarea
+            <Label htmlFor="address">
+              {t("superadmin.companies.form.address")}
+            </Label>
+            <Input
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
-              placeholder="123 Main St, City, State 12345"
-              rows={3}
+              placeholder={t("superadmin.companies.form.addressPlaceholder")}
             />
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-4">
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : submitLabel}
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>{t("superadmin.common.saving")}</span>
+                </div>
+              ) : (
+                submitLabel
+              )}
             </Button>
           </div>
         </form>

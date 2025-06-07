@@ -74,7 +74,8 @@ type SuperAdminConfigUpdateInput struct {
 	SupportedLanguages *[]string `json:"supported_languages,omitempty"`
 
 	// Application Configuration
-	ApplicationName *string `json:"application_name,omitempty"`
+	ApplicationName    *string `json:"application_name,omitempty"`
+	EnableRegistration *string `json:"enable_registration,omitempty"`
 }
 
 type SuperAdminHandler struct {
@@ -612,7 +613,8 @@ func (h *SuperAdminHandler) GetConfig(c *fiber.Ctx) error {
 		"supported_languages": currentConfig.SupportedLanguages,
 
 		// Application Configuration
-		"application_name": currentConfig.ApplicationName,
+		"application_name":    currentConfig.ApplicationName,
+		"enable_registration": currentConfig.EnableRegistration,
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, "config_retrieved", configResponse)
@@ -726,6 +728,13 @@ func (h *SuperAdminHandler) UpdateConfig(c *fiber.Ctx) error {
 		if err := config.SetApplicationName(*input.ApplicationName); err != nil {
 			h.logger.Error("Failed to update application name", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update application name")
+		}
+	}
+
+	if input.EnableRegistration != nil {
+		if err := config.SetEnableRegistration(*input.EnableRegistration); err != nil {
+			h.logger.Error("Failed to update enable registration", fiber.Map{"error": err.Error()})
+			updateErrors = append(updateErrors, "Failed to update enable registration")
 		}
 	}
 

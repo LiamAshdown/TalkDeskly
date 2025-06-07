@@ -31,6 +31,8 @@ import {
 import { useToast } from "@/lib/hooks/use-toast";
 import { CannedResponseModal } from "@/components/protected/settings/canned-responses/canned-responses-modal";
 import { useTranslation } from "react-i18next";
+import { UseFormReturn } from "react-hook-form";
+import { CannedResponseFormData } from "@/lib/schemas/canned-response-schema";
 
 interface CannedResponse {
   id: string;
@@ -49,7 +51,8 @@ interface CannedResponsesListProps {
     response: Omit<
       CannedResponse,
       "id" | "createdAt" | "updatedAt" | "companyId"
-    >
+    >,
+    form: UseFormReturn<CannedResponseFormData>
   ) => void;
 }
 
@@ -85,10 +88,11 @@ export function CannedResponsesList({
   };
 
   const handleUpdate = (
-    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">
+    data: Omit<CannedResponse, "id" | "createdAt" | "updatedAt" | "companyId">,
+    form: UseFormReturn<CannedResponseFormData>
   ) => {
     if (editingResponse) {
-      onUpdate(editingResponse.id, data);
+      onUpdate(editingResponse.id, data, form);
       setIsEditModalOpen(false);
       setEditingResponse(null);
     }

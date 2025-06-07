@@ -227,6 +227,15 @@ func (c *DIContainer) GetHealthService() interfaces.HealthService {
 	return service
 }
 
+// GetResponseFactory retrieves the response factory
+func (c *DIContainer) GetResponseFactory() interfaces.ResponseFactory {
+	var factory interfaces.ResponseFactory
+	c.dig.Invoke(func(f interfaces.ResponseFactory) {
+		factory = f
+	})
+	return factory
+}
+
 // NewContainer creates a new container with DI
 func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 	digContainer := dig.New()

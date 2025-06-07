@@ -12,6 +12,7 @@ import GeneralSettingsPage from "./pages/(protected)/settings/general/page";
 import ContactsPage from "@/components/protected/contacts/contacts";
 import NotificationsPage from "@/components/protected/notifications/notifications";
 import CompanySettingsPage from "@/pages/(protected)/settings/company/page";
+import AnalyticsPage from "@/pages/(protected)/settings/analytics/page";
 import LoginPage from "@/pages/(auth)/login/page";
 import RegisterPage from "@/pages/(auth)/register/page";
 import ForgotPasswordPage from "@/pages/(auth)/forgot-password/page";
@@ -182,6 +183,11 @@ export const router = createBrowserRouter([
                 path: "canned-responses",
                 element: <CannedResponsesPage />,
                 id: "canned-responses",
+              },
+              {
+                path: "analytics",
+                element: <AnalyticsPage />,
+                id: "analytics",
               },
               {
                 path: "inboxes",

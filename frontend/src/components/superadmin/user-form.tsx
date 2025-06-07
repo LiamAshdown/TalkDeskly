@@ -16,6 +16,7 @@ import {
   UpdateUserRequest,
 } from "@/lib/api/services/superadmin";
 import { SuperAdminUser } from "@/lib/interfaces";
+import { useTranslation } from "react-i18next";
 
 interface UserFormProps {
   user?: SuperAdminUser;
@@ -32,6 +33,7 @@ export default function UserForm({
   title,
   submitLabel,
 }: UserFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -45,24 +47,21 @@ export default function UserForm({
   const roles = [
     {
       value: "superadmin",
-      label: "Super Admin",
+      label: t("superadmin.users.roles.superadmin"),
       icon: Shield,
-      description:
-        "Full system access with ability to manage all users, companies, and system settings across the entire platform.",
+      description: t("superadmin.users.roles.superadminDescription"),
     },
     {
       value: "admin",
-      label: "Admin",
+      label: t("superadmin.users.roles.admin"),
       icon: User,
-      description:
-        "Company-level administrator who can manage users, settings, and conversations within their organization.",
+      description: t("superadmin.users.roles.adminDescription"),
     },
     {
       value: "agent",
-      label: "Agent",
+      label: t("superadmin.users.roles.agent"),
       icon: User,
-      description:
-        "Support agent who can handle customer conversations and access basic features within their company.",
+      description: t("superadmin.users.roles.agentDescription"),
     },
   ];
 
@@ -73,27 +72,27 @@ export default function UserForm({
     const newErrors: Record<string, string> = {};
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
+      newErrors.firstName = t("superadmin.users.validation.firstNameRequired");
     }
 
     if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
+      newErrors.lastName = t("superadmin.users.validation.lastNameRequired");
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("superadmin.users.validation.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
+      newErrors.email = t("superadmin.users.validation.emailInvalid");
     }
 
     if (!user && !formData.password.trim()) {
-      newErrors.password = "Password is required";
+      newErrors.password = t("superadmin.users.validation.passwordRequired");
     } else if (!user && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+      newErrors.password = t("superadmin.users.validation.passwordMinLength");
     }
 
     if (!formData.role) {
-      newErrors.role = "Role is required";
+      newErrors.role = t("superadmin.users.validation.roleRequired");
     }
 
     setErrors(newErrors);
@@ -130,12 +129,14 @@ export default function UserForm({
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">
+                {t("superadmin.users.form.firstName")}
+              </Label>
               <Input
                 id="firstName"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
-                placeholder="John"
+                placeholder={t("superadmin.users.form.firstNamePlaceholder")}
                 className={errors.firstName ? "border-red-500" : ""}
               />
               {errors.firstName && (
@@ -147,12 +148,14 @@ export default function UserForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">
+                {t("superadmin.users.form.lastName")}
+              </Label>
               <Input
                 id="lastName"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
-                placeholder="Doe"
+                placeholder={t("superadmin.users.form.lastNamePlaceholder")}
                 className={errors.lastName ? "border-red-500" : ""}
               />
               {errors.lastName && (
@@ -166,13 +169,13 @@ export default function UserForm({
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("superadmin.users.form.email")}</Label>
             <Input
               id="email"
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
-              placeholder="john.doe@example.com"
+              placeholder={t("superadmin.users.form.emailPlaceholder")}
               className={errors.email ? "border-red-500" : ""}
             />
             {errors.email && (
@@ -186,13 +189,15 @@ export default function UserForm({
           {/* Password (only for new users) */}
           {!user && (
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">
+                {t("superadmin.users.form.password")}
+              </Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password}
                 onChange={(e) => handleInputChange("password", e.target.value)}
-                placeholder="••••••••"
+                placeholder={t("superadmin.users.form.passwordPlaceholder")}
                 className={errors.password ? "border-red-500" : ""}
               />
               {errors.password && (
@@ -204,35 +209,54 @@ export default function UserForm({
             </div>
           )}
 
-          {/* Role */}
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={formData.role}
-              onValueChange={(value) => handleInputChange("role", value)}
-            >
-              <SelectTrigger className={errors.role ? "border-red-500" : ""}>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    <div className="flex items-center gap-2">
+          {/* Role Selection */}
+          <div className="space-y-4">
+            <Label>{t("superadmin.users.form.role")}</Label>
+            <div className="grid gap-3">
+              {roles.map((role) => (
+                <div
+                  key={role.value}
+                  className={`relative rounded-lg border p-4 cursor-pointer transition-colors ${
+                    formData.role === role.value
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600"
+                  }`}
+                  onClick={() => handleInputChange("role", role.value)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div
+                      className={`mt-1 p-2 rounded-lg ${
+                        formData.role === role.value
+                          ? "bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-400"
+                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                      }`}
+                    >
                       <role.icon className="h-4 w-4" />
-                      {role.label}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formData.role && (
-              <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                {
-                  roles.find((role) => role.value === formData.role)
-                    ?.description
-                }
-              </div>
-            )}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="role"
+                          value={role.value}
+                          checked={formData.role === role.value}
+                          onChange={(e) =>
+                            handleInputChange("role", e.target.value)
+                          }
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                          {role.label}
+                        </h3>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        {role.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
             {errors.role && (
               <p className="text-sm text-red-600 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
@@ -257,9 +281,16 @@ export default function UserForm({
           )}
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-4">
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : submitLabel}
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>{t("superadmin.common.saving")}</span>
+                </div>
+              ) : (
+                submitLabel
+              )}
             </Button>
           </div>
         </form>

@@ -94,6 +94,20 @@ func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
 
 	if input.CompanyID != "" {
 		user.CompanyID = &input.CompanyID
+	} else {
+
+		if !config.IsRegistrationEnabled() {
+			// Check to see if thee's a superadmin, if there is, then we cannot
+			// allow them to create a company
+			user, err := h.userRepo.GetSuperAdminUser()
+			if err != nil {
+				return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_fetch_failed", err)
+			}
+
+			if user != nil {
+				return utils.ErrorResponse(c, fiber.StatusForbidden, "registration_disabled", nil)
+			}
+		}
 	}
 
 	createdUser, err := h.userRepo.CreateUser(&user)
