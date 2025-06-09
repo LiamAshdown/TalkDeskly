@@ -1,190 +1,96 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Check, ChevronLeft, ChevronRight } from "lucide-react";
-
-// Slider content
-const slides = [
-  {
-    title: "Welcome to our platform",
-    description:
-      "We're excited to have you join us. Complete your registration to get started with all the features our platform has to offer.",
-    features: [
-      {
-        title: "Personalized Dashboard",
-        description: "Access all your information in one place",
-      },
-      {
-        title: "Seamless Collaboration",
-        description: "Work together with your team efficiently",
-      },
-      {
-        title: "Advanced Analytics",
-        description: "Gain insights with detailed reporting",
-      },
-    ],
-  },
-  {
-    title: "Join thousands of users",
-    description:
-      "Our platform helps teams around the world to collaborate and achieve their goals faster.",
-    features: [
-      {
-        title: "Real-time Updates",
-        description: "Stay informed with instant notifications",
-      },
-      {
-        title: "Secure Environment",
-        description: "Your data is protected with enterprise-grade security",
-      },
-      {
-        title: "24/7 Support",
-        description: "Our team is always ready to help you",
-      },
-    ],
-  },
-  {
-    title: "Powerful tools for your workflow",
-    description:
-      "Unlock your team's potential with our suite of productivity tools designed for modern teams.",
-    features: [
-      {
-        title: "Smart Automation",
-        description: "Save time with automated workflows",
-      },
-      {
-        title: "Integrated Calendar",
-        description: "Schedule and manage events effortlessly",
-      },
-      {
-        title: "File Management",
-        description: "Store and share files securely in the cloud",
-      },
-    ],
-  },
-];
+import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function LeftColumn() {
-  // Slider state
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const { t } = useTranslation();
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-  }, []);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-  }, []);
-
-  // Auto-rotate slides
-  useEffect(() => {
-    if (isPaused) return;
-
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [isPaused, nextSlide]);
+  const features = [
+    {
+      title: t("auth.leftColumn.features.realTimeMessaging.title"),
+      description: t("auth.leftColumn.features.realTimeMessaging.description"),
+    },
+    {
+      title: t("auth.leftColumn.features.teamCollaboration.title"),
+      description: t("auth.leftColumn.features.teamCollaboration.description"),
+    },
+    {
+      title: t("auth.leftColumn.features.openSource.title"),
+      description: t("auth.leftColumn.features.openSource.description"),
+    },
+    {
+      title: t("auth.leftColumn.features.easyIntegration.title"),
+      description: t("auth.leftColumn.features.easyIntegration.description"),
+    },
+  ];
 
   return (
-    <div
-      className="flex min-h-[600px] md:min-h-screen flex-col justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-6 text-white md:p-8 lg:p-10"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="mx-auto w-full max-w-xl overflow-hidden">
-        <div className="mb-6 inline-block rounded-lg bg-slate-700/30 p-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-8 w-8"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg>
+    <div className="flex min-h-[600px] md:min-h-screen flex-col justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-6 text-white md:p-8 lg:p-10">
+      <div className="mx-auto w-full max-w-xl">
+        {/* TalkDeskly Logo */}
+        <div className="mb-8 flex items-center gap-3">
+          <div className="inline-block rounded-lg bg-gradient-to-br from-teal-400 to-blue-500 p-3">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-8 w-8 text-white"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">
+              {t("auth.leftColumn.brandName")}
+            </h2>
+            <p className="text-sm text-slate-400">
+              {t("auth.leftColumn.tagline")}
+            </p>
+          </div>
         </div>
 
-        {/* Slider container */}
-        <div className="relative h-[420px]">
-          {slides.map((slide, index) => (
-            <div
-              key={index}
-              className={`absolute left-0 top-0 w-full transition-all duration-500 ease-in-out ${
-                index === currentSlide
-                  ? "translate-x-0 opacity-100"
-                  : index < currentSlide
-                  ? "-translate-x-full opacity-0"
-                  : "translate-x-full opacity-0"
-              }`}
-              aria-hidden={index !== currentSlide}
-            >
-              <h1 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-                {slide.title}
-              </h1>
-              <p className="mb-8 text-slate-300">{slide.description}</p>
+        {/* Main Content */}
+        <div className="mb-8">
+          <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+            {t("auth.leftColumn.heroTitle")}
+            <span className="bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">
+              {" "}
+              {t("auth.leftColumn.heroTitleAccent")}
+            </span>
+          </h1>
+          <p className="text-xl text-slate-300 leading-relaxed">
+            {t("auth.leftColumn.description")}
+          </p>
+        </div>
 
-              <div className="space-y-5">
-                {slide.features.map((feature, featureIndex) => (
-                  <div key={featureIndex} className="flex items-start gap-4">
-                    <div className="rounded-full bg-slate-700/30 p-1">
-                      <Check className="h-5 w-5 text-teal-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-white">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm text-slate-300">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+        {/* Features */}
+        <div className="space-y-4">
+          {features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-4">
+              <div className="rounded-full bg-gradient-to-br from-teal-400/20 to-blue-500/20 p-1 mt-1">
+                <Check className="h-4 w-4 text-teal-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white mb-1">
+                  {feature.title}
+                </h3>
+                <p className="text-sm text-slate-400">{feature.description}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Slider controls */}
-        <div className="mt-8 flex items-center justify-between">
-          <button
-            onClick={prevSlide}
-            className="rounded-full bg-slate-700/50 p-2 text-white transition-colors hover:bg-slate-600/50"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-
-          <div className="flex gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`h-2 w-2 rounded-full transition-all ${
-                  index === currentSlide
-                    ? "w-6 bg-teal-400"
-                    : "bg-slate-600 hover:bg-slate-500"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-                aria-current={index === currentSlide}
-              />
-            ))}
+        {/* Bottom accent */}
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-teal-400/10 to-blue-500/10 px-4 py-2 text-sm text-slate-300">
+            <div className="h-2 w-2 rounded-full bg-teal-400"></div>
+            {t("auth.leftColumn.trustBadge")}
           </div>
-
-          <button
-            onClick={nextSlide}
-            className="rounded-full bg-slate-700/50 p-2 text-white transition-colors hover:bg-slate-600/50"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </div>

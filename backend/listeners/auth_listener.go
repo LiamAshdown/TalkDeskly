@@ -31,6 +31,10 @@ type AuthLogoutPayload struct {
 	UserID string
 }
 
+type PasswordResetPayload struct {
+	UserID string
+}
+
 func NewAuthListener(params AuthListenerParams) *AuthListener {
 	listener := &AuthListener{
 		dispatcher:   params.Dispatcher,

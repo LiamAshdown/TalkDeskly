@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"live-chat-server/config"
 	"live-chat-server/interfaces"
 	"live-chat-server/repositories"
 	"live-chat-server/utils"
@@ -14,14 +15,16 @@ type PublicHandler struct {
 	logger           interfaces.Logger
 	langContext      interfaces.LanguageContext
 	conversationRepo repositories.ConversationRepository
+	config           config.Config
 }
 
-func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext) *PublicHandler {
+func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, config config.Config) *PublicHandler {
 	return &PublicHandler{
 		inboxRepo:        inboxRepo,
 		logger:           logger,
 		langContext:      langContext,
 		conversationRepo: conversationRepo,
+		config:           config,
 	}
 }
 
@@ -55,4 +58,11 @@ func (h *PublicHandler) HandleGetConversationDetails(c *fiber.Ctx) error {
 	}
 
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "conversation_details_retrieved"), conversation.ToPayloadWithoutPrivateMessages())
+}
+
+func (h *PublicHandler) AppInformation(c *fiber.Ctx) error {
+	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "app_information_retrieved"), fiber.Map{
+		"app_name": h.config.ApplicationName,
+		"version":  h.config.Version,
+	})
 }

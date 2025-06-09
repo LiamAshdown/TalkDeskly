@@ -51,10 +51,13 @@ func SetupRoutesWithDI(params DIParams) {
 	app.Static("/", "./public/app")
 
 	apiGroup := app.Group("/api")
+	apiGroup.Get("/app-information", params.PublicHandler.AppInformation)
 
 	authGroup := apiGroup.Group("/auth")
 	authGroup.Post("/login", params.AuthHandler.Login)
 	authGroup.Post("/logout", middleware.Auth(), params.AuthHandler.Logout)
+	authGroup.Post("/forgot-password", params.AuthHandler.ForgotPassword)
+	authGroup.Post("/reset-password", params.AuthHandler.ResetPassword)
 
 	wsGroup := app.Group("/ws")
 

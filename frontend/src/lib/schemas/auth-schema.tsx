@@ -84,6 +84,34 @@ export const createOnboardingCompanySchema = (t: (key: string) => string) => {
   });
 };
 
+// Forgot password validation schema
+export const createForgotPasswordSchema = (t: (key: string) => string) => {
+  const zod = createZodI18n(t);
+
+  return zod.object({
+    email: zod
+      .string()
+      .min(1)
+      .email()
+      .transform((val) => val.toLowerCase()),
+  });
+};
+
+// Reset password validation schema
+export const createResetPasswordSchema = (t: (key: string) => string) => {
+  const zod = createZodI18n(t);
+
+  return zod
+    .object({
+      password: zod.string().min(1).min(8),
+      confirmPassword: zod.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("validation.confirmPassword.mismatch"),
+      path: ["confirmPassword"],
+    });
+};
+
 // Types derived from the schemas
 export type OnboardingUser = z.infer<
   ReturnType<typeof createOnboardingUserSchema>
@@ -92,3 +120,9 @@ export type OnboardingCompany = z.infer<
   ReturnType<typeof createOnboardingCompanySchema>
 >;
 export type LoginFormData = z.infer<ReturnType<typeof createLoginFormSchema>>;
+export type ForgotPasswordFormData = z.infer<
+  ReturnType<typeof createForgotPasswordSchema>
+>;
+export type ResetPasswordFormData = z.infer<
+  ReturnType<typeof createResetPasswordSchema>
+>;

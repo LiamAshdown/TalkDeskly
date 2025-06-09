@@ -16,9 +16,11 @@ import AnalyticsPage from "@/pages/(protected)/settings/analytics/page";
 import LoginPage from "@/pages/(auth)/login/page";
 import RegisterPage from "@/pages/(auth)/register/page";
 import ForgotPasswordPage from "@/pages/(auth)/forgot-password/page";
+import ResetPasswordPage from "@/pages/(auth)/reset-password/[token]/page";
 import InvitePage from "./components/auth/invite";
 import { AuthLayout } from "@/components/layouts/auth-layout";
 import CannedResponsesPage from "./pages/(protected)/settings/canned-responses/page";
+import { RouteErrorBoundary } from "@/components/route-error-boundary";
 
 // SuperAdmin imports
 import SuperAdminLayout from "@/pages/(superadmin)/layout";
@@ -38,7 +40,12 @@ export const router = createBrowserRouter([
     path: "/",
     element: <App />,
     id: "root",
+    errorElement: <RouteErrorBoundary />,
     children: [
+      {
+        path: "/",
+        loader: () => redirect("/auth/login"),
+      },
       {
         path: "login",
         loader: () => redirect("/auth/login"),
@@ -46,6 +53,15 @@ export const router = createBrowserRouter([
       {
         path: "register",
         loader: () => redirect("/auth/register"),
+      },
+      {
+        path: "forgot-password",
+        loader: () => redirect("/auth/forgot-password"),
+      },
+      {
+        path: "reset-password/:token",
+        loader: ({ params }) =>
+          redirect(`/auth/reset-password/${params.token}`),
       },
       {
         path: "invite/:token",
@@ -64,6 +80,16 @@ export const router = createBrowserRouter([
             path: "register",
             element: <RegisterPage />,
             id: "register",
+          },
+          {
+            path: "forgot-password",
+            element: <ForgotPasswordPage />,
+            id: "forgot-password",
+          },
+          {
+            path: "reset-password/:token",
+            element: <ResetPasswordPage />,
+            id: "reset-password",
           },
           {
             path: "invite/:token/",

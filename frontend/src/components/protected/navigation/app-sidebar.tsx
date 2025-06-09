@@ -39,6 +39,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { user, isSuperAdmin, isAdmin, logout } = useAuthStore();
   const { t } = useTranslation();
+  const { appInformation } = useMiscStore();
   const navigate = useNavigate();
 
   // Add class to document on initial load
@@ -65,7 +66,7 @@ export function AppSidebar() {
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              <h1 className="font-semibold">TalkDeskly</h1>
+              <h1 className="font-semibold">{appInformation?.appName}</h1>
             </div>
           )}
           {sidebarCollapsed && <MessageSquare className="h-5 w-5 mx-auto" />}

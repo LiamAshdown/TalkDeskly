@@ -27,6 +27,11 @@ var (
 	releaseSkipBuild   bool
 	releaseSkipVersion bool
 	releaseForce       bool
+	// Docker-related flags
+	releaseDockerRegistry string
+	releaseDockerImage    string
+	releaseSkipDocker     bool
+	releaseDockerPush     bool
 )
 
 var releaseCmd = &cobra.Command{
@@ -34,13 +39,16 @@ var releaseCmd = &cobra.Command{
 	Short: "Build and release the application",
 	Long: `Build and release the application with version management.
 This command handles version bumping, building frontend/chat-bubble,
-and preparing the release.
+building Docker images, and preparing the release.
 
 Examples:
-  talkdeskly release                    # Patch version bump and build
-  talkdeskly release --version 1.2.3   # Set specific version
-  talkdeskly release --skip-build      # Only bump version
-  talkdeskly release --skip-version    # Only build (no version change)`,
+  talkdeskly release                                    # Patch version bump and build
+  talkdeskly release --version 1.2.3                   # Set specific version
+  talkdeskly release --skip-build                      # Only bump version
+  talkdeskly release --skip-version                    # Only build (no version change)
+  talkdeskly release --docker-push                     # Build and push Docker image
+  talkdeskly release --docker-image myapp --docker-push # Custom image name and push
+  talkdeskly release --skip-docker                     # Skip Docker build entirely`,
 	RunE: runRelease,
 }
 
@@ -49,6 +57,13 @@ func init() {
 	releaseCmd.Flags().BoolVar(&releaseSkipBuild, "skip-build", false, "Skip building frontend and chat-bubble")
 	releaseCmd.Flags().BoolVar(&releaseSkipVersion, "skip-version", false, "Skip version bumping")
 	releaseCmd.Flags().BoolVar(&releaseForce, "force", false, "Force release without confirmation")
+
+	// Docker flags
+	releaseCmd.Flags().StringVar(&releaseDockerRegistry, "docker-registry", "", "Docker registry URL (e.g., docker.io, ghcr.io)")
+	releaseCmd.Flags().StringVar(&releaseDockerImage, "docker-image", "talkdeskly", "Docker image name")
+	releaseCmd.Flags().BoolVar(&releaseSkipDocker, "skip-docker", false, "Skip Docker image building")
+	releaseCmd.Flags().BoolVar(&releaseDockerPush, "docker-push", false, "Push Docker image to registry after building")
+
 	rootCmd.AddCommand(releaseCmd)
 }
 
@@ -82,6 +97,11 @@ func runRelease(cmd *cobra.Command, args []string) error {
 	fmt.Printf("New version: %s\n", newVersion)
 	fmt.Printf("Skip build: %t\n", releaseSkipBuild)
 	fmt.Printf("Skip version: %t\n", releaseSkipVersion)
+	fmt.Printf("Skip Docker: %t\n", releaseSkipDocker)
+	if !releaseSkipDocker {
+		fmt.Printf("Docker image: %s\n", getDockerImageName(newVersion))
+		fmt.Printf("Docker push: %t\n", releaseDockerPush)
+	}
 	fmt.Println()
 
 	// Confirm release
@@ -108,6 +128,22 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		printSuccess("Application built successfully")
 	}
 
+	// Build Docker image if not skipping
+	if !releaseSkipDocker {
+		if err := buildDockerImage(newVersion); err != nil {
+			return fmt.Errorf("Docker build failed: %v", err)
+		}
+		printSuccess("Docker image built successfully")
+
+		// Push Docker image if requested
+		if releaseDockerPush {
+			if err := pushDockerImage(newVersion); err != nil {
+				return fmt.Errorf("Docker push failed: %v", err)
+			}
+			printSuccess("Docker image pushed successfully")
+		}
+	}
+
 	// Generate build info
 	if err := generateBuildInfo(newVersion); err != nil {
 		return fmt.Errorf("failed to generate build info: %v", err)
@@ -123,11 +159,25 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		fmt.Println("✅ Frontend application built and deployed")
 		fmt.Println("✅ Chat SDK built and deployed")
 	}
+	if !releaseSkipDocker {
+		fmt.Printf("✅ Docker image built: %s\n", getDockerImageName(newVersion))
+		if releaseDockerPush {
+			fmt.Println("✅ Docker image pushed to registry")
+		}
+	}
 	fmt.Println("✅ Build info generated")
 	fmt.Println()
 	fmt.Println("🌐 Access URLs (when backend is running):")
 	fmt.Println("   Frontend App: http://localhost:6721/")
 	fmt.Println("   Chat SDK: http://localhost:6721/sdk")
+	if !releaseSkipDocker {
+		fmt.Println()
+		fmt.Println("🐳 Docker Usage:")
+		if releaseDockerPush {
+			fmt.Printf("   docker pull %s\n", getDockerImageName(newVersion))
+		}
+		fmt.Printf("   docker run -p 8080:8080 %s\n", getDockerImageName(newVersion))
+	}
 
 	return nil
 }
@@ -303,13 +353,31 @@ func buildChatBubble(backendPublicDir string) error {
 }
 
 func generateBuildInfo(version string) error {
+	components := map[string]string{}
+
+	if !releaseSkipBuild {
+		components["frontend"] = "built"
+		components["chatBubble"] = "built"
+	}
+
+	if !releaseSkipDocker {
+		components["docker"] = "built"
+		if releaseDockerPush {
+			components["dockerPushed"] = "true"
+		}
+	}
+
 	buildInfo := map[string]interface{}{
-		"buildDate": time.Now().UTC().Format("2006-01-02T15:04:05Z"),
-		"version":   version,
-		"components": map[string]string{
-			"frontend":   "built",
-			"chatBubble": "built",
-		},
+		"buildDate":  time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+		"version":    version,
+		"components": components,
+	}
+
+	if !releaseSkipDocker {
+		buildInfo["dockerImage"] = getDockerImageName(version)
+		if releaseDockerRegistry != "" {
+			buildInfo["dockerRegistry"] = releaseDockerRegistry
+		}
 	}
 
 	// Write to public directory
@@ -360,4 +428,76 @@ func writeJSONFile(filename string, data interface{}) error {
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(data)
+}
+
+// Docker-related functions
+
+func getDockerImageName(version string) string {
+	imageName := releaseDockerImage
+	if releaseDockerRegistry != "" {
+		imageName = fmt.Sprintf("%s/%s", releaseDockerRegistry, imageName)
+	}
+	return fmt.Sprintf("%s:%s", imageName, version)
+}
+
+func buildDockerImage(version string) error {
+	printInfo("Building Docker image...")
+
+	imageName := getDockerImageName(version)
+	latestImageName := fmt.Sprintf("%s:latest", getBaseImageName())
+
+	// Build the Docker image using the production Dockerfile
+	buildArgs := []string{
+		"build",
+		"-f", "docker/Dockerfile.prod",
+		"-t", imageName,
+		"-t", latestImageName,
+		".",
+	}
+
+	if err := runDockerCommand("docker", buildArgs...); err != nil {
+		return fmt.Errorf("failed to build Docker image: %v", err)
+	}
+
+	printInfo(fmt.Sprintf("Docker image built: %s", imageName))
+	return nil
+}
+
+func pushDockerImage(version string) error {
+	printInfo("Pushing Docker image...")
+
+	if releaseDockerRegistry == "" {
+		return fmt.Errorf("docker registry must be specified when pushing (use --docker-registry)")
+	}
+
+	imageName := getDockerImageName(version)
+	latestImageName := fmt.Sprintf("%s:latest", getBaseImageName())
+
+	// Push versioned image
+	if err := runDockerCommand("docker", "push", imageName); err != nil {
+		return fmt.Errorf("failed to push Docker image %s: %v", imageName, err)
+	}
+
+	// Push latest image
+	if err := runDockerCommand("docker", "push", latestImageName); err != nil {
+		return fmt.Errorf("failed to push Docker image %s: %v", latestImageName, err)
+	}
+
+	printInfo(fmt.Sprintf("Docker images pushed: %s and %s", imageName, latestImageName))
+	return nil
+}
+
+func getBaseImageName() string {
+	if releaseDockerRegistry != "" {
+		return fmt.Sprintf("%s/%s", releaseDockerRegistry, releaseDockerImage)
+	}
+	return releaseDockerImage
+}
+
+func runDockerCommand(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = "." // Ensure we're in the backend directory
+	return cmd.Run()
 }

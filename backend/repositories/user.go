@@ -3,6 +3,7 @@ package repositories
 import (
 	"fmt"
 	"live-chat-server/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,6 +17,7 @@ type UserRepository interface {
 	UpdateUser(user *models.User) error
 	DeleteUser(id string) error
 	GetNotifications(userID string) ([]models.UserNotification, error)
+	GetUserByPasswordResetToken(token string) (*models.User, error)
 
 	// SuperAdmin methods
 	GetAllUsers(page, limit int, search string) ([]models.User, int64, error)
@@ -65,7 +67,7 @@ func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 
-	return &user, gorm.ErrRecordNotFound
+	return &user, nil
 }
 
 func (r *userRepository) CreateUser(user *models.User) (*models.User, error) {
@@ -96,6 +98,17 @@ func (r *userRepository) GetNotifications(userID string) ([]models.UserNotificat
 	}
 
 	return notifications, nil
+}
+
+func (r *userRepository) GetUserByPasswordResetToken(token string) (*models.User, error) {
+	var user models.User
+	if err := r.db.Preload("Company").Preload("NotificationSettings").
+		Where("password_reset_token = ? AND password_reset_expires_at > ?", token, time.Now()).
+		First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // SuperAdmin methods implementation

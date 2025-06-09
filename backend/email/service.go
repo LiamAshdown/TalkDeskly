@@ -106,6 +106,7 @@ func (e *EmailServiceImpl) SendTemplatedEmailAsync(to, subject, templateName str
 		templateData = NewTemplateData()
 		templateData.Data = v
 		templateData.Subject = subject
+		templateData.AppName = e.config.ApplicationName
 	default:
 		return fmt.Errorf("unsupported data type for template: %T", data)
 	}
@@ -129,6 +130,7 @@ func (e *EmailServiceImpl) CreateTemplateData(subject string, data map[string]in
 
 // TemplateData represents the data structure for email templates
 type TemplateData struct {
+	AppName        string                 `json:"app_name"`
 	Subject        string                 `json:"subject"`
 	CurrentYear    int                    `json:"current_year"`
 	UnsubscribeURL string                 `json:"unsubscribe_url"`
@@ -138,6 +140,7 @@ type TemplateData struct {
 // NewTemplateData creates a new TemplateData with default values
 func NewTemplateData() TemplateData {
 	return TemplateData{
+		AppName:        "TalkDeskly",
 		Subject:        "TalkDeskly",
 		CurrentYear:    time.Now().Year(),
 		UnsubscribeURL: "https://talkdeskly.com/unsubscribe",

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useMobileView } from "../../context/mobile-view-context";
 import { cn } from "@/lib/utils";
+import { useMiscStore } from "@/stores/misc";
 
 interface ResponsiveLayoutProps {
   inboxSidebar: React.ReactNode;
@@ -25,6 +26,7 @@ export default function ResponsiveLayout({
 }: ResponsiveLayoutProps) {
   const { mobileView, setMobileView } = useMobileView();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { appInformation } = useMiscStore();
 
   return (
     <div className="h-full flex flex-col">
@@ -37,7 +39,7 @@ export default function ResponsiveLayout({
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="font-semibold">TalkDeskly</div>
+        <div className="font-semibold">{appInformation?.appName}</div>
         {/* To center the Agent Portal text */}
         <div></div>
       </div>

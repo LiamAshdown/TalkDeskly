@@ -4,6 +4,14 @@ import { persist } from "zustand/middleware";
 interface MiscState {
   theme: "light" | "dark" | "system";
   sidebarCollapsed: boolean;
+  appInformation: {
+    appName: string;
+    version: string;
+  } | null;
+  setAppInformation: (appInformation: {
+    appName: string;
+    version: string;
+  }) => void;
   setTheme: (theme: "light" | "dark" | "system") => void;
   toggleTheme: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -39,6 +47,10 @@ export const useMiscStore = create<MiscState>()(
     (set, get) => ({
       theme: "system",
       sidebarCollapsed: false,
+      appInformation: {
+        appName: "",
+        version: "",
+      },
       setTheme: (theme) => {
         applyTheme(theme);
         set({ theme });
@@ -52,6 +64,7 @@ export const useMiscStore = create<MiscState>()(
       setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      setAppInformation: (appInformation) => set({ appInformation }),
     }),
     {
       name: "ui-preferences",

@@ -40,6 +40,7 @@ const (
 	EventTypeAuthLogin     EventType = "auth_login"
 	EventTypeAuthLogout    EventType = "auth_logout"
 	EventTypeAuthLoginFail EventType = "auth_login_fail"
+	EventTypePasswordReset EventType = "password_reset"
 
 	// Error events
 	EventTypeError EventType = "connection_error"

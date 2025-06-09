@@ -18,21 +18,23 @@ const (
 )
 
 type User struct {
-	ID                   string                `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	CompanyID            *string               `gorm:"type:uuid"`
-	Email                string                `gorm:"unique;not null"`
-	FirstName            string                `gorm:"not null"`
-	LastName             string                `gorm:"not null"`
-	Password             string                `gorm:"not null"`
-	Role                 string                `gorm:"not null"`
-	Language             string                `gorm:"type:varchar(10);default:'en'"`
-	AvatarPath           *string               `gorm:"type:text"`
-	CreatedAt            time.Time             `gorm:""`
-	UpdatedAt            time.Time             `gorm:""`
-	Company              *Company              `gorm:"foreignKey:CompanyID"`
-	NotificationSettings *NotificationSettings `gorm:"foreignKey:UserID"`
-	DeletedAt            gorm.DeletedAt        `gorm:"index" json:"-"`
-	Inboxes              []*Inbox              `gorm:"many2many:inbox_users;"`
+	ID                     string                `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	CompanyID              *string               `gorm:"type:uuid"`
+	Email                  string                `gorm:"unique;not null"`
+	FirstName              string                `gorm:"not null"`
+	LastName               string                `gorm:"not null"`
+	Password               string                `gorm:"not null"`
+	Role                   string                `gorm:"not null"`
+	Language               string                `gorm:"type:varchar(10);default:'en'"`
+	AvatarPath             *string               `gorm:"type:text"`
+	PasswordResetToken     *string               `gorm:"type:text"`
+	PasswordResetExpiresAt *time.Time            `gorm:""`
+	CreatedAt              time.Time             `gorm:""`
+	UpdatedAt              time.Time             `gorm:""`
+	Company                *Company              `gorm:"foreignKey:CompanyID"`
+	NotificationSettings   *NotificationSettings `gorm:"foreignKey:UserID"`
+	DeletedAt              gorm.DeletedAt        `gorm:"index" json:"-"`
+	Inboxes                []*Inbox              `gorm:"many2many:inbox_users;"`
 }
 
 func (u *User) GetFullName() string {
