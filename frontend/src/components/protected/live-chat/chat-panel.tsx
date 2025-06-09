@@ -17,6 +17,12 @@ export default function ChatPanel() {
   } = useActiveConversation();
   const { setMobileView } = useMobileView();
 
+  useEffect(() => {
+    if (activeConversation) {
+      setMobileView("chat");
+    }
+  }, [activeConversation, setMobileView]);
+
   if (!activeConversation) {
     return (
       <EmptyChatState
@@ -30,10 +36,6 @@ export default function ChatPanel() {
     setIsContactInfoOpen(newState);
     setMobileView(newState ? "contact" : "chat");
   };
-
-  useEffect(() => {
-    setMobileView("chat");
-  }, []);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">

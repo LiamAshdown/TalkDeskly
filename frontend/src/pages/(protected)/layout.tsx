@@ -3,6 +3,8 @@ import { AppSidebar } from "@/components/protected/navigation/app-sidebar";
 import { useWebSocket } from "@/context/websocket-context";
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/auth";
+import { useMiscStore } from "@/stores/misc";
+import { miscService } from "@/lib/api/services/misc";
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user } = useAuthStore();
@@ -20,6 +22,17 @@ export default function ProtectedLayout() {
       hasConnected.current = false;
     }
   }, [isAuthenticated]);
+
+  const { setAppInformation } = useMiscStore();
+
+  useEffect(() => {
+    miscService.getAppInformation().then((res) => {
+      setAppInformation({
+        appName: res.data.appName,
+        version: res.data.version,
+      });
+    });
+  }, []);
 
   return (
     <div className="flex h-screen">

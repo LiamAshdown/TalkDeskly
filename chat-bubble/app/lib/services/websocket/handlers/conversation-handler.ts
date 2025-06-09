@@ -3,6 +3,7 @@ import type {
   ConversationSendMessagePayload,
   ConversationStartPayload,
   ConversationUpdatePayload,
+  ConversationClosePayload,
   WebSocketMessage,
 } from "~/lib/services/websocket/types";
 import type { IWebSocketHandler } from "~/lib/services/websocket/handlers/types";
@@ -13,6 +14,9 @@ export class ConversationHandler implements IWebSocketHandler {
     switch (message.event) {
       case "conversation_start":
         this.handleConversationStart(message);
+        break;
+      case "conversation_close":
+        this.handleConversationClose(message);
         break;
       case "conversation_end":
         this.handleConversationEnd(message);
@@ -29,6 +33,11 @@ export class ConversationHandler implements IWebSocketHandler {
   private handleConversationStart(message: WebSocketMessage): void {
     const payload = message.payload as ConversationStartPayload;
     useChatStore.getState().setConversation(payload);
+  }
+
+  private handleConversationClose(message: WebSocketMessage): void {
+    const payload = message.payload as ConversationClosePayload;
+    useChatStore.getState().setConversationStatus(payload.status);
   }
 
   private handleConversationEnd(message: WebSocketMessage): void {

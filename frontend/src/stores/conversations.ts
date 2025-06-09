@@ -84,7 +84,7 @@ export const useConversationsStore = create<ConversationsState>()(
 
       handleConversationStart: (payload: ConversationPayload) => {
         set((state) => {
-          get().fetchConversations();
+          state.conversations.unshift(payload);
         });
       },
 

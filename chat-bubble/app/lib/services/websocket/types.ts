@@ -43,6 +43,7 @@ export interface ConnectionEstablishedPayload {
 
 export interface ConversationStartPayload extends Conversation {}
 
+export interface ConversationClosePayload extends Conversation {}
 export interface ConversationGetByIdPayload {
   conversationId: string;
 }
