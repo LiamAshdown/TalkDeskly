@@ -197,7 +197,7 @@ func updateVersion(version string) error {
 	}
 
 	// Update config
-	if err := config.SetVersion(version); err != nil {
+	if err := config.NewConfigManager().SetVersion(version); err != nil {
 		return err
 	}
 

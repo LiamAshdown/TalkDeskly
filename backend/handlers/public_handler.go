@@ -15,10 +15,10 @@ type PublicHandler struct {
 	logger           interfaces.Logger
 	langContext      interfaces.LanguageContext
 	conversationRepo repositories.ConversationRepository
-	config           config.Config
+	config           config.ConfigManager
 }
 
-func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, config config.Config) *PublicHandler {
+func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, config config.ConfigManager) *PublicHandler {
 	return &PublicHandler{
 		inboxRepo:        inboxRepo,
 		logger:           logger,
@@ -62,7 +62,7 @@ func (h *PublicHandler) HandleGetConversationDetails(c *fiber.Ctx) error {
 
 func (h *PublicHandler) AppInformation(c *fiber.Ctx) error {
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "app_information_retrieved"), fiber.Map{
-		"app_name": h.config.ApplicationName,
-		"version":  h.config.Version,
+		"app_name": h.config.GetConfig().ApplicationName,
+		"version":  h.config.GetConfig().Version,
 	})
 }

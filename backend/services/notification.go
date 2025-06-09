@@ -16,10 +16,10 @@ type NotificationService struct {
 	pubSub       interfaces.PubSub
 	emailService interfaces.EmailService
 	langContext  interfaces.LanguageContext
-	config       config.Config
+	config       config.ConfigManager
 }
 
-func NewNotificationService(db *gorm.DB, logger interfaces.Logger, jobClient interfaces.JobClient, pubSub interfaces.PubSub, emailService interfaces.EmailService, langContext interfaces.LanguageContext, config config.Config) interfaces.NotificationService {
+func NewNotificationService(db *gorm.DB, logger interfaces.Logger, jobClient interfaces.JobClient, pubSub interfaces.PubSub, emailService interfaces.EmailService, langContext interfaces.LanguageContext, config config.ConfigManager) interfaces.NotificationService {
 	return &NotificationService{db: db, logger: logger, jobClient: jobClient, pubSub: pubSub, emailService: emailService, langContext: langContext, config: config}
 }
 

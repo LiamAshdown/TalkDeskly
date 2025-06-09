@@ -24,21 +24,21 @@ func RegisterEmailService(container *dig.Container) {
 	// Register email service
 	if err := container.Provide(func(
 		factory *EmailFactory,
-		cfg config.Config,
+		cfg config.ConfigManager,
 	) interfaces.EmailService {
 		emailConfig, err := CreateEmailConfigFromEnv(
-			cfg.EmailProvider,
-			cfg.EmailHost,
-			cfg.EmailPort,
-			cfg.EmailUsername,
-			cfg.EmailPassword,
-			cfg.EmailFrom,
+			cfg.GetConfig().EmailProvider,
+			cfg.GetConfig().EmailHost,
+			cfg.GetConfig().EmailPort,
+			cfg.GetConfig().EmailUsername,
+			cfg.GetConfig().EmailPassword,
+			cfg.GetConfig().EmailFrom,
 		)
 		if err != nil {
 			log.Fatalf("Failed to create email config: %v", err)
 		}
 
-		service, err := factory.CreateEmailService(emailConfig)
+		service, err := factory.CreateEmailService(emailConfig, cfg)
 		if err != nil {
 			log.Fatalf("Failed to create email service: %v", err)
 		}

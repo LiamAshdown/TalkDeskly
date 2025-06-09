@@ -9,11 +9,12 @@ import (
 
 // EmailServiceImpl implements the EmailService interface
 type EmailServiceImpl struct {
-	sender    interfaces.EmailSender
-	renderer  interfaces.EmailTemplateRenderer
-	jobClient interfaces.JobClient
-	logger    interfaces.Logger
-	config    config.Config
+	sender      interfaces.EmailSender
+	renderer    interfaces.EmailTemplateRenderer
+	jobClient   interfaces.JobClient
+	logger      interfaces.Logger
+	emailConfig interfaces.EmailConfig
+	config      config.ConfigManager
 }
 
 // NewEmailService creates a new email service
@@ -22,12 +23,16 @@ func NewEmailService(
 	renderer interfaces.EmailTemplateRenderer,
 	jobClient interfaces.JobClient,
 	logger interfaces.Logger,
+	emailConfig interfaces.EmailConfig,
+	config config.ConfigManager,
 ) interfaces.EmailService {
 	return &EmailServiceImpl{
-		sender:    sender,
-		renderer:  renderer,
-		jobClient: jobClient,
-		logger:    logger,
+		sender:      sender,
+		renderer:    renderer,
+		jobClient:   jobClient,
+		logger:      logger,
+		emailConfig: emailConfig,
+		config:      config,
 	}
 }
 
@@ -50,7 +55,7 @@ func (e *EmailServiceImpl) SendTemplatedEmail(to, templateName string, data inte
 		if subject, exists := v["subject"].(string); exists {
 			templateData.Subject = subject
 		} else {
-			templateData.Subject = fmt.Sprintf("%s Notification", e.config.ApplicationName)
+			templateData.Subject = fmt.Sprintf("%s Notification", e.config.GetConfig().ApplicationName)
 		}
 	default:
 		return fmt.Errorf("unsupported data type for template: %T", data)
@@ -106,7 +111,7 @@ func (e *EmailServiceImpl) SendTemplatedEmailAsync(to, subject, templateName str
 		templateData = NewTemplateData()
 		templateData.Data = v
 		templateData.Subject = subject
-		templateData.AppName = e.config.ApplicationName
+		templateData.AppName = e.config.GetConfig().ApplicationName
 	default:
 		return fmt.Errorf("unsupported data type for template: %T", data)
 	}

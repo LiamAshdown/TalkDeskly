@@ -20,10 +20,10 @@ type Service struct {
 }
 
 // NewI18nService creates a new internationalization service
-func NewI18nService(cfg config.Config) (interfaces.I18n, error) {
+func NewI18nService(cfg config.ConfigManager) (interfaces.I18n, error) {
 	service := &Service{
-		defaultLanguage:    cfg.DefaultLanguage,
-		supportedLanguages: cfg.SupportedLanguages,
+		defaultLanguage:    cfg.GetConfig().DefaultLanguage,
+		supportedLanguages: cfg.GetConfig().SupportedLanguages,
 		translations:       make(map[string]map[string]string),
 	}
 

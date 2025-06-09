@@ -18,7 +18,7 @@ type ZapLogger struct {
 }
 
 // NewLogger creates a new ZapLogger instance with file and console output
-func NewLogger(config config.Config) interfaces.Logger {
+func NewLogger(config config.ConfigManager) interfaces.Logger {
 	// Ensure logs directory exists
 	logDir := "logs"
 	if err := os.MkdirAll(logDir, 0755); err != nil {
@@ -41,7 +41,7 @@ func NewLogger(config config.Config) interfaces.Logger {
 	var consoleEncoder zapcore.Encoder
 	var fileEncoder zapcore.Encoder
 
-	if config.Environment == "production" {
+	if config.GetConfig().Environment == "production" {
 		// Production: JSON format for files, simplified console
 		fileEncoderConfig := zap.NewProductionEncoderConfig()
 		fileEncoderConfig.TimeKey = "timestamp"
@@ -66,7 +66,7 @@ func NewLogger(config config.Config) interfaces.Logger {
 
 	// Set log levels
 	var logLevel zapcore.Level
-	switch config.LogLevel {
+	switch config.GetConfig().LogLevel {
 	case "debug":
 		logLevel = zapcore.DebugLevel
 	case "info":

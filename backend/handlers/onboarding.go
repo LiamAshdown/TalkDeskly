@@ -27,7 +27,7 @@ type OnboardingHandler struct {
 	emailService    interfaces.EmailService
 	securityContext interfaces.SecurityContext
 	logger          interfaces.Logger
-	config          config.Config
+	config          config.ConfigManager
 	langContext     interfaces.LanguageContext
 }
 
@@ -37,7 +37,7 @@ func NewOnboardingHandler(userRepo repositories.UserRepository,
 	emailService interfaces.EmailService,
 	securityContext interfaces.SecurityContext,
 	logger interfaces.Logger,
-	config config.Config,
+	config config.ConfigManager,
 	langContext interfaces.LanguageContext) *OnboardingHandler {
 	handlerLogger := logger.Named("onboarding_handler")
 	return &OnboardingHandler{
@@ -96,7 +96,7 @@ func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
 		user.CompanyID = &input.CompanyID
 	} else {
 
-		if !config.IsRegistrationEnabled() {
+		if !h.config.IsRegistrationEnabled() {
 			// Check to see if thee's a superadmin, if there is, then we cannot
 			// allow them to create a company
 			user, err := h.userRepo.GetSuperAdminUser()
@@ -184,13 +184,13 @@ func (h *OnboardingHandler) HandleCreateCompany(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_reload_failed", err)
 	}
 
-	actionURL := fmt.Sprintf("%s/portal", config.App.FrontendURL)
+	actionURL := fmt.Sprintf("%s/portal", h.config.GetConfig().FrontendURL)
 
 	payload := map[string]interface{}{
 		"AcceptURL": actionURL,
 	}
 
-	h.emailService.SendTemplatedEmailAsync(user.User.Email, h.langContext.T(c, "welcome_email_subject", h.config.ApplicationName), "welcome.html", payload)
+	h.emailService.SendTemplatedEmailAsync(user.User.Email, h.langContext.T(c, "welcome_email_subject", h.config.GetConfig().ApplicationName), "welcome.html", payload)
 
 	user.User = fetchedUser
 

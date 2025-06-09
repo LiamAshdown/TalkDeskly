@@ -63,6 +63,36 @@ type Config struct {
 	Version            string
 }
 
+// ConfigManager interface defines the contract for configuration management
+type ConfigManager interface {
+	GetConfig() Config
+	Load()
+	Reload()
+	IsRegistrationEnabled() bool
+
+	// Configuration setters
+	SetPort(port string) error
+	SetBaseURL(url string) error
+	SetFrontendURL(url string) error
+	SetEnvironment(env string) error
+	SetLogLevel(level string) error
+	SetDatabaseDSN(dsn string) error
+	SetRedisAddr(addr string) error
+	SetJwtSecret(secret string) error
+	SetEmailProvider(provider string) error
+	SetEmailHost(host string) error
+	SetEmailPort(port string) error
+	SetEmailUsername(username string) error
+	SetEmailPassword(password string) error
+	SetEmailFrom(from string) error
+	SetDefaultLanguage(lang string) error
+	SetSupportedLanguages(languages []string) error
+	SetApplicationName(name string) error
+	SetEnableRegistration(enable string) error
+	SetVersion(version string) error
+	SaveCurrentConfig() error
+}
+
 // JSONConfig represents the JSON configuration file structure
 // Uses pointers to detect which values are explicitly set
 type JSONConfig struct {
@@ -98,33 +128,42 @@ type JSONConfig struct {
 	Version            *string `json:"version,omitempty"`
 }
 
-// Global configuration instance
-var App Config
-
-// NewConfig creates a new config instance with loaded configuration
-func NewConfig() Config {
-	return loadConfig()
+// ConfigManagerImpl handles all configuration operations
+type ConfigManagerImpl struct {
+	config Config
 }
 
-// Load initializes the global configuration
-func Load() {
-	App = loadConfig()
+// NewConfigManager creates a new ConfigManager instance with loaded configuration
+func NewConfigManager() ConfigManager {
+	cm := &ConfigManagerImpl{}
+	cm.Load()
+	return cm
 }
 
-// Reload reloads the global configuration from files
-func Reload() {
-	Load()
+// GetConfig returns the current configuration
+func (cm *ConfigManagerImpl) GetConfig() Config {
+	return cm.config
+}
+
+// Load initializes the configuration
+func (cm *ConfigManagerImpl) Load() {
+	cm.config = cm.loadConfig()
+}
+
+// Reload reloads the configuration from files
+func (cm *ConfigManagerImpl) Reload() {
+	cm.Load()
 	log.Println("Configuration reloaded")
 }
 
 // loadConfig loads configuration with priority: defaults -> env vars -> JSON file
-func loadConfig() Config {
+func (cm *ConfigManagerImpl) loadConfig() Config {
 	// Step 1: Load base configuration from environment variables
-	config := loadFromEnv()
+	config := cm.loadFromEnv()
 
 	// Step 2: Try to override with JSON configuration if available
-	if jsonConfig := loadFromJSON(ConfigFileName); jsonConfig != nil {
-		config = mergeJSONConfig(config, jsonConfig)
+	if jsonConfig := cm.loadFromJSON(ConfigFileName); jsonConfig != nil {
+		config = cm.mergeJSONConfig(config, jsonConfig)
 		log.Printf("Configuration overridden with %s", ConfigFileName)
 	}
 
@@ -132,7 +171,7 @@ func loadConfig() Config {
 }
 
 // loadFromEnv loads configuration from environment variables with fallback to defaults
-func loadFromEnv() Config {
+func (cm *ConfigManagerImpl) loadFromEnv() Config {
 	return Config{
 		// Server Configuration
 		Port:        getEnv("PORT", DefaultPort),
@@ -169,7 +208,7 @@ func loadFromEnv() Config {
 
 // loadFromJSON attempts to load configuration from a JSON file
 // Returns nil if file doesn't exist or cannot be parsed
-func loadFromJSON(filename string) *JSONConfig {
+func (cm *ConfigManagerImpl) loadFromJSON(filename string) *JSONConfig {
 	file, err := os.Open(filename)
 	if err != nil {
 		// File doesn't exist or cannot be opened - this is not an error
@@ -189,7 +228,7 @@ func loadFromJSON(filename string) *JSONConfig {
 
 // mergeJSONConfig merges JSON configuration values over the base configuration
 // Only non-nil JSON values will override the base configuration
-func mergeJSONConfig(base Config, jsonConfig *JSONConfig) Config {
+func (cm *ConfigManagerImpl) mergeJSONConfig(base Config, jsonConfig *JSONConfig) Config {
 	// Server Configuration
 	if jsonConfig.Port != nil {
 		base.Port = *jsonConfig.Port
@@ -267,115 +306,116 @@ func mergeJSONConfig(base Config, jsonConfig *JSONConfig) Config {
 // Configuration Setters - These functions update the JSON config file and reload configuration
 
 // SetPort updates the server port in JSON config and reloads
-func SetPort(port string) error {
-	return setConfigValue("port", port)
+func (cm *ConfigManagerImpl) SetPort(port string) error {
+	return cm.setConfigValue("port", port)
 }
 
 // SetBaseURL updates the base URL in JSON config and reloads
-func SetBaseURL(url string) error {
-	return setConfigValue("base_url", url)
+func (cm *ConfigManagerImpl) SetBaseURL(url string) error {
+	return cm.setConfigValue("base_url", url)
 }
 
 // SetFrontendURL updates the frontend URL in JSON config and reloads
-func SetFrontendURL(url string) error {
-	return setConfigValue("frontend_url", url)
+func (cm *ConfigManagerImpl) SetFrontendURL(url string) error {
+	return cm.setConfigValue("frontend_url", url)
 }
 
 // SetEnvironment updates the environment in JSON config and reloads
-func SetEnvironment(env string) error {
-	return setConfigValue("environment", env)
+func (cm *ConfigManagerImpl) SetEnvironment(env string) error {
+	return cm.setConfigValue("environment", env)
 }
 
 // SetLogLevel updates the log level in JSON config and reloads
-func SetLogLevel(level string) error {
-	return setConfigValue("log_level", level)
+func (cm *ConfigManagerImpl) SetLogLevel(level string) error {
+	return cm.setConfigValue("log_level", level)
 }
 
 // SetDatabaseDSN updates the database DSN in JSON config and reloads
-func SetDatabaseDSN(dsn string) error {
-	return setConfigValue("database_dsn", dsn)
+func (cm *ConfigManagerImpl) SetDatabaseDSN(dsn string) error {
+	return cm.setConfigValue("database_dsn", dsn)
 }
 
 // SetRedisAddr updates the Redis address in JSON config and reloads
-func SetRedisAddr(addr string) error {
-	return setConfigValue("redis_addr", addr)
+func (cm *ConfigManagerImpl) SetRedisAddr(addr string) error {
+	return cm.setConfigValue("redis_addr", addr)
 }
 
 // SetJwtSecret updates the JWT secret in JSON config and reloads
-func SetJwtSecret(secret string) error {
-	return setConfigValue("jwt_secret", secret)
+func (cm *ConfigManagerImpl) SetJwtSecret(secret string) error {
+	return cm.setConfigValue("jwt_secret", secret)
 }
 
 // SetEmailProvider updates the email provider in JSON config and reloads
-func SetEmailProvider(provider string) error {
-	return setConfigValue("email_provider", provider)
+func (cm *ConfigManagerImpl) SetEmailProvider(provider string) error {
+	return cm.setConfigValue("email_provider", provider)
 }
 
 // SetEmailHost updates the email host in JSON config and reloads
-func SetEmailHost(host string) error {
-	return setConfigValue("email_host", host)
+func (cm *ConfigManagerImpl) SetEmailHost(host string) error {
+	return cm.setConfigValue("email_host", host)
 }
 
 // SetEmailPort updates the email port in JSON config and reloads
-func SetEmailPort(port string) error {
-	return setConfigValue("email_port", port)
+func (cm *ConfigManagerImpl) SetEmailPort(port string) error {
+	return cm.setConfigValue("email_port", port)
 }
 
 // SetEmailUsername updates the email username in JSON config and reloads
-func SetEmailUsername(username string) error {
-	return setConfigValue("email_username", username)
+func (cm *ConfigManagerImpl) SetEmailUsername(username string) error {
+	return cm.setConfigValue("email_username", username)
 }
 
 // SetEmailPassword updates the email password in JSON config and reloads
-func SetEmailPassword(password string) error {
-	return setConfigValue("email_password", password)
+func (cm *ConfigManagerImpl) SetEmailPassword(password string) error {
+	return cm.setConfigValue("email_password", password)
 }
 
 // SetEmailFrom updates the email from address in JSON config and reloads
-func SetEmailFrom(from string) error {
-	return setConfigValue("email_from", from)
+func (cm *ConfigManagerImpl) SetEmailFrom(from string) error {
+	return cm.setConfigValue("email_from", from)
 }
 
 // SetDefaultLanguage updates the default language in JSON config and reloads
-func SetDefaultLanguage(lang string) error {
-	return setConfigValue("default_language", lang)
+func (cm *ConfigManagerImpl) SetDefaultLanguage(lang string) error {
+	return cm.setConfigValue("default_language", lang)
 }
 
 // SetSupportedLanguages updates the supported languages in JSON config and reloads
-func SetSupportedLanguages(languages []string) error {
-	return setConfigValue("supported_languages", strings.Join(languages, ","))
+func (cm *ConfigManagerImpl) SetSupportedLanguages(languages []string) error {
+	return cm.setConfigValue("supported_languages", strings.Join(languages, ","))
 }
 
 // SetApplicationName updates the application name in JSON config and reloads
-func SetApplicationName(name string) error {
-	return setConfigValue("application_name", name)
+func (cm *ConfigManagerImpl) SetApplicationName(name string) error {
+	return cm.setConfigValue("application_name", name)
 }
 
 // SetEnableRegistration updates the enable registration in JSON config and reloads
-func SetEnableRegistration(enable string) error {
-	return setConfigValue("enable_registration", enable)
+func (cm *ConfigManagerImpl) SetEnableRegistration(enable string) error {
+	return cm.setConfigValue("enable_registration", enable)
 }
 
 // SetVersion updates the version in JSON config and reloads
-func SetVersion(version string) error {
-	return setConfigValue("version", version)
+func (cm *ConfigManagerImpl) SetVersion(version string) error {
+	return cm.setConfigValue("version", version)
 }
 
-func IsRegistrationEnabled() bool {
-	return App.EnableRegistration == "true"
+// IsRegistrationEnabled checks if registration is enabled
+func (cm *ConfigManagerImpl) IsRegistrationEnabled() bool {
+	return cm.config.EnableRegistration == "true"
 }
 
 // SaveCurrentConfig saves the current in-memory configuration to JSON file
-func SaveCurrentConfig() error {
-	return saveConfigToJSON(App)
+func (cm *ConfigManagerImpl) SaveCurrentConfig() error {
+	return cm.saveConfigToJSON(cm.config)
 }
 
 // Internal setter functions
 
 // setConfigValue updates a single configuration value in the JSON file
-func setConfigValue(key, value string) error {
+func (cm *ConfigManagerImpl) setConfigValue(key, value string) error {
 	// Load existing JSON config or create new one
-	jsonConfig := loadFromJSON(ConfigFileName)
+	jsonConfig := cm.loadFromJSON(ConfigFileName)
 	if jsonConfig == nil {
 		jsonConfig = &JSONConfig{}
 	}
@@ -425,17 +465,17 @@ func setConfigValue(key, value string) error {
 	}
 
 	// Save to file
-	if err := saveJSONConfigToFile(jsonConfig); err != nil {
+	if err := cm.saveJSONConfigToFile(jsonConfig); err != nil {
 		return err
 	}
 
 	// Reload configuration
-	Reload()
+	cm.Reload()
 	return nil
 }
 
 // saveConfigToJSON converts the current Config to JSONConfig and saves it
-func saveConfigToJSON(config Config) error {
+func (cm *ConfigManagerImpl) saveConfigToJSON(config Config) error {
 	jsonConfig := &JSONConfig{
 		Port:               &config.Port,
 		BaseURL:            &config.BaseURL,
@@ -461,11 +501,11 @@ func saveConfigToJSON(config Config) error {
 	supportedLangs := strings.Join(config.SupportedLanguages, ",")
 	jsonConfig.SupportedLanguages = &supportedLangs
 
-	return saveJSONConfigToFile(jsonConfig)
+	return cm.saveJSONConfigToFile(jsonConfig)
 }
 
 // saveJSONConfigToFile writes JSONConfig to the config file
-func saveJSONConfigToFile(jsonConfig *JSONConfig) error {
+func (cm *ConfigManagerImpl) saveJSONConfigToFile(jsonConfig *JSONConfig) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(ConfigFileName), 0755); err != nil {
 		return err
@@ -535,4 +575,37 @@ func getVersionWithFallback() string {
 
 	// Final fallback to default
 	return "0.0.1"
+}
+
+// Global configuration instance for backward compatibility
+var App Config
+
+// Backward compatibility functions - these maintain the old API while using the new structure
+var defaultConfigManager ConfigManager
+
+func init() {
+	defaultConfigManager = NewConfigManager()
+	App = defaultConfigManager.GetConfig()
+}
+
+// NewConfig creates a new config instance with loaded configuration
+func NewConfig() Config {
+	return NewConfigManager().GetConfig()
+}
+
+// Load initializes the global configuration
+func Load() {
+	defaultConfigManager = NewConfigManager()
+	App = defaultConfigManager.GetConfig()
+}
+
+// Reload reloads the global configuration from files
+func Reload() {
+	defaultConfigManager.Reload()
+	App = defaultConfigManager.GetConfig()
+	log.Println("Configuration reloaded")
+}
+
+func IsRegistrationEnabled() bool {
+	return defaultConfigManager.IsRegistrationEnabled()
 }

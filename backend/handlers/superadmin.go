@@ -86,6 +86,7 @@ type SuperAdminHandler struct {
 	logger          interfaces.Logger
 	i18n            interfaces.I18n
 	langContext     interfaces.LanguageContext
+	config          config.ConfigManager
 }
 
 func NewSuperAdminHandler(
@@ -96,6 +97,7 @@ func NewSuperAdminHandler(
 	logger interfaces.Logger,
 	i18n interfaces.I18n,
 	langContext interfaces.LanguageContext,
+	config config.ConfigManager,
 ) *SuperAdminHandler {
 	handlerLogger := logger.Named("superadmin_handler")
 
@@ -107,6 +109,7 @@ func NewSuperAdminHandler(
 		logger:          handlerLogger,
 		i18n:            i18n,
 		langContext:     langContext,
+		config:          config,
 	}
 }
 
@@ -585,7 +588,7 @@ func (h *SuperAdminHandler) GetCompanyUsers(c *fiber.Ctx) error {
 // Configuration Management
 func (h *SuperAdminHandler) GetConfig(c *fiber.Ctx) error {
 	// Get current configuration (sanitized - no sensitive data)
-	currentConfig := config.App
+	currentConfig := h.config.GetConfig()
 
 	// Create response without sensitive fields
 	configResponse := fiber.Map{
@@ -634,105 +637,105 @@ func (h *SuperAdminHandler) UpdateConfig(c *fiber.Ctx) error {
 	updateErrors := []string{}
 
 	if input.Port != nil {
-		if err := config.SetPort(*input.Port); err != nil {
+		if err := h.config.SetPort(*input.Port); err != nil {
 			h.logger.Error("Failed to update port", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update port")
 		}
 	}
 
 	if input.BaseURL != nil {
-		if err := config.SetBaseURL(*input.BaseURL); err != nil {
+		if err := h.config.SetBaseURL(*input.BaseURL); err != nil {
 			h.logger.Error("Failed to update base URL", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update base URL")
 		}
 	}
 
 	if input.FrontendURL != nil {
-		if err := config.SetFrontendURL(*input.FrontendURL); err != nil {
+		if err := h.config.SetFrontendURL(*input.FrontendURL); err != nil {
 			h.logger.Error("Failed to update frontend URL", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update frontend URL")
 		}
 	}
 
 	if input.Environment != nil {
-		if err := config.SetEnvironment(*input.Environment); err != nil {
+		if err := h.config.SetEnvironment(*input.Environment); err != nil {
 			h.logger.Error("Failed to update environment", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update environment")
 		}
 	}
 
 	if input.LogLevel != nil {
-		if err := config.SetLogLevel(*input.LogLevel); err != nil {
+		if err := h.config.SetLogLevel(*input.LogLevel); err != nil {
 			h.logger.Error("Failed to update log level", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update log level")
 		}
 	}
 
 	if input.EmailProvider != nil {
-		if err := config.SetEmailProvider(*input.EmailProvider); err != nil {
+		if err := h.config.SetEmailProvider(*input.EmailProvider); err != nil {
 			h.logger.Error("Failed to update email provider", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email provider")
 		}
 	}
 
 	if input.EmailHost != nil {
-		if err := config.SetEmailHost(*input.EmailHost); err != nil {
+		if err := h.config.SetEmailHost(*input.EmailHost); err != nil {
 			h.logger.Error("Failed to update email host", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email host")
 		}
 	}
 
 	if input.EmailPort != nil {
-		if err := config.SetEmailPort(*input.EmailPort); err != nil {
+		if err := h.config.SetEmailPort(*input.EmailPort); err != nil {
 			h.logger.Error("Failed to update email port", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email port")
 		}
 	}
 
 	if input.EmailUsername != nil {
-		if err := config.SetEmailUsername(*input.EmailUsername); err != nil {
+		if err := h.config.SetEmailUsername(*input.EmailUsername); err != nil {
 			h.logger.Error("Failed to update email username", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email username")
 		}
 	}
 
 	if input.EmailPassword != nil {
-		if err := config.SetEmailPassword(*input.EmailPassword); err != nil {
+		if err := h.config.SetEmailPassword(*input.EmailPassword); err != nil {
 			h.logger.Error("Failed to update email password", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email password")
 		}
 	}
 
 	if input.EmailFrom != nil {
-		if err := config.SetEmailFrom(*input.EmailFrom); err != nil {
+		if err := h.config.SetEmailFrom(*input.EmailFrom); err != nil {
 			h.logger.Error("Failed to update email from", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update email from")
 		}
 	}
 
 	if input.DefaultLanguage != nil {
-		if err := config.SetDefaultLanguage(*input.DefaultLanguage); err != nil {
+		if err := h.config.SetDefaultLanguage(*input.DefaultLanguage); err != nil {
 			h.logger.Error("Failed to update default language", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update default language")
 		}
 	}
 
 	if input.SupportedLanguages != nil {
-		if err := config.SetSupportedLanguages(*input.SupportedLanguages); err != nil {
+		if err := h.config.SetSupportedLanguages(*input.SupportedLanguages); err != nil {
 			h.logger.Error("Failed to update supported languages", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update supported languages")
 		}
 	}
 
 	if input.ApplicationName != nil {
-		if err := config.SetApplicationName(*input.ApplicationName); err != nil {
+		if err := h.config.SetApplicationName(*input.ApplicationName); err != nil {
 			h.logger.Error("Failed to update application name", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update application name")
 		}
 	}
 
 	if input.EnableRegistration != nil {
-		if err := config.SetEnableRegistration(*input.EnableRegistration); err != nil {
+		if err := h.config.SetEnableRegistration(*input.EnableRegistration); err != nil {
 			h.logger.Error("Failed to update enable registration", fiber.Map{"error": err.Error()})
 			updateErrors = append(updateErrors, "Failed to update enable registration")
 		}

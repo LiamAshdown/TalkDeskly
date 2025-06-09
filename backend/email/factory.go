@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+	"live-chat-server/config"
 	"live-chat-server/interfaces"
 	"strconv"
 )
@@ -36,8 +37,8 @@ func (f *EmailFactory) CreateTemplateRenderer() interfaces.EmailTemplateRenderer
 }
 
 // CreateEmailService creates a complete email service
-func (f *EmailFactory) CreateEmailService(config interfaces.EmailConfig) (interfaces.EmailService, error) {
-	sender, err := f.CreateEmailSender(config)
+func (f *EmailFactory) CreateEmailService(emailConfig interfaces.EmailConfig, config config.ConfigManager) (interfaces.EmailService, error) {
+	sender, err := f.CreateEmailSender(emailConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create email sender: %w", err)
 	}
@@ -49,7 +50,7 @@ func (f *EmailFactory) CreateEmailService(config interfaces.EmailConfig) (interf
 
 	renderer := f.CreateTemplateRenderer()
 
-	return NewEmailService(sender, renderer, f.jobClient, f.logger), nil
+	return NewEmailService(sender, renderer, f.jobClient, f.logger, emailConfig, config), nil
 }
 
 // CreateEmailConfigFromEnv creates email configuration from environment/config

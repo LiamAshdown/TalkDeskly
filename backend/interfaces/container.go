@@ -29,7 +29,7 @@ type Container interface {
 	GetI18n() I18n
 	GetLanguageContext() LanguageContext
 	GetUploadService() UploadService
-	GetConfig() config.Config
+	GetConfig() config.ConfigManager
 	GetDig() *dig.Container
 	GetConversationHandler() ConversationHandler
 	GetCommandFactory() CommandFactory

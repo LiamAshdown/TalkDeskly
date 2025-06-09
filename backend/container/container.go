@@ -160,10 +160,10 @@ func (c *DIContainer) GetLanguageContext() interfaces.LanguageContext {
 }
 
 // GetConfig retrieves the config
-func (c *DIContainer) GetConfig() config.Config {
-	var cfg config.Config
-	c.dig.Invoke(func(c config.Config) {
-		cfg = c
+func (c *DIContainer) GetConfig() config.ConfigManager {
+	var cfg config.ConfigManager
+	c.dig.Invoke(func(cm config.ConfigManager) {
+		cfg = cm
 	})
 	return cfg
 }
@@ -250,14 +250,14 @@ func NewContainer(db *gorm.DB, app *fiber.App) interfaces.Container {
 		panic(err)
 	}
 
-	// Register config
-	if err := digContainer.Provide(config.NewConfig); err != nil {
+	// Register config - clean and simple!
+	if err := digContainer.Provide(config.NewConfigManager); err != nil {
 		log.Fatalf("Failed to provide config: %v", err)
 	}
 
 	// Register job client
-	if err := digContainer.Provide(func(cfg config.Config) interfaces.JobClient {
-		return jobs.NewClient(cfg.RedisAddr)
+	if err := digContainer.Provide(func(cfg config.ConfigManager) interfaces.JobClient {
+		return jobs.NewClient(cfg.GetConfig().RedisAddr)
 	}); err != nil {
 		log.Printf("Failed to provide job client: %v", err)
 	}
@@ -290,7 +290,7 @@ func StartJobServer(container interfaces.Container) *jobs.Server {
 	emailService := container.GetEmailService()
 	config := container.GetConfig()
 	jobServer := jobs.RegisterJobServer(
-		config.RedisAddr,
+		config.GetConfig().RedisAddr,
 		emailService,
 		container.GetLogger(),
 	)
