@@ -32,6 +32,9 @@ var (
 	releaseDockerImage    string
 	releaseSkipDocker     bool
 	releaseDockerPush     bool
+	// Git-related flags
+	releaseSkipGitTag bool
+	releaseGitPushTag bool
 )
 
 var releaseCmd = &cobra.Command{
@@ -48,7 +51,9 @@ Examples:
   talkdeskly release --skip-version                    # Only build (no version change)
   talkdeskly release --docker-push                     # Build and push Docker image
   talkdeskly release --docker-image myapp --docker-push # Custom image name and push
-  talkdeskly release --skip-docker                     # Skip Docker build entirely`,
+  talkdeskly release --skip-docker                     # Skip Docker build entirely
+  talkdeskly release --git-push-tag                    # Create and push Git tag
+  talkdeskly release --skip-git-tag                    # Skip Git tag creation`,
 	RunE: runRelease,
 }
 
@@ -63,6 +68,10 @@ func init() {
 	releaseCmd.Flags().StringVar(&releaseDockerImage, "docker-image", "talkdeskly", "Docker image name")
 	releaseCmd.Flags().BoolVar(&releaseSkipDocker, "skip-docker", false, "Skip Docker image building")
 	releaseCmd.Flags().BoolVar(&releaseDockerPush, "docker-push", false, "Push Docker image to registry after building")
+
+	// Git flags
+	releaseCmd.Flags().BoolVar(&releaseSkipGitTag, "skip-git-tag", false, "Skip creating Git tag for the release")
+	releaseCmd.Flags().BoolVar(&releaseGitPushTag, "git-push-tag", false, "Push Git tag to remote repository after creating")
 
 	rootCmd.AddCommand(releaseCmd)
 }
@@ -101,6 +110,11 @@ func runRelease(cmd *cobra.Command, args []string) error {
 	if !releaseSkipDocker {
 		fmt.Printf("Docker image: %s\n", getDockerImageName(newVersion))
 		fmt.Printf("Docker push: %t\n", releaseDockerPush)
+	}
+	fmt.Printf("Skip Git tag: %t\n", releaseSkipGitTag)
+	if !releaseSkipGitTag {
+		fmt.Printf("Git tag: v%s\n", newVersion)
+		fmt.Printf("Git push tag: %t\n", releaseGitPushTag)
 	}
 	fmt.Println()
 
@@ -144,6 +158,22 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Create Git tag if not skipping
+	if !releaseSkipGitTag {
+		if err := createGitTag(newVersion); err != nil {
+			return fmt.Errorf("Git tag creation failed: %v", err)
+		}
+		printSuccess(fmt.Sprintf("Git tag v%s created successfully", newVersion))
+
+		// Push Git tag if requested
+		if releaseGitPushTag {
+			if err := pushGitTag(newVersion); err != nil {
+				return fmt.Errorf("Git tag push failed: %v", err)
+			}
+			printSuccess(fmt.Sprintf("Git tag v%s pushed successfully", newVersion))
+		}
+	}
+
 	// Generate build info
 	if err := generateBuildInfo(newVersion); err != nil {
 		return fmt.Errorf("failed to generate build info: %v", err)
@@ -163,6 +193,12 @@ func runRelease(cmd *cobra.Command, args []string) error {
 		fmt.Printf("✅ Docker image built: %s\n", getDockerImageName(newVersion))
 		if releaseDockerPush {
 			fmt.Println("✅ Docker image pushed to registry")
+		}
+	}
+	if !releaseSkipGitTag {
+		fmt.Printf("✅ Git tag v%s created\n", newVersion)
+		if releaseGitPushTag {
+			fmt.Println("✅ Git tag pushed to remote repository")
 		}
 	}
 	fmt.Println("✅ Build info generated")
@@ -430,6 +466,47 @@ func writeJSONFile(filename string, data interface{}) error {
 	return encoder.Encode(data)
 }
 
+// Git-related functions
+
+func createGitTag(version string) error {
+	printInfo("Creating Git tag...")
+
+	tagName := fmt.Sprintf("v%s", version)
+
+	// Check if tag already exists
+	checkCmd := exec.Command("git", "tag", "-l", tagName)
+	output, err := checkCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to check existing tags: %v", err)
+	}
+
+	if strings.TrimSpace(string(output)) != "" {
+		return fmt.Errorf("tag %s already exists", tagName)
+	}
+
+	// Create the tag
+	if err := runCommand("git", "tag", "-a", tagName, "-m", fmt.Sprintf("Release %s", version)); err != nil {
+		return fmt.Errorf("failed to create Git tag: %v", err)
+	}
+
+	printInfo(fmt.Sprintf("Git tag %s created", tagName))
+	return nil
+}
+
+func pushGitTag(version string) error {
+	printInfo("Pushing Git tag...")
+
+	tagName := fmt.Sprintf("v%s", version)
+
+	// Push the tag to origin
+	if err := runCommand("git", "push", "origin", tagName); err != nil {
+		return fmt.Errorf("failed to push Git tag: %v", err)
+	}
+
+	printInfo(fmt.Sprintf("Git tag %s pushed to remote repository", tagName))
+	return nil
+}
+
 // Docker-related functions
 
 func getDockerImageName(version string) string {
@@ -441,30 +518,40 @@ func getDockerImageName(version string) string {
 }
 
 func buildDockerImage(version string) error {
-	printInfo("Building Docker image...")
+	printInfo("Building multi-platform Docker image...")
 
 	imageName := getDockerImageName(version)
 	latestImageName := fmt.Sprintf("%s:latest", getBaseImageName())
 
-	// Build the Docker image using the production Dockerfile
+	// Build multi-platform Docker image using buildx
 	buildArgs := []string{
-		"build",
+		"buildx", "build",
+		"--platform", "linux/amd64,linux/arm64",
 		"-f", "docker/Dockerfile.prod",
 		"-t", imageName,
 		"-t", latestImageName,
-		".",
 	}
+
+	// If pushing, add --push flag, otherwise load to local docker
+	if releaseDockerPush {
+		buildArgs = append(buildArgs, "--push")
+	} else {
+		buildArgs = append(buildArgs, "--load")
+		printWarning("Note: Multi-platform images can't be loaded locally. Consider using --docker-push to push to registry.")
+	}
+
+	buildArgs = append(buildArgs, ".")
 
 	if err := runDockerCommand("docker", buildArgs...); err != nil {
 		return fmt.Errorf("failed to build Docker image: %v", err)
 	}
 
-	printInfo(fmt.Sprintf("Docker image built: %s", imageName))
+	printInfo(fmt.Sprintf("Multi-platform Docker image built: %s", imageName))
 	return nil
 }
 
 func pushDockerImage(version string) error {
-	printInfo("Pushing Docker image...")
+	printInfo("Docker images were pushed during build (using buildx --push)")
 
 	if releaseDockerRegistry == "" {
 		return fmt.Errorf("docker registry must be specified when pushing (use --docker-registry)")
@@ -473,17 +560,7 @@ func pushDockerImage(version string) error {
 	imageName := getDockerImageName(version)
 	latestImageName := fmt.Sprintf("%s:latest", getBaseImageName())
 
-	// Push versioned image
-	if err := runDockerCommand("docker", "push", imageName); err != nil {
-		return fmt.Errorf("failed to push Docker image %s: %v", imageName, err)
-	}
-
-	// Push latest image
-	if err := runDockerCommand("docker", "push", latestImageName); err != nil {
-		return fmt.Errorf("failed to push Docker image %s: %v", latestImageName, err)
-	}
-
-	printInfo(fmt.Sprintf("Docker images pushed: %s and %s", imageName, latestImageName))
+	printInfo(fmt.Sprintf("Multi-platform Docker images pushed: %s and %s", imageName, latestImageName))
 	return nil
 }
 

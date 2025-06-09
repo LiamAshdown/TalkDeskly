@@ -111,10 +111,11 @@ func (e *EmailServiceImpl) SendTemplatedEmailAsync(to, subject, templateName str
 		templateData = NewTemplateData()
 		templateData.Data = v
 		templateData.Subject = subject
-		templateData.AppName = e.config.GetConfig().ApplicationName
 	default:
 		return fmt.Errorf("unsupported data type for template: %T", data)
 	}
+
+	templateData.AppName = e.config.GetConfig().ApplicationName
 
 	subject, body, err := e.renderer.RenderTemplateWithSubject(templateName, templateData)
 	if err != nil {

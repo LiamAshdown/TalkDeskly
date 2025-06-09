@@ -77,12 +77,24 @@ func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "password_hash_failed", nil)
 	}
 
+	superAdminUser, err := h.userRepo.GetSuperAdminUser()
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_fetch_failed", err)
+	}
+
+	role := models.RoleAdmin
+
+	// If there's no super admin user, then this registration is for a super admin
+	if superAdminUser != nil {
+		role = models.RoleSuperAdmin
+	}
+
 	user := models.User{
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Email:     input.Email,
 		Password:  hashedPassword,
-		Role:      string(models.RoleAdmin),
+		Role:      string(role),
 		NotificationSettings: &models.NotificationSettings{
 			NewConversation: true,
 			NewMessage:      true,

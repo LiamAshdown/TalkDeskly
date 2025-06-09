@@ -26,6 +26,8 @@ func (f *EmailFactory) CreateEmailSender(config interfaces.EmailConfig) (interfa
 	switch config.Provider {
 	case "smtp", "gomail":
 		return NewSMTPSender(config, f.logger), nil
+	case "null":
+		return NewNullSender(config, f.logger), nil
 	default:
 		return nil, fmt.Errorf("unsupported email provider: %s", config.Provider)
 	}

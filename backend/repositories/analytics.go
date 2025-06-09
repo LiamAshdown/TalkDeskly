@@ -81,7 +81,7 @@ func (r *analyticsRepository) GetConversationsByAgent(companyID string, startDat
 		LEFT JOIN conversations c ON u.id = c.assigned_to_id 
 			AND c.company_id = ? 
 			AND c.created_at BETWEEN ? AND ?
-		WHERE u.company_id = ? AND u.role IN ('agent', 'admin')
+		WHERE u.company_id = ? AND u.role IN ('agent', 'admin', 'superadmin')
 		GROUP BY u.id, u.first_name, u.last_name
 		ORDER BY total_assigned DESC
 	`, companyID, startDate, endDate, companyID).Rows()
