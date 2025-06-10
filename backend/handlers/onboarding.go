@@ -78,7 +78,7 @@ func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
 	}
 
 	superAdminUser, err := h.userRepo.GetSuperAdminUser()
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_fetch_failed", err)
 	}
 
@@ -109,10 +109,10 @@ func (h *OnboardingHandler) HandleCreateUser(c *fiber.Ctx) error {
 	} else {
 
 		if !h.config.IsRegistrationEnabled() {
-			// Check to see if thee's a superadmin, if there is, then we cannot
+			// Check to see if there's a superadmin, if there is, then we cannot
 			// allow them to create a company
 			user, err := h.userRepo.GetSuperAdminUser()
-			if err != nil {
+			if err != nil && err != gorm.ErrRecordNotFound {
 				return utils.ErrorResponse(c, fiber.StatusInternalServerError, "user_fetch_failed", err)
 			}
 

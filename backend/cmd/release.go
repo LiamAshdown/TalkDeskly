@@ -14,6 +14,7 @@ import (
 
 	"live-chat-server/config"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
 
@@ -434,19 +435,19 @@ func copyDir(src, dst string) error {
 
 // Utility functions for colored output
 func printInfo(message string) {
-	fmt.Printf("\033[0;34m[INFO]\033[0m %s\n", message)
+	color.New(color.FgBlue).Printf("[INFO] %s\n", message)
 }
 
 func printSuccess(message string) {
-	fmt.Printf("\033[0;32m[SUCCESS]\033[0m %s\n", message)
+	color.New(color.FgGreen).Printf("[SUCCESS] %s\n", message)
 }
 
 func printWarning(message string) {
-	fmt.Printf("\033[1;33m[WARNING]\033[0m %s\n", message)
+	color.New(color.FgYellow, color.Bold).Printf("[WARNING] %s\n", message)
 }
 
 func printError(message string) {
-	fmt.Printf("\033[0;31m[ERROR]\033[0m %s\n", message)
+	color.New(color.FgRed).Printf("[ERROR] %s\n", message)
 }
 
 func writeJSONFile(filename string, data interface{}) error {
