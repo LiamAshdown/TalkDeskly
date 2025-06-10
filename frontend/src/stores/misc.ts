@@ -7,10 +7,12 @@ interface MiscState {
   appInformation: {
     appName: string;
     version: string;
+    registrationEnabled: boolean;
   } | null;
   setAppInformation: (appInformation: {
     appName: string;
     version: string;
+    registrationEnabled: boolean;
   }) => void;
   setTheme: (theme: "light" | "dark" | "system") => void;
   toggleTheme: () => void;
@@ -50,6 +52,7 @@ export const useMiscStore = create<MiscState>()(
       appInformation: {
         appName: "",
         version: "",
+        registrationEnabled: true,
       },
       setTheme: (theme) => {
         applyTheme(theme);

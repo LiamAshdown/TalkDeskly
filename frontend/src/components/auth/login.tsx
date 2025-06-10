@@ -21,12 +21,14 @@ import {
 import { InputField, CheckboxField } from "@/components/ui/form-field";
 import { useFormValidation } from "@/lib/hooks/use-form-validation";
 import { toast } from "@/lib/hooks/use-toast";
+import { useMiscStore } from "@/stores/misc";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const { t } = useTranslation();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { appInformation } = useMiscStore();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(createLoginFormSchema(t)),
@@ -121,15 +123,17 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? t("auth.login.loading") : t("auth.login.submit")}
           </Button>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            {t("auth.login.noAccount")}{" "}
-            <Link
-              to="/register"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              {t("auth.login.signUp")}
-            </Link>
-          </p>
+          {appInformation?.registrationEnabled && (
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              {t("auth.login.noAccount")}{" "}
+              <Link
+                to="/register"
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {t("auth.login.signUp")}
+              </Link>
+            </p>
+          )}
         </CardFooter>
       </form>
     </Form>

@@ -16,15 +16,17 @@ type PublicHandler struct {
 	langContext      interfaces.LanguageContext
 	conversationRepo repositories.ConversationRepository
 	config           config.ConfigManager
+	userRepo         repositories.UserRepository
 }
 
-func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, config config.ConfigManager) *PublicHandler {
+func NewPublicHandler(inboxRepo repositories.InboxRepository, conversationRepo repositories.ConversationRepository, logger interfaces.Logger, langContext interfaces.LanguageContext, config config.ConfigManager, userRepo repositories.UserRepository) *PublicHandler {
 	return &PublicHandler{
 		inboxRepo:        inboxRepo,
 		logger:           logger,
 		langContext:      langContext,
 		conversationRepo: conversationRepo,
 		config:           config,
+		userRepo:         userRepo,
 	}
 }
 
@@ -61,8 +63,19 @@ func (h *PublicHandler) HandleGetConversationDetails(c *fiber.Ctx) error {
 }
 
 func (h *PublicHandler) AppInformation(c *fiber.Ctx) error {
+	user, _ := h.userRepo.GetSuperAdminUser()
+
+	registrationEnabled := true
+
+	if !h.config.IsRegistrationEnabled() {
+		if user != nil {
+			registrationEnabled = false
+		}
+	}
+
 	return utils.SuccessResponse(c, fiber.StatusOK, h.langContext.T(c, "app_information_retrieved"), fiber.Map{
-		"app_name": h.config.GetConfig().ApplicationName,
-		"version":  h.config.GetConfig().Version,
+		"app_name":             h.config.GetConfig().ApplicationName,
+		"version":              h.config.GetConfig().Version,
+		"registration_enabled": registrationEnabled,
 	})
 }

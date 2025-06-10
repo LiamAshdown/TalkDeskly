@@ -126,6 +126,15 @@
         "inviteFound": "You've been invited to join {{companyName}}",
         "inviteFoundDescription": "You've been invited to join {{companyName}}. Please enter your details to continue."
       }
+    },
+    "registration": {
+      "disabled": {
+        "title": "Registration Unavailable",
+        "description": "New account registration is currently disabled. Please contact your administrator for access or try again later.",
+        "helpTitle": "Need an account?",
+        "helpDescription": "Contact support for assistance with account creation.",
+        "backToLogin": "Back to login"
+      }
     }
   },
   "contacts": {

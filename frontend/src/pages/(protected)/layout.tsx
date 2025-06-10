@@ -30,6 +30,7 @@ export default function ProtectedLayout() {
       setAppInformation({
         appName: res.data.appName,
         version: res.data.version,
+        registrationEnabled: res.data.registrationEnabled,
       });
     });
   }, []);
