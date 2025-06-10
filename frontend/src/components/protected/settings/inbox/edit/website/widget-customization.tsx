@@ -37,7 +37,7 @@ export function WidgetCustomization() {
       position: "${widgetPosition}",
       primaryColor: "${widgetColor}",
       zIndex: 9999,
-      baseUrl: "${window.location.origin}/ws"
+      baseUrl: "${window.location.origin}"
     })
   }
 })(document,"script");

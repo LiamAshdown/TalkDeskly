@@ -21,7 +21,7 @@ export function Complete({ inbox }: CompleteProps) {
   g.onload=function(){
     window.talkDeskly.init({
       inboxId: "${inbox.id}",
-      baseUrl: "${window.location.origin}/ws"
+      baseUrl: "${window.location.origin}"
     })
   }
 })(document,"script");

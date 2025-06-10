@@ -27,6 +27,7 @@ import type { WebSocketMessage } from "~/lib/services/websocket/types";
 import { inboxService } from "~/lib/api/services/inbox";
 import { useConfig } from "~/stores/config-context";
 import { ThemeProvider } from "~/contexts/theme-provider";
+import apiClient from "~/lib/api/client";
 
 function LiveChatWidgetContent() {
   const chatState = useChatStateContext();
@@ -48,7 +49,10 @@ function LiveChatWidgetContent() {
     chatState.setConnected(false);
 
     // Attempt to reconnect
-    wsService.connect(config.baseUrl!, contactId, config.inboxId);
+    wsService.connect(config.baseUrl! + "/ws", contactId, config.inboxId);
+
+    apiClient.defaults.baseURL = config.baseUrl! + "/api";
+
     wsServiceConnected.current = true;
   };
 
