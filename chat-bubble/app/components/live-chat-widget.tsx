@@ -51,8 +51,6 @@ function LiveChatWidgetContent() {
     // Attempt to reconnect
     wsService.connect(config.baseUrl! + "/ws", contactId, config.inboxId);
 
-    apiClient.defaults.baseURL = config.baseUrl! + "/api";
-
     wsServiceConnected.current = true;
   };
 
@@ -90,9 +88,11 @@ function LiveChatWidgetContent() {
       return;
     }
 
+    apiClient.defaults.baseURL = config.baseUrl! + "/api";
+
     wsService.initializeHandlers();
 
-    wsService.connect(config.baseUrl!, contactId, config.inboxId);
+    wsService.connect(config.baseUrl! + "/ws", contactId, config.inboxId);
     wsServiceConnected.current = true;
 
     return () => {
