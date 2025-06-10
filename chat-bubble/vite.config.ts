@@ -4,6 +4,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tailwindcss(), tsconfigPaths()],
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env": JSON.stringify({}),
+  },
   build: {
     lib: {
       entry: "app/sdk.tsx", // Entry point that exposes window.talkDeskly
@@ -12,12 +16,8 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
       output: {
-        globals: {
-          react: "React",
-          "react-dom": "ReactDOM",
-        },
+        // Remove globals configuration
       },
     },
     target: "es2015",

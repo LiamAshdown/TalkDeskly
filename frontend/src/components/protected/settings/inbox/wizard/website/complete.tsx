@@ -20,7 +20,8 @@ export function Complete({ inbox }: CompleteProps) {
   s.parentNode.insertBefore(g,s);
   g.onload=function(){
     window.talkDeskly.init({
-      inboxId: "${inbox.id}"
+      inboxId: "${inbox.id}",
+      baseUrl: "${window.location.origin}/ws"
     })
   }
 })(document,"script");
