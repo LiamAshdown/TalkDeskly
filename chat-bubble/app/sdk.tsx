@@ -29,9 +29,11 @@ function init(options: Config) {
   if (!container) {
     container = document.createElement("div");
     container.id = "talkdeskly-root";
+
     document.body.appendChild(container);
   }
 
+  // Create React root and render the app
   const root = createRoot(container);
   root.render(<ChatBubbleApp config={options} />);
 }
